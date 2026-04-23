@@ -304,6 +304,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -320,6 +323,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1686,16 +1691,27 @@ function renderMarcaDetalheGeral() {
 
   // Tabela por marca (linha de resumo por marca)
   const marcasOrdenadas=Object.entries(marcaMap).sort((a,b)=>b[1].fat-a[1].fat);
+  // Média de conversão geral para colorir marcas
+  const convGeralTotal = stores.reduce((a,s)=>a+s.carros,0);
+  const convGeralMedia = convGeralTotal>0 ? stores.reduce((a,s)=>a+s.segsat,0)/convGeralTotal : 0;
   const marcaRows=marcasOrdenadas.map(([marca,d])=>{
     const mc=d.car>0?d.seg/d.car:0;
     const mT={};PK.forEach(k=>{mT[k]=0;});
     d.lojas.forEach(s=>{const sp=STORE_PLANS[s.loja]||{};PK.forEach(k=>{mT[k]+=(sp[k]||0);});});
     const mTotal=PK.reduce((a,k)=>a+mT[k],0);
+    const mIsCrit = d.seg===0 || d.seg<=3;
+    const mIsAbaixo = !mIsCrit && mc < convGeralMedia;
+    const mSegColor = mIsCrit ? 'color:var(--red);font-weight:700' : mIsAbaixo ? 'color:var(--gold);font-weight:700' : 'color:var(--green);font-weight:700';
+    const mConvColor = mIsCrit ? `background:rgba(255,77,106,0.15);color:var(--red)` : mIsAbaixo ? `background:rgba(245,166,35,0.15);color:var(--gold)` : `background:rgba(0,208,132,0.12);color:var(--green)`;
+    const mArrow = mIsCrit ? '↓' : mIsAbaixo ? '↓' : mc>=0.5?'↑':'▲';
+    const mConvBadge = d.car===0
+      ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">0%</span>`
+      : `<span style="${mConvColor};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">${mArrow} ${fPct(mc)}</span>`;
     return `<tr>
       <td class="td-main" style="font-weight:700">${marca}</td>
-      <td class="td-green">${d.seg}</td>
+      <td style="${mSegColor}">${d.seg}</td>
       <td class="td-mono">${d.car}</td>
-      <td>${convBadge(mc)}</td>
+      <td>${mConvBadge}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${mT['1 ANO']}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${mT['2 ANOS']}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${mT['3 ANOS']}</td>
@@ -1838,7 +1854,7 @@ function renderMarcaDetalhe(marca) {
       ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">0%</span>`
       : `<span style="${convColor};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">${convArrow} ${fPct(c)}</span>`;
     // Cor do segsat: vermelho se crítico
-    const segColor = isCrit ? 'color:var(--red);font-weight:600' : 'color:var(--green);font-weight:600';
+    const segColor = isCrit ? 'color:var(--red);font-weight:600' : isAbaixo ? 'color:var(--gold);font-weight:600' : 'color:var(--green);font-weight:600';
     return `<tr>
       <td class="td-main" style="font-size:12px;white-space:nowrap">${s.loja}</td>
       <td style="${segColor}">${s.segsat}</td>

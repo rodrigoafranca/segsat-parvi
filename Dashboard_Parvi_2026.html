@@ -298,84 +298,7 @@ tr:hover td{background:var(--surface2);}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
 
-/* ── LOGIN ── */
-#login-screen {
-  position:fixed;inset:0;z-index:99999;
-  background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:'DM Sans',sans-serif;
-}
-#login-box {
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:14px;padding:36px 40px;width:320px;text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
-}
-#login-logo { font-size:40px;margin-bottom:12px; }
-#login-title { font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px; }
-#login-sub { font-size:12px;color:var(--text3);margin-bottom:24px; }
-#login-input {
-  width:100%;padding:10px 14px;border-radius:8px;
-  border:1px solid var(--border2);background:var(--surface2);
-  color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;
-  outline:none;text-align:center;letter-spacing:2px;
-  margin-bottom:12px;box-sizing:border-box;
-}
-#login-input:focus { border-color:var(--blue); }
-#login-btn {
-  width:100%;padding:11px;border-radius:8px;
-  background:var(--blue);color:#fff;border:none;
-  font-size:14px;font-weight:700;cursor:pointer;
-  font-family:'DM Sans',sans-serif;transition:opacity 0.15s;
-}
-#login-btn:hover { opacity:0.85; }
-#login-error {
-  color:var(--red);font-size:12px;margin-top:8px;
-  display:none;
-}
-#login-footer {
-  margin-top:20px;font-size:10px;color:var(--text3);
-  font-family:'DM Mono',monospace;
-}
 
-
-/* ── LOGIN ── */
-#login-screen {
-  position:fixed;inset:0;z-index:99999;
-  background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:'DM Sans',sans-serif;
-}
-#login-box {
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:14px;padding:36px 40px;width:320px;text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
-}
-#login-logo { font-size:40px;margin-bottom:12px; }
-#login-title { font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px; }
-#login-sub { font-size:12px;color:var(--text3);margin-bottom:24px; }
-#login-input {
-  width:100%;padding:10px 14px;border-radius:8px;
-  border:1px solid var(--border2);background:var(--surface2);
-  color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;
-  outline:none;text-align:center;letter-spacing:2px;
-  margin-bottom:12px;box-sizing:border-box;
-}
-#login-input:focus { border-color:var(--blue); }
-#login-btn {
-  width:100%;padding:11px;border-radius:8px;
-  background:var(--blue);color:#fff;border:none;
-  font-size:14px;font-weight:700;cursor:pointer;
-  font-family:'DM Sans',sans-serif;transition:opacity 0.15s;
-}
-#login-btn:hover { opacity:0.85; }
-#login-error {
-  color:var(--red);font-size:12px;margin-top:8px;
-  display:none;
-}
-#login-footer {
-  margin-top:20px;font-size:10px;color:var(--text3);
-  font-family:'DM Mono',monospace;
-}
 
 
 /* ── LOGIN ── */
@@ -394,6 +317,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1858,28 +1783,36 @@ function renderMarcaDetalhe(marca) {
   const bT={};PK.forEach(k=>{bT[k]=0;});
   stores.forEach(s=>{const sp=STORE_PLANS[s.loja]||{};PK.forEach(k=>{bT[k]+=(sp[k]||0);});});
 
+  // Separadores coloridos por grupo
+  const SEP_R = 'border-left:1.5px solid rgba(77,138,255,0.4)';
+  const SEP_S = 'border-left:1.5px solid rgba(167,139,250,0.4)';
+  const SEP_G = 'border-left:1.5px solid rgba(245,166,35,0.4)';
+  const SEP_T = 'border-left:1.5px solid var(--border2)';
+  const FM    = "font-family:'DM Mono',monospace";
+
   // Linha total da marca
   const totalRow=`<tr style="background:rgba(77,138,255,0.08);font-weight:700;border-top:2px solid var(--border2)">
     <td class="td-main" style="color:var(--blue)">TOTAL ${marca}</td>
     <td class="td-green" style="font-weight:700">${tSeg}</td>
     <td class="td-mono">${tCar}</td>
     <td>${convBadge(conv)}</td>
-    <td style="font-family:'DM Mono',monospace;font-weight:700">${bT['1 ANO']}</td>
-    <td style="font-family:'DM Mono',monospace;font-weight:700">${bT['2 ANOS']}</td>
-    <td style="font-family:'DM Mono',monospace;font-weight:700">${bT['3 ANOS']}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--purple);font-weight:700">${bT['1FSv']}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--purple);font-weight:700">${bT['2FSv']}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--purple);font-weight:700">${bT['3FSv']}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--gold);font-weight:700">${bT['1FG']}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--gold);font-weight:700">${bT['2FG']}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--gold);font-weight:700">${bT['3FG']}</td>
-    <td style="font-family:'DM Mono',monospace;font-weight:700">${PK.reduce((a,k)=>a+bT[k],0)}</td>
+    <td style="${FM};font-weight:700;${SEP_R}">${bT['1 ANO']}</td>
+    <td style="${FM};font-weight:700">${bT['2 ANOS']}</td>
+    <td style="${FM};font-weight:700">${bT['3 ANOS']}</td>
+    <td style="${FM};color:var(--purple);font-weight:700;${SEP_S}">${bT['1FSv']}</td>
+    <td style="${FM};color:var(--purple);font-weight:700">${bT['2FSv']}</td>
+    <td style="${FM};color:var(--purple);font-weight:700">${bT['3FSv']}</td>
+    <td style="${FM};color:var(--gold);font-weight:700;${SEP_G}">${bT['1FG']}</td>
+    <td style="${FM};color:var(--gold);font-weight:700">${bT['2FG']}</td>
+    <td style="${FM};color:var(--gold);font-weight:700">${bT['3FG']}</td>
+    <td style="${FM};font-weight:700;${SEP_T}">${PK.reduce((a,k)=>a+bT[k],0)}</td>
     <td class="td-orange" style="font-weight:700">${fBRL(tFat)}</td>
   </tr>`;
 
   const storeRows=stores.map(s=>{
     const sp=STORE_PLANS[s.loja]||{};
     const g=k=>sp[k]||0;
+    const gz=k=>g(k)===0?`<span style="color:var(--text3)">0</span>`:g(k);
     const sTotal=PK.reduce((a,k)=>a+g(k),0);
     const c=s.carros>0?s.segsat/s.carros:0;
     return `<tr>
@@ -1887,16 +1820,16 @@ function renderMarcaDetalhe(marca) {
       <td class="td-green">${s.segsat}</td>
       <td class="td-mono">${s.carros}</td>
       <td>${convBadge(c)}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px">${g('1 ANO')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px">${g('2 ANOS')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px">${g('3 ANOS')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--purple)">${g('1FSv')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--purple)">${g('2FSv')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--purple)">${g('3FSv')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold)">${g('1FG')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold)">${g('2FG')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold)">${g('3FG')}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700">${sTotal}</td>
+      <td style="${FM};font-size:11px;${SEP_R}">${gz('1 ANO')}</td>
+      <td style="${FM};font-size:11px">${gz('2 ANOS')}</td>
+      <td style="${FM};font-size:11px">${gz('3 ANOS')}</td>
+      <td style="${FM};font-size:11px;color:var(--purple);${SEP_S}">${gz('1FSv')}</td>
+      <td style="${FM};font-size:11px;color:var(--purple)">${gz('2FSv')}</td>
+      <td style="${FM};font-size:11px;color:var(--purple)">${gz('3FSv')}</td>
+      <td style="${FM};font-size:11px;color:var(--gold);${SEP_G}">${gz('1FG')}</td>
+      <td style="${FM};font-size:11px;color:var(--gold)">${gz('2FG')}</td>
+      <td style="${FM};font-size:11px;color:var(--gold)">${gz('3FG')}</td>
+      <td style="${FM};font-size:11px;font-weight:700;${SEP_T}">${sTotal}</td>
       <td class="td-orange">${s.fat>0?fBRL(s.fat):'—'}</td>
     </tr>`;
   }).join('');
@@ -1935,16 +1868,16 @@ function renderMarcaDetalhe(marca) {
             <th rowspan="2" style="vertical-align:bottom">Seg.</th>
             <th rowspan="2" style="vertical-align:bottom">Carros</th>
             <th rowspan="2" style="vertical-align:bottom">Conv.</th>
-            <th colspan="3" style="text-align:center;color:var(--text2);border-bottom:1px solid var(--border)">Rastreio</th>
-            <th colspan="3" style="text-align:center;color:var(--purple);border-bottom:1px solid var(--border)">Family Silver</th>
-            <th colspan="3" style="text-align:center;color:var(--gold);border-bottom:1px solid var(--border)">Family Gold</th>
-            <th rowspan="2" style="vertical-align:bottom">Total</th>
+            <th colspan="3" style="text-align:center;color:var(--blue);background:rgba(77,138,255,0.07);border-bottom:2px solid var(--blue);${SEP_R}">Rastreio</th>
+            <th colspan="3" style="text-align:center;color:var(--purple);background:rgba(167,139,250,0.07);border-bottom:2px solid var(--purple);${SEP_S}">Family Silver</th>
+            <th colspan="3" style="text-align:center;color:var(--gold);background:rgba(245,166,35,0.07);border-bottom:2px solid var(--gold);${SEP_G}">Family Gold</th>
+            <th rowspan="2" style="vertical-align:bottom;${SEP_T}">Total</th>
             <th rowspan="2" style="vertical-align:bottom">Fat.</th>
           </tr>
           <tr>
-            <th style="color:var(--text2);font-size:9px">1A</th><th style="color:var(--text2);font-size:9px">2A</th><th style="color:var(--text2);font-size:9px">3A</th>
-            <th style="color:var(--purple);font-size:9px">1A</th><th style="color:var(--purple);font-size:9px">2A</th><th style="color:var(--purple);font-size:9px">3A</th>
-            <th style="color:var(--gold);font-size:9px">1A</th><th style="color:var(--gold);font-size:9px">2A</th><th style="color:var(--gold);font-size:9px">3A</th>
+            <th style="color:var(--blue);font-size:9px;${SEP_R}">1A</th><th style="color:var(--blue);font-size:9px">2A</th><th style="color:var(--blue);font-size:9px">3A</th>
+            <th style="color:var(--purple);font-size:9px;${SEP_S}">1A</th><th style="color:var(--purple);font-size:9px">2A</th><th style="color:var(--purple);font-size:9px">3A</th>
+            <th style="color:var(--gold);font-size:9px;${SEP_G}">1A</th><th style="color:var(--gold);font-size:9px">2A</th><th style="color:var(--gold);font-size:9px">3A</th>
           </tr>
         </thead>
         <tbody>${storeRows}${totalRow}</tbody>

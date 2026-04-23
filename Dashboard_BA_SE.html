@@ -319,6 +319,12 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -335,6 +341,10 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
+
+
 
 
 
@@ -1847,33 +1857,42 @@ function renderMarcaDetalhe(marca) {
   const FM    = "font-family:'DM Mono',monospace";
 
   // Linha total da marca
-  const totalRow=`<tr style="background:rgba(77,138,255,0.08);font-weight:700;border-top:2px solid var(--border2)">
-    <td class="td-main" style="color:var(--blue)">TOTAL ${marca}</td>
-    <td class="td-green" style="font-weight:700">${tSeg}</td>
-    <td class="td-mono">${tCar}</td>
+  const bTz=k=>bT[k]>0?`<span style="${FM};font-weight:700">${bT[k]}</span>`:`<span style="color:var(--text3);font-weight:400">0</span>`;
+  const totalRow=`<tr style="background:rgba(255,255,255,0.03);border-top:1.5px solid var(--border2)">
+    <td class="td-main" style="color:var(--text);font-weight:700">TOTAL ${marca}</td>
+    <td style="color:var(--green);font-weight:700">${tSeg}</td>
+    <td style="${FM};font-weight:700">${tCar}</td>
     <td>${convBadge(conv)}</td>
-    <td style="${FM};font-weight:700;color:var(--blue);${SEP_R}">${bT['1 ANO']}</td>
-    <td style="${FM};font-weight:700;color:var(--blue)">${bT['2 ANOS']}</td>
-    <td style="${FM};font-weight:700;color:var(--blue)">${bT['3 ANOS']}</td>
-    <td style="${FM};color:var(--purple);font-weight:700;${SEP_S}">${bT['1FSv']}</td>
-    <td style="${FM};color:var(--purple);font-weight:700">${bT['2FSv']}</td>
-    <td style="${FM};color:var(--purple);font-weight:700">${bT['3FSv']}</td>
-    <td style="${FM};color:var(--gold);font-weight:700;${SEP_G}">${bT['1FG']}</td>
-    <td style="${FM};color:var(--gold);font-weight:700">${bT['2FG']}</td>
-    <td style="${FM};color:var(--gold);font-weight:700">${bT['3FG']}</td>
-    <td style="${FM};font-weight:700;${SEP_T}">${PK.reduce((a,k)=>a+bT[k],0)}</td>
+    <td style="color:var(--blue);${SEP_R}">${bTz('1 ANO')}</td>
+    <td style="color:var(--blue)">${bTz('2 ANOS')}</td>
+    <td style="color:var(--blue)">${bTz('3 ANOS')}</td>
+    <td style="color:var(--purple);${SEP_S}">${bTz('1FSv')}</td>
+    <td style="color:var(--purple)">${bTz('2FSv')}</td>
+    <td style="color:var(--purple)">${bTz('3FSv')}</td>
+    <td style="color:var(--gold);${SEP_G}">${bTz('1FG')}</td>
+    <td style="color:var(--gold)">${bTz('2FG')}</td>
+    <td style="color:var(--gold)">${bTz('3FG')}</td>
+    <td style="${FM};font-weight:700;color:var(--text);${SEP_T}">${PK.reduce((a,k)=>a+bT[k],0)}</td>
     <td class="td-orange" style="font-weight:700">${fBRL(tFat)}</td>
   </tr>`;
 
   // Ordena por conversão desc
   stores.sort((a,b)=>(b.carros>0?b.segsat/b.carros:0)-(a.carros>0?a.segsat/a.carros:0));
 
-  const storeRows=stores.map(s=>{
+  const storeRows=stores.map((s,idx)=>{
     const sp=STORE_PLANS[s.loja]||{};
     const g=k=>sp[k]||0;
-    const gz=k=>g(k)===0?`<span style="color:var(--text3)">0</span>`:g(k);
+    // Negrito se >0, cinza apagado se 0
+    const gn=(k,cor)=>g(k)===0
+      ?`<span style="color:var(--text3);font-weight:400">0</span>`
+      :`<span style="color:${cor};font-weight:700">${g(k)}</span>`;
     const sTotal=PK.reduce((a,k)=>a+g(k),0);
     const c=s.carros>0?s.segsat/s.carros:0;
+    const pos = idx+1;
+    const posBadge = pos===1?`<span style="font-size:10px;color:#FFD700;font-weight:700;margin-right:5px">${pos}°</span>`
+                   : pos===2?`<span style="font-size:10px;color:#C0C0C0;font-weight:700;margin-right:5px">${pos}°</span>`
+                   : pos===3?`<span style="font-size:10px;color:#CD7F32;font-weight:700;margin-right:5px">${pos}°</span>`
+                   :`<span style="font-size:10px;color:var(--text);font-weight:600;margin-right:5px">${pos}°</span>`;
     // Cor do badge de conversão: vermelho se 0% ou seg<=3, amarelo se abaixo da média, verde se acima
     // Regras de cor:
     // Verde:   conv >= média  (qualquer seg)
@@ -1893,20 +1912,20 @@ function renderMarcaDetalhe(marca) {
                      : isAmarelo ? 'color:var(--gold);font-weight:600'
                      :             'color:var(--red);font-weight:600';
     return `<tr>
-      <td class="td-main" style="font-size:12px;white-space:nowrap">${s.loja}</td>
+      <td class="td-main" style="font-size:12px;white-space:nowrap">${posBadge}${s.loja}</td>
       <td style="${segColor}">${s.segsat}</td>
       <td class="td-mono">${s.carros}</td>
       <td>${convBadgeCustom}</td>
-      <td style="${FM};font-size:11px;color:var(--blue);${SEP_R}">${gz('1 ANO')}</td>
-      <td style="${FM};font-size:11px;color:var(--blue)">${gz('2 ANOS')}</td>
-      <td style="${FM};font-size:11px;color:var(--blue)">${gz('3 ANOS')}</td>
-      <td style="${FM};font-size:11px;color:var(--purple);${SEP_S}">${gz('1FSv')}</td>
-      <td style="${FM};font-size:11px;color:var(--purple)">${gz('2FSv')}</td>
-      <td style="${FM};font-size:11px;color:var(--purple)">${gz('3FSv')}</td>
-      <td style="${FM};font-size:11px;color:var(--gold);${SEP_G}">${gz('1FG')}</td>
-      <td style="${FM};font-size:11px;color:var(--gold)">${gz('2FG')}</td>
-      <td style="${FM};font-size:11px;color:var(--gold)">${gz('3FG')}</td>
-      <td style="${FM};font-size:11px;font-weight:700;${SEP_T}">${sTotal}</td>
+      <td style="${FM};font-size:11px;${SEP_R}">${gn('1 ANO','var(--blue)')}</td>
+      <td style="${FM};font-size:11px">${gn('2 ANOS','var(--blue)')}</td>
+      <td style="${FM};font-size:11px">${gn('3 ANOS','var(--blue)')}</td>
+      <td style="${FM};font-size:11px;${SEP_S}">${gn('1FSv','var(--purple)')}</td>
+      <td style="${FM};font-size:11px">${gn('2FSv','var(--purple)')}</td>
+      <td style="${FM};font-size:11px">${gn('3FSv','var(--purple)')}</td>
+      <td style="${FM};font-size:11px;${SEP_G}">${gn('1FG','var(--gold)')}</td>
+      <td style="${FM};font-size:11px">${gn('2FG','var(--gold)')}</td>
+      <td style="${FM};font-size:11px">${gn('3FG','var(--gold)')}</td>
+      <td style="${FM};font-size:11px;font-weight:700;color:var(--text);${SEP_T}">${sTotal}</td>
       <td class="td-orange">${s.fat>0?fBRL(s.fat):'—'}</td>
     </tr>`;
   }).join('');

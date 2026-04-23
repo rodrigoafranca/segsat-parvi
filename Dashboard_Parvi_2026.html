@@ -310,6 +310,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -326,6 +329,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1776,20 +1781,20 @@ function renderMarcaDetalheGeral() {
       <div class="tbl-wrap"><table>
         <thead>
           <tr>
-            <th rowspan="2" style="vertical-align:bottom;min-width:120px">Marca</th>
-            <th rowspan="2" style="vertical-align:bottom">Seg.</th>
-            <th rowspan="2" style="vertical-align:bottom">Carros</th>
-            <th rowspan="2" style="vertical-align:bottom">Conv.</th>
-            <th colspan="3" style="text-align:center;color:var(--text2);border-bottom:1px solid var(--border)">Rastreio</th>
-            <th colspan="3" style="text-align:center;color:var(--purple);border-bottom:1px solid var(--border)">Family Silver</th>
-            <th colspan="3" style="text-align:center;color:var(--gold);border-bottom:1px solid var(--border)">Family Gold</th>
-            <th rowspan="2" style="vertical-align:bottom">Total</th>
-            <th rowspan="2" style="vertical-align:bottom">Fat.</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom;min-width:120px;text-align:left">Marca</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Seg.</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Carros</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Conv.</th>
+            <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--blue);background:rgba(77,138,255,0.07);border-bottom:2px solid var(--blue);border-left:1.5px solid rgba(77,138,255,0.4)">Rastreio</th>
+            <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--purple);background:rgba(167,139,250,0.07);border-bottom:2px solid var(--purple);border-left:1.5px solid rgba(167,139,250,0.4)">Family Silver</th>
+            <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--gold);background:rgba(245,166,35,0.07);border-bottom:2px solid var(--gold);border-left:1.5px solid rgba(245,166,35,0.4)">Family Gold</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom;border-left:1.5px solid var(--border2)">Total</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Fat.</th>
           </tr>
           <tr>
-            <th style="color:var(--text2);font-size:9px">1A</th><th style="color:var(--text2);font-size:9px">2A</th><th style="color:var(--text2);font-size:9px">3A</th>
-            <th style="color:var(--purple);font-size:9px">1A</th><th style="color:var(--purple);font-size:9px">2A</th><th style="color:var(--purple);font-size:9px">3A</th>
-            <th style="color:var(--gold);font-size:9px">1A</th><th style="color:var(--gold);font-size:9px">2A</th><th style="color:var(--gold);font-size:9px">3A</th>
+            <th style="color:var(--blue);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border);border-left:1.5px solid rgba(77,138,255,0.4)">1A</th><th style="color:var(--blue);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">2A</th><th style="color:var(--blue);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">3A</th>
+            <th style="color:var(--purple);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border);border-left:1.5px solid rgba(167,139,250,0.4)">1A</th><th style="color:var(--purple);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">2A</th><th style="color:var(--purple);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">3A</th>
+            <th style="color:var(--gold);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border);border-left:1.5px solid rgba(245,166,35,0.4)">1A</th><th style="color:var(--gold);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">2A</th><th style="color:var(--gold);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">3A</th>
           </tr>
         </thead>
         <tbody>${marcaRows}${totalRow}</tbody>
@@ -1916,20 +1921,20 @@ function renderMarcaDetalhe(marca) {
       <div class="tbl-wrap"><table>
         <thead>
           <tr>
-            <th rowspan="2" style="vertical-align:bottom;min-width:140px">Loja</th>
-            <th rowspan="2" style="vertical-align:bottom">Seg.</th>
-            <th rowspan="2" style="vertical-align:bottom">Carros</th>
-            <th rowspan="2" style="vertical-align:bottom">Conv.</th>
-            <th colspan="3" style="text-align:center;color:var(--blue);background:rgba(77,138,255,0.07);border-bottom:2px solid var(--blue);${SEP_R}">Rastreio</th>
-            <th colspan="3" style="text-align:center;color:var(--purple);background:rgba(167,139,250,0.07);border-bottom:2px solid var(--purple);${SEP_S}">Family Silver</th>
-            <th colspan="3" style="text-align:center;color:var(--gold);background:rgba(245,166,35,0.07);border-bottom:2px solid var(--gold);${SEP_G}">Family Gold</th>
-            <th rowspan="2" style="vertical-align:bottom;${SEP_T}">Total</th>
-            <th rowspan="2" style="vertical-align:bottom">Fat.</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom;min-width:140px;text-align:left">Loja</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Seg.</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Carros</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Conv.</th>
+            <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--blue);background:rgba(77,138,255,0.07);border-bottom:2px solid var(--blue);${SEP_R}">Rastreio</th>
+            <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--purple);background:rgba(167,139,250,0.07);border-bottom:2px solid var(--purple);${SEP_S}">Family Silver</th>
+            <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--gold);background:rgba(245,166,35,0.07);border-bottom:2px solid var(--gold);${SEP_G}">Family Gold</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom;${SEP_T}">Total</th>
+            <th style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Fat.</th>
           </tr>
           <tr>
-            <th style="color:var(--blue);font-size:9px;${SEP_R}">1A</th><th style="color:var(--blue);font-size:9px">2A</th><th style="color:var(--blue);font-size:9px">3A</th>
-            <th style="color:var(--purple);font-size:9px;${SEP_S}">1A</th><th style="color:var(--purple);font-size:9px">2A</th><th style="color:var(--purple);font-size:9px">3A</th>
-            <th style="color:var(--gold);font-size:9px;${SEP_G}">1A</th><th style="color:var(--gold);font-size:9px">2A</th><th style="color:var(--gold);font-size:9px">3A</th>
+            <th style="color:var(--blue);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border);${SEP_R}">1A</th><th style="color:var(--blue);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">2A</th><th style="color:var(--blue);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">3A</th>
+            <th style="color:var(--purple);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border);${SEP_S}">1A</th><th style="color:var(--purple);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">2A</th><th style="color:var(--purple);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">3A</th>
+            <th style="color:var(--gold);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border);${SEP_G}">1A</th><th style="color:var(--gold);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">2A</th><th style="color:var(--gold);font-size:10px;font-weight:700;background:var(--surface2);border-bottom:0.5px solid var(--border)">3A</th>
           </tr>
         </thead>
         <tbody>${storeRows}${totalRow}</tbody>

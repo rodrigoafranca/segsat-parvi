@@ -301,6 +301,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -317,6 +320,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1809,17 +1814,34 @@ function renderMarcaDetalhe(marca) {
     <td class="td-orange" style="font-weight:700">${fBRL(tFat)}</td>
   </tr>`;
 
+  // Ordena por conversão desc
+  stores.sort((a,b)=>(b.carros>0?b.segsat/b.carros:0)-(a.carros>0?a.segsat/a.carros:0));
+
   const storeRows=stores.map(s=>{
     const sp=STORE_PLANS[s.loja]||{};
     const g=k=>sp[k]||0;
     const gz=k=>g(k)===0?`<span style="color:var(--text3)">0</span>`:g(k);
     const sTotal=PK.reduce((a,k)=>a+g(k),0);
     const c=s.carros>0?s.segsat/s.carros:0;
+    // Cor do badge de conversão: vermelho se 0% ou seg<=3, amarelo se abaixo da média, verde se acima
+    const isCrit = s.segsat===0 || s.segsat<=3;
+    const isAbaixo = !isCrit && c < conv;
+    const convColor = isCrit
+      ? `background:rgba(255,77,106,0.15);color:var(--red)`
+      : isAbaixo
+        ? `background:rgba(245,166,35,0.15);color:var(--gold)`
+        : `background:rgba(0,208,132,0.12);color:var(--green)`;
+    const convArrow = isCrit ? '↓' : isAbaixo ? '↓' : c>=0.5?'↑':'▲';
+    const convBadgeCustom = s.carros===0
+      ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">0%</span>`
+      : `<span style="${convColor};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">${convArrow} ${fPct(c)}</span>`;
+    // Cor do segsat: vermelho se crítico
+    const segColor = isCrit ? 'color:var(--red);font-weight:600' : 'color:var(--green);font-weight:600';
     return `<tr>
       <td class="td-main" style="font-size:12px;white-space:nowrap">${s.loja}</td>
-      <td class="td-green">${s.segsat}</td>
+      <td style="${segColor}">${s.segsat}</td>
       <td class="td-mono">${s.carros}</td>
-      <td>${convBadge(c)}</td>
+      <td>${convBadgeCustom}</td>
       <td style="${FM};font-size:11px;${SEP_R}">${gz('1 ANO')}</td>
       <td style="${FM};font-size:11px">${gz('2 ANOS')}</td>
       <td style="${FM};font-size:11px">${gz('3 ANOS')}</td>

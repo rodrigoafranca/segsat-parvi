@@ -325,6 +325,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -341,6 +344,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1873,6 +1878,7 @@ function renderMarcaDetalhe(marca) {
     <td style="color:var(--gold)">${bTz('2FG')}</td>
     <td style="color:var(--gold)">${bTz('3FG')}</td>
     <td style="${FM};font-weight:700;color:var(--text);${SEP_T}">${PK.reduce((a,k)=>a+bT[k],0)}</td>
+    <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--green)">${(()=>{let tc=0;stores.forEach(s=>{tc+=s.comm||0;});return tc>0?fBRL(tc):'—';})()}</td>
     <td class="td-orange" style="font-weight:700">${fBRL(tFat)}</td>
   </tr>`;
 
@@ -1926,6 +1932,7 @@ function renderMarcaDetalhe(marca) {
       <td style="${FM};font-size:11px">${gn('2FG','var(--gold)')}</td>
       <td style="${FM};font-size:11px">${gn('3FG','var(--gold)')}</td>
       <td style="${FM};font-size:11px;font-weight:700;color:var(--text);${SEP_T}">${sTotal}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--green);font-weight:${s.comm>0?'700':'400'}">${s.comm>0?fBRL(s.comm):'—'}</td>
       <td class="td-orange">${s.fat>0?fBRL(s.fat):'—'}</td>
     </tr>`;
   }).join('');
@@ -1968,6 +1975,7 @@ function renderMarcaDetalhe(marca) {
             <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--purple);background:rgba(167,139,250,0.07);border-bottom:2px solid var(--purple);${SEP_S}">Family Silver</th>
             <th colspan="3" style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.8px;color:var(--gold);background:rgba(245,166,35,0.07);border-bottom:2px solid var(--gold);${SEP_G}">Family Gold</th>
             <th rowspan="2" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom;${SEP_T}">Total</th>
+            <th rowspan="2" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--green);background:var(--surface2);border-bottom:1.5px solid var(--green);vertical-align:bottom">Comissão</th>
             <th rowspan="2" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2);vertical-align:bottom">Fat.</th>
           </tr>
           <tr>

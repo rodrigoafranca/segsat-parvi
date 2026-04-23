@@ -307,6 +307,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -323,6 +326,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1690,7 +1695,7 @@ function renderMarcaDetalheGeral() {
   const gTotal=PK.reduce((a,k)=>a+gT[k],0);
 
   // Tabela por marca (linha de resumo por marca)
-  const marcasOrdenadas=Object.entries(marcaMap).sort((a,b)=>b[1].fat-a[1].fat);
+  const marcasOrdenadas=Object.entries(marcaMap).sort((a,b)=>(b[1].car>0?b[1].seg/b[1].car:0)-(a[1].car>0?a[1].seg/a[1].car:0));
   // Média de conversão geral para colorir marcas
   const convGeralTotal = stores.reduce((a,s)=>a+s.carros,0);
   const convGeralMedia = convGeralTotal>0 ? stores.reduce((a,s)=>a+s.segsat,0)/convGeralTotal : 0;
@@ -1699,13 +1704,18 @@ function renderMarcaDetalheGeral() {
     const mT={};PK.forEach(k=>{mT[k]=0;});
     d.lojas.forEach(s=>{const sp=STORE_PLANS[s.loja]||{};PK.forEach(k=>{mT[k]+=(sp[k]||0);});});
     const mTotal=PK.reduce((a,k)=>a+mT[k],0);
-    const mIsCrit = d.seg===0 || d.seg<=3;
-    const mIsAbaixo = !mIsCrit && mc < convGeralMedia;
-    const mSegColor = mIsCrit ? 'color:var(--red);font-weight:700' : mIsAbaixo ? 'color:var(--gold);font-weight:700' : 'color:var(--green);font-weight:700';
-    const mConvColor = mIsCrit ? `background:rgba(255,77,106,0.15);color:var(--red)` : mIsAbaixo ? `background:rgba(245,166,35,0.15);color:var(--gold)` : `background:rgba(0,208,132,0.12);color:var(--green)`;
-    const mArrow = mIsCrit ? '↓' : mIsAbaixo ? '↓' : mc>=0.5?'↑':'▲';
-    const mConvBadge = d.car===0
-      ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">0%</span>`
+    const mIsVerde    = mc >= convGeralMedia;
+    const mIsAmarelo  = !mIsVerde && mc > 0.05;
+    const mIsVermelho = !mIsVerde && !mIsAmarelo;
+    const mSegColor   = mIsVerde   ? 'color:var(--green);font-weight:700'
+                      : mIsAmarelo ? 'color:var(--gold);font-weight:700'
+                      :              'color:var(--red);font-weight:700';
+    const mConvColor  = mIsVerde   ? `background:rgba(0,208,132,0.12);color:var(--green)`
+                      : mIsAmarelo ? `background:rgba(245,166,35,0.15);color:var(--gold)`
+                      :              `background:rgba(255,77,106,0.15);color:var(--red)`;
+    const mArrow      = mIsVerde ? (mc>=0.5?'↑':'▲') : '↓';
+    const mConvBadge  = d.car===0
+      ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">—</span>`
       : `<span style="${mConvColor};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">${mArrow} ${fPct(mc)}</span>`;
     return `<tr>
       <td class="td-main" style="font-weight:700">${marca}</td>
@@ -1842,19 +1852,23 @@ function renderMarcaDetalhe(marca) {
     const sTotal=PK.reduce((a,k)=>a+g(k),0);
     const c=s.carros>0?s.segsat/s.carros:0;
     // Cor do badge de conversão: vermelho se 0% ou seg<=3, amarelo se abaixo da média, verde se acima
-    const isCrit = s.segsat===0 || s.segsat<=3;
-    const isAbaixo = !isCrit && c < conv;
-    const convColor = isCrit
-      ? `background:rgba(255,77,106,0.15);color:var(--red)`
-      : isAbaixo
-        ? `background:rgba(245,166,35,0.15);color:var(--gold)`
-        : `background:rgba(0,208,132,0.12);color:var(--green)`;
-    const convArrow = isCrit ? '↓' : isAbaixo ? '↓' : c>=0.5?'↑':'▲';
+    // Regras de cor:
+    // Verde:   conv >= média  (qualquer seg)
+    // Amarelo: conv > 5% e < média  (qualquer seg)
+    // Vermelho: conv <= 5% ou seg=0
+    const isVerde    = c >= conv;
+    const isAmarelo  = !isVerde && c > 0.05;
+    const isVermelho = !isVerde && !isAmarelo; // conv <= 5% ou 0%
+    const convColor  = isVerde   ? `background:rgba(0,208,132,0.12);color:var(--green)`
+                     : isAmarelo ? `background:rgba(245,166,35,0.15);color:var(--gold)`
+                     :             `background:rgba(255,77,106,0.15);color:var(--red)`;
+    const convArrow  = isVerde ? (c>=0.5?'↑':'▲') : '↓';
     const convBadgeCustom = s.carros===0
-      ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">0%</span>`
+      ? `<span style="background:var(--surface2);color:var(--text3);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">—</span>`
       : `<span style="${convColor};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600">${convArrow} ${fPct(c)}</span>`;
-    // Cor do segsat: vermelho se crítico
-    const segColor = isCrit ? 'color:var(--red);font-weight:600' : isAbaixo ? 'color:var(--gold);font-weight:600' : 'color:var(--green);font-weight:600';
+    const segColor   = isVerde   ? 'color:var(--green);font-weight:600'
+                     : isAmarelo ? 'color:var(--gold);font-weight:600'
+                     :             'color:var(--red);font-weight:600';
     return `<tr>
       <td class="td-main" style="font-size:12px;white-space:nowrap">${s.loja}</td>
       <td style="${segColor}">${s.segsat}</td>

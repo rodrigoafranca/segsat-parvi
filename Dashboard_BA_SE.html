@@ -377,47 +377,27 @@ tr:hover td{background:var(--surface2);}
   font-family:'DM Mono',monospace;
 }
 
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+#login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+#login-logo{font-size:40px;margin-bottom:12px;}
+#login-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;}
+#login-sub{font-size:12px;color:var(--text3);margin-bottom:24px;}
+#login-input{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;text-align:center;letter-spacing:2px;margin-bottom:12px;box-sizing:border-box;}
+#login-input:focus{border-color:var(--blue);}
+#login-btn{width:100%;padding:11px;border-radius:8px;background:var(--blue);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.15s;}
+#login-btn:hover{opacity:0.85;}
+#login-error{color:var(--red);font-size:12px;margin-top:8px;display:none;}
+#login-footer{margin-top:20px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;}
+
 </style>
 </head>
 <body>
 
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen">
-  <div id="login-box">
-    <div id="login-logo">🎯</div>
-    <div id="login-title">Segsat · Grupo Parvi</div>
-    <div id="login-sub">Digite a senha para acessar</div>
-    <input id="login-input" type="password" placeholder="••••••••" 
-      onkeydown="if(event.key==='Enter') document.getElementById('login-btn').click()"/>
-    <button id="login-btn" onclick="checkLogin()">Entrar</button>
-    <div id="login-error">Senha incorreta. Tente novamente.</div>
-    <div id="login-footer">Grupo Parvi · Segsat 2026</div>
-  </div>
-</div>
 
-<script>
-function checkLogin() {
-  var pwd = document.getElementById('login-input').value.trim();
-  var SENHA = 'parvi2026';
-  // Verifica senha (simples hash via comparação)
-  if(pwd === SENHA) {
-    document.getElementById('login-screen').style.display = 'none';
-    sessionStorage.setItem('parvi_auth', '1');
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-    document.getElementById('login-input').value = '';
-    document.getElementById('login-input').focus();
-  }
-}
-// Verifica se já está autenticado nesta sessão
-if(sessionStorage.getItem('parvi_auth') === '1') {
-  document.addEventListener('DOMContentLoaded', function() {
-    var el = document.getElementById('login-screen');
-    if(el) el.style.display = 'none';
-  });
-}
-</script>
+
 
 
 <!-- LOGIN SCREEN -->
@@ -426,20 +406,18 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     <div id="login-logo">🟡</div>
     <div id="login-title">Segsat · BA / SE</div>
     <div id="login-sub">Digite a senha para acessar</div>
-    <input id="login-input" type="password" placeholder="••••••••" 
+    <input id="login-input" type="password" placeholder="••••••••"
       onkeydown="if(event.key==='Enter') document.getElementById('login-btn').click()"/>
     <button id="login-btn" onclick="checkLogin()">Entrar</button>
     <div id="login-error">Senha incorreta. Tente novamente.</div>
     <div id="login-footer">Grupo Parvi · Segsat 2026</div>
   </div>
 </div>
-
 <script>
+var SENHA_CORRETA = 'Jairo123';
 function checkLogin() {
   var pwd = document.getElementById('login-input').value.trim();
-  var SENHA = 'Jairo123';
-  // Verifica senha (simples hash via comparação)
-  if(pwd === SENHA) {
+  if(pwd === SENHA_CORRETA) {
     document.getElementById('login-screen').style.display = 'none';
     sessionStorage.setItem('parvi_auth', '1');
   } else {
@@ -448,7 +426,6 @@ function checkLogin() {
     document.getElementById('login-input').focus();
   }
 }
-// Verifica se já está autenticado nesta sessão
 if(sessionStorage.getItem('parvi_auth') === '1') {
   document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('login-screen');

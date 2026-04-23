@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Segsat · PB / RN · 2026</title>
+<title>Segsat · MA / PA · 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -423,8 +423,8 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div id="login-box">
-    <div id="login-logo">🟣</div>
-    <div id="login-title">Segsat · PB / RN</div>
+    <div id="login-logo">🔵</div>
+    <div id="login-title">Segsat · MA / PA</div>
     <div id="login-sub">Digite a senha para acessar</div>
     <input id="login-input" type="password" placeholder="••••••••" 
       onkeydown="if(event.key==='Enter') document.getElementById('login-btn').click()"/>
@@ -437,7 +437,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 <script>
 function checkLogin() {
   var pwd = document.getElementById('login-input').value.trim();
-  var SENHA = 'Paulo123';
+  var SENHA = 'Laila123';
   // Verifica senha (simples hash via comparação)
   if(pwd === SENHA) {
     document.getElementById('login-screen').style.display = 'none';
@@ -458,8 +458,8 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 </script>
 
 <div id="loading-overlay">
-  <div class="loading-logo">🟣</div>
-  <div class="loading-title">Segsat · PB / RN</div>
+  <div class="loading-logo">🔵</div>
+  <div class="loading-title">Segsat · MA / PA</div>
   <div class="loading-sub">Carregando dados da praça...</div>
   <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
   <div class="loading-msg" id="loading-msg">Iniciando</div>
@@ -469,12 +469,12 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 
 <!-- SIDEBAR -->
 <nav>
-  <div style="height:3px;background:linear-gradient(90deg,#a78bfa,#a78bfa88)"></div>
+  <div style="height:3px;background:linear-gradient(90deg,#4d8aff,#4d8aff88)"></div>
   <div class="nav-logo">
-    <div class="nav-logo-mark">🟣</div>
-    <h1>Segsat · PB / RN</h1>
+    <div class="nav-logo-mark">🔵</div>
+    <h1>Segsat · MA / PA</h1>
     <span id="nav-mes-ano">2026</span>
-    <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-family:'DM Mono',monospace;font-weight:700;background:#a78bfa22;color:#a78bfa;margin-top:4px;letter-spacing:0.5px">PRAÇA PB / RN</span>
+    <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-family:'DM Mono',monospace;font-weight:700;background:#4d8aff22;color:#4d8aff;margin-top:4px;letter-spacing:0.5px">PRAÇA MA / PA</span>
   </div>
   <div class="nav-section">Visão Geral</div>
   <button class="nav-item active" onclick="navTo('geral',this)"><span class="ni">📊</span> Dashboard</button>
@@ -2060,20 +2060,20 @@ window.addEventListener('resize', ()=>{
   if(currentPage==='geral') setTimeout(()=>drawLineChart('chart-daily',DAILY),50);
 });
 // ═══════════════════════════════════════════════
-// PRAÇA PBRN — filtros e inicialização
+// PRAÇA MA — filtros e inicialização
 // ═══════════════════════════════════════════════
-const _PRACA_UFS = ["PB", "RN"];
+const _PRACA_UFS = ["MA", "PA"];
 
 // ── Filtro do Plano de Ação ──
 // Sobrescreve as funções de renderização para filtrar por praça
-const _origRenderAll_PBRN = renderAll;
+const _origRenderAll_MA = renderAll;
 renderAll = function() {
   // Salva ALL_STORES original
   const _allOrig = ALL_STORES;
 
   // Filtra para a praça APENAS nas seções de ação e detalhe
   // (o dashboard principal mostra todos para contexto geral)
-  _origRenderAll_PBRN();
+  _origRenderAll_MA();
   // ── KPIs do Plano de Ação — reescreve com dados da praça ──
   var _pracaStoresKpi = _allOrig.filter(s => _PRACA_UFS.includes(s.uf));
   var _kpiCriticas  = _pracaStoresKpi.filter(s=>s.opp===3).length;
@@ -2196,19 +2196,19 @@ renderAll = function() {
 
 
 // Override renderMarcaDetalheGeral — usa apenas lojas da praça
-const _origMarcaDetalheGeral_PBRN = renderMarcaDetalheGeral;
+const _origMarcaDetalheGeral_MA = renderMarcaDetalheGeral;
 renderMarcaDetalheGeral = function() {
   const _orig = ALL_STORES;
   ALL_STORES = ALL_STORES.filter(s => _PRACA_UFS.includes(s.uf));
-  _origMarcaDetalheGeral_PBRN();
+  _origMarcaDetalheGeral_MA();
   ALL_STORES = _orig;
 };
 // Override renderMarcaDetalhe — só lojas da praça
-const _origMarcaDet_PBRN = renderMarcaDetalhe;
+const _origMarcaDet_MA = renderMarcaDetalhe;
 renderMarcaDetalhe = function(marca) {
   const _orig = ALL_STORES;
   ALL_STORES = ALL_STORES.filter(s => _PRACA_UFS.includes(s.uf));
-  _origMarcaDet_PBRN(marca);
+  _origMarcaDet_MA(marca);
   ALL_STORES = _orig;
 };
 
@@ -2218,8 +2218,8 @@ window.addEventListener('DOMContentLoaded', function() {
   var _h_nav_pe=document.getElementById('nav-pe'); if(_h_nav_pe) _h_nav_pe.style.display='none';
   var _h_nav_am=document.getElementById('nav-am'); if(_h_nav_am) _h_nav_am.style.display='none';
   var _h_nav_base=document.getElementById('nav-base'); if(_h_nav_base) _h_nav_base.style.display='none';
-  var _h_nav_ma=document.getElementById('nav-ma'); if(_h_nav_ma) _h_nav_ma.style.display='none';
-  var _np=document.getElementById('nav-pbrn'); if(_np) _np.style.color='#a78bfa';
+  var _h_nav_pbrn=document.getElementById('nav-pbrn'); if(_h_nav_pbrn) _h_nav_pbrn.style.display='none';
+  var _np=document.getElementById('nav-ma'); if(_np) _np.style.color='#4d8aff';
   buildSelectors();
   loadData();
 });

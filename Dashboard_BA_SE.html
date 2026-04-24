@@ -2289,6 +2289,47 @@ renderMarcaDetalheGeral = function() {
   setTimeout(ocultarColunaComissao, 50);
 };
 
+// ── OCULTA COMISSÃO PARCIAL NAS PRAÇAS ──
+function _ocultarComissao() {
+  var el = document.getElementById('marca-detalhe-content');
+  if (!el) return;
+  // Percorre todas as tabelas do card
+  el.querySelectorAll('table').forEach(function(tbl) {
+    var ths = tbl.querySelectorAll('th');
+    var colIdx = -1;
+    // Encontra índice da coluna pelo texto
+    ths.forEach(function(th) {
+      if (th.textContent.replace(/\s+/g,' ').trim().toLowerCase().includes('comiss')) {
+        th.style.display = 'none';
+      }
+    });
+    // Oculta células de dados: penúltima coluna de cada linha (antes de FAT.)
+    tbl.querySelectorAll('tr').forEach(function(row) {
+      var cells = row.querySelectorAll('td, th');
+      if (cells.length >= 2) {
+        // FAT. é sempre última — comissão é penúltima
+        cells[cells.length - 2].style.display = 'none';
+      }
+    });
+  });
+}
+
+// Aplica em toda navegação para o menu
+const _origNavTo_comm = navTo;
+navTo = function(page, btn) {
+  _origNavTo_comm(page, btn);
+  if (page === 'marca-detalhe') {
+    setTimeout(_ocultarComissao, 200);
+  }
+};
+
+// Aplica após renderAll (que chama renderMarcaDetalheGeral)
+const _origRenderAll_comm = renderAll;
+renderAll = function() {
+  _origRenderAll_comm();
+  setTimeout(_ocultarComissao, 300);
+};
+
 </script>
 </body>
 </html>

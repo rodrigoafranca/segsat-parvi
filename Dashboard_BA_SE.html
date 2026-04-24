@@ -345,6 +345,7 @@ tr:hover td{background:var(--surface2);}
 #login-error{color:var(--red);font-size:12px;margin-top:8px;display:none;}
 #login-footer{margin-top:20px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;}
 
+
 </style>
 </head>
 <body>
@@ -2241,6 +2242,48 @@ window.addEventListener('DOMContentLoaded', function() {
   buildSelectors();
   loadData();
 });
+
+// Oculta coluna COMISSÃO PARCIAL nos HTMLs das praças
+function ocultarColunaComissao() {
+  var container = document.getElementById('marca-detalhe-content');
+  if (!container) return;
+  // Encontra o th com texto "Comissão Parcial"
+  var ths = container.querySelectorAll('th');
+  var colIdx = -1;
+  ths.forEach(function(th, i) {
+    if (th.textContent.trim() === 'Comissão Parcial') {
+      th.style.display = 'none';
+      // Descobre o índice da coluna
+      colIdx = i;
+    }
+  });
+  if (colIdx < 0) return;
+  // Oculta todas as células td nessa posição em cada linha
+  var rows = container.querySelectorAll('tr');
+  rows.forEach(function(row) {
+    var cells = row.querySelectorAll('td, th');
+    // A coluna de comissão é a penúltima (antes de FAT.)
+    // Conta da direita: FAT. é última, COMISSÃO é penúltima
+    var len = cells.length;
+    if (len >= 2) {
+      cells[len - 2].style.display = 'none';
+    }
+  });
+}
+
+// Sobrescreve renderMarcaDetalhe para ocultar após render
+const _origMD_hideComm = renderMarcaDetalhe;
+renderMarcaDetalhe = function(marca) {
+  _origMD_hideComm(marca);
+  setTimeout(ocultarColunaComissao, 50);
+};
+
+// Sobrescreve renderMarcaDetalheGeral para ocultar após render
+const _origMDG_hideComm = renderMarcaDetalheGeral;
+renderMarcaDetalheGeral = function() {
+  _origMDG_hideComm();
+  setTimeout(ocultarColunaComissao, 50);
+};
 
 </script>
 </body>

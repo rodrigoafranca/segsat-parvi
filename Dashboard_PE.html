@@ -335,6 +335,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -351,6 +354,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -732,7 +737,7 @@ function enrichStores(stores) {
   });
 }
 
-const fBRL = n => n>=1e6?'R$'+(n/1e6).toFixed(2).replace('.',',')+'M':n>=1e3?'R$'+(n/1e3).toFixed(0)+'K':'R$'+Math.round(n);
+const fBRL = n => 'R$\u00a0' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fPct = n => (n*100).toFixed(1)+'%';
 const convBadge = p => {
   if(p===0) return `<span class="badge grey">0%</span>`;
@@ -1888,8 +1893,8 @@ function renderMarcaDetalhe(marca) {
     <td style="color:var(--gold);${SEP_G}">${bTz('1FG')}</td>
     <td style="color:var(--gold)">${bTz('2FG')}</td>
     <td style="color:var(--gold)">${bTz('3FG')}</td>
-    <td style="${FM};font-weight:700;color:var(--text);${SEP_T}">${PK.reduce((a,k)=>a+bT[k],0)}</td>
-    <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--orange)">${(()=>{let tc=0;stores.forEach(s=>{tc+=s.comm||0;});return tc>0?fBRL(tc):'—';})()}</td>
+    <td style="${FM};font-weight:700;color:var(--text);text-align:center;${SEP_T}">${PK.reduce((a,k)=>a+bT[k],0)}</td>
+    <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--orange);text-align:center">${(()=>{let tc=0;stores.forEach(s=>{tc+=s.comm||0;});return tc>0?fBRL(tc):'—';})()}</td>
     <td class="td-orange" style="font-weight:700">${fBRL(tFat)}</td>
   </tr>`;
 
@@ -1942,8 +1947,8 @@ function renderMarcaDetalhe(marca) {
       <td style="${FM};font-size:11px;${SEP_G}">${gn('1FG','var(--gold)')}</td>
       <td style="${FM};font-size:11px">${gn('2FG','var(--gold)')}</td>
       <td style="${FM};font-size:11px">${gn('3FG','var(--gold)')}</td>
-      <td style="${FM};font-size:11px;font-weight:700;color:var(--text);${SEP_T}">${sTotal}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);font-weight:${s.comm>0?'700':'400'}">${s.comm>0?fBRL(s.comm):'—'}</td>
+      <td style="${FM};font-size:11px;font-weight:700;color:var(--text);text-align:center;${SEP_T}">${sTotal}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);font-weight:${s.comm>0?'700':'400'};text-align:center">${s.comm>0?fBRL(s.comm):'—'}</td>
       <td class="td-orange">${s.fat>0?fBRL(s.fat):'—'}</td>
     </tr>`;
   }).join('');
@@ -2246,48 +2251,6 @@ window.addEventListener('DOMContentLoaded', function() {
   buildSelectors();
   loadData();
 });
-
-// Oculta coluna COMISSÃO PARCIAL nos HTMLs das praças
-function ocultarColunaComissao() {
-  var container = document.getElementById('marca-detalhe-content');
-  if (!container) return;
-  // Encontra o th com texto "Comissão Parcial"
-  var ths = container.querySelectorAll('th');
-  var colIdx = -1;
-  ths.forEach(function(th, i) {
-    if (th.textContent.trim() === 'Comissão Parcial') {
-      th.style.display = 'none';
-      // Descobre o índice da coluna
-      colIdx = i;
-    }
-  });
-  if (colIdx < 0) return;
-  // Oculta todas as células td nessa posição em cada linha
-  var rows = container.querySelectorAll('tr');
-  rows.forEach(function(row) {
-    var cells = row.querySelectorAll('td, th');
-    // A coluna de comissão é a penúltima (antes de FAT.)
-    // Conta da direita: FAT. é última, COMISSÃO é penúltima
-    var len = cells.length;
-    if (len >= 2) {
-      cells[len - 2].style.display = 'none';
-    }
-  });
-}
-
-// Sobrescreve renderMarcaDetalhe para ocultar após render
-const _origMD_hideComm = renderMarcaDetalhe;
-renderMarcaDetalhe = function(marca) {
-  _origMD_hideComm(marca);
-  setTimeout(ocultarColunaComissao, 50);
-};
-
-// Sobrescreve renderMarcaDetalheGeral para ocultar após render
-const _origMDG_hideComm = renderMarcaDetalheGeral;
-renderMarcaDetalheGeral = function() {
-  _origMDG_hideComm();
-  setTimeout(ocultarColunaComissao, 50);
-};
 
 // ── OCULTA COMISSÃO PARCIAL NAS PRAÇAS ──
 function _ocultarComissao() {

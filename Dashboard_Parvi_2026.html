@@ -350,6 +350,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -367,6 +370,8 @@ tr:hover td{background:var(--surface2);}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
+
+
 
 
 
@@ -1894,6 +1899,11 @@ function copiarTabelaMarca(marca) {
 
   // Pequeno delay para o browser renderizar antes de capturar
   setTimeout(function() {
+    // Pega a tabela interna para medir largura real
+    const tbl = tblCard.querySelector('table');
+    const fullW = tbl ? Math.max(tbl.scrollWidth, tblCard.scrollWidth) + 40 : tblCard.scrollWidth + 40;
+    const fullH = tblCard.scrollHeight + 40;
+
     html2canvas(tblCard, {
       backgroundColor: '#0d0f14',
       scale: 2,
@@ -1901,15 +1911,33 @@ function copiarTabelaMarca(marca) {
       logging: false,
       scrollX: 0,
       scrollY: 0,
-      windowWidth: tblCard.scrollWidth + 40,
-      windowHeight: tblCard.scrollHeight + 40,
-      height: tblCard.scrollHeight,
-      width: tblCard.scrollWidth,
+      windowWidth: fullW,
+      windowHeight: fullH,
+      width: fullW,
+      height: fullH,
       onclone: function(doc) {
         doc.body.style.background = '#0d0f14';
-        // No clone: remove overflow para capturar tudo
+        // No clone: remove overflow para capturar tudo horizontalmente
+        var cloneCard = doc.querySelectorAll('#marca-detalhe-content .card');
+        var cloneLastCard = cloneCard[cloneCard.length-1];
+        if(cloneLastCard){
+          cloneLastCard.style.overflow='visible';
+          cloneLastCard.style.width = fullW + 'px';
+          cloneLastCard.style.minWidth = fullW + 'px';
+        }
         var cloneWrap = doc.querySelector('#marca-detalhe-content .tbl-wrap');
-        if(cloneWrap){ cloneWrap.style.overflow='visible'; cloneWrap.style.maxHeight='none'; cloneWrap.style.height='auto'; }
+        if(cloneWrap){
+          cloneWrap.style.overflow='visible';
+          cloneWrap.style.maxHeight='none';
+          cloneWrap.style.height='auto';
+          cloneWrap.style.width='auto';
+          cloneWrap.style.minWidth='100%';
+        }
+        var cloneTbl = doc.querySelector('#marca-detalhe-content table');
+        if(cloneTbl){
+          cloneTbl.style.width='auto';
+          cloneTbl.style.minWidth='100%';
+        }
         // Oculta coluna FAT no clone
         doc.querySelectorAll('#marca-detalhe-content tr td:last-child, #marca-detalhe-content tr th:last-child')
           .forEach(c => c.style.visibility='hidden');

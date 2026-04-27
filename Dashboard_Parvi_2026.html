@@ -338,6 +338,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -354,6 +357,8 @@ tr:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
+
+
 
 
 
@@ -1851,6 +1856,72 @@ function renderMarcaDetalheGeral() {
     </div>`;
 }
 
+// ── COPIAR TABELA PARA WHATSAPP ──
+function copiarTabelaMarca(marca) {
+  const stores = ALL_STORES.filter(s=>(s.marca||getMarcaByName(s.loja))===marca)
+    .sort((a,b)=>(b.carros>0?b.segsat/b.carros:0)-(a.carros>0?a.segsat/a.carros:0));
+  const PK = ['1 ANO','2 ANOS','3 ANOS','1FSv','2FSv','3FSv','1FG','2FG','3FG'];
+  const conv = stores.reduce((a,s)=>a+s.carros,0)>0
+    ? stores.reduce((a,s)=>a+s.segsat,0)/stores.reduce((a,s)=>a+s.carros,0) : 0;
+
+  const METAS_CONV_WA = {
+    'PATEO':0.25,'BREMEN':0.25,'FIORI':0.25,'JEEP':0.25,'TOYOLEX':0.25,
+    'MARDISA':0.25,'LAND ROVER':0.70,'AMERICA':0.70,'AUDI':0.70,
+    'AUTOPARVI':0.25,'RAM':0.25,'LEXUS':0.25,'BYD':0.25
+  };
+  const meta = METAS_CONV_WA[marca] || 0.25;
+
+  let txt = `📊 *Lojas · ${marca}* — ${getPeriodoLabel()}\n`;
+  txt += `_Rastreio | Family Silver | Family Gold_\n`;
+  txt += `━━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+  const emoji = (pos) => pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':'▪️';
+
+  stores.forEach((s, idx) => {
+    const sp = STORE_PLANS[s.loja]||{};
+    const c = s.carros>0?s.segsat/s.carros:0;
+    const isVerde = c >= conv;
+    const isAmarelo = !isVerde && c > 0.05;
+    const convIcon = c===0?'🔴': isVerde?'🟢':isAmarelo?'🟡':'🔴';
+    const sTotal = PK.reduce((a,k)=>a+(sp[k]||0),0);
+    const comm = s.comm||0;
+
+    // Calcula planos por grupo
+    const r1=sp['1 ANO']||0, r2=sp['2 ANOS']||0, r3=sp['3 ANOS']||0;
+    const s1=sp['1FSv']||0, s2=sp['2FSv']||0, s3=sp['3FSv']||0;
+    const g1=sp['1FG']||0, g2=sp['2FG']||0, g3=sp['3FG']||0;
+
+    txt += `\n${emoji(idx+1)} *${s.loja}*\n`;
+    txt += `   ${convIcon} Conv: *${fPct(c)}* | Seg: ${s.segsat} | Carros: ${s.carros}\n`;
+    if(r1||r2||r3) txt += `   🔵 Rastreio: ${r1>0?r1+'×1A ':''} ${r2>0?r2+'×2A ':''} ${r3>0?r3+'×3A ':''}\n`.replace(/\s+/g,' ').trim()+'\n';
+    if(s1||s2||s3) txt += `   🟣 F.Silver: ${s1>0?s1+'×1A ':''} ${s2>0?s2+'×2A ':''} ${s3>0?s3+'×3A ':''}\n`.replace(/\s+/g,' ').trim()+'\n';
+    if(g1||g2||g3) txt += `   🟡 F.Gold: ${g1>0?g1+'×1A ':''} ${g2>0?g2+'×2A ':''} ${g3>0?g3+'×3A ':''}\n`.replace(/\s+/g,' ').trim()+'\n';
+    if(sTotal>0) txt += `   📦 Total: ${sTotal} planos`;
+    if(comm>0) txt += ` | 💰 Comissão: ${fBRL(comm)}`;
+    if(sTotal>0) txt += '\n';
+  });
+
+  txt += `\n━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  const tSeg=stores.reduce((a,s)=>a+s.segsat,0);
+  const tCar=stores.reduce((a,s)=>a+s.carros,0);
+  const tComm=stores.reduce((a,s)=>a+(s.comm||0),0);
+  txt += `*TOTAL ${marca}*\n`;
+  txt += `📦 ${tSeg} Segsat | 🚗 ${tCar} Carros | 🎯 ${fPct(conv)}\n`;
+  if(tComm>0) txt += `💰 Comissão total: ${fBRL(tComm)}\n`;
+  txt += `_Segsat · Grupo Parvi · ${getPeriodoLabel()}_`;
+
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn = document.getElementById('btn-copiar-'+marca);
+    if(btn){
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span>✅</span> Copiado!';
+      btn.style.borderColor='var(--green)';
+      btn.style.color='var(--green)';
+      setTimeout(()=>{btn.innerHTML=orig;btn.style.borderColor='';btn.style.color='';},2500);
+    }
+  }).catch(()=>alert('Erro ao copiar. Tente novamente.'));
+}
+
 function renderMarcaDetalhe(marca) {
   const stores = ALL_STORES
     .filter(s => (s.marca===marca) || (!s.marca && getMarcaByName(s.loja)===marca))
@@ -1977,6 +2048,9 @@ function renderMarcaDetalhe(marca) {
           <span style="color:var(--purple)">Family Silver</span> ·
           <span style="color:var(--gold)">Family Gold</span>
         </div></div>
+        <button onclick="copiarTabelaMarca('${marca}')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'" id="btn-copiar-${marca}">
+          <span>📋</span> Copiar para WhatsApp
+        </button>
       </div>
       <div class="tbl-wrap"><table>
         <thead>

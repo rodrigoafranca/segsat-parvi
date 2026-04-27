@@ -347,6 +347,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -364,6 +367,8 @@ tr:hover td{background:var(--surface2);}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
+
+
 
 
 
@@ -1869,84 +1874,86 @@ function renderMarcaDetalheGeral() {
     </div>`;
 }
 
-// ── COPIAR TABELA COMO IMAGEM ──
+// ── COPIAR TABELA COMO IMAGEM (COMPLETA) ──
 function copiarTabelaMarca(marca) {
   const btn = document.getElementById('btn-copiar-'+marca);
   if(btn){ btn.innerHTML='<span>⏳</span> Gerando...'; btn.disabled=true; }
 
-  // Encontra o card da tabela de lojas (último card do marca-detalhe-content)
   const container = document.getElementById('marca-detalhe-content');
   const cards = container.querySelectorAll('.card');
-  const tblCard = cards[cards.length - 1]; // último card = tabela de lojas
+  const tblCard = cards[cards.length - 1];
 
-  // Oculta temporariamente a coluna FAT. (última coluna)
+  // Oculta coluna FAT. (última coluna)
   const fatCols = tblCard.querySelectorAll('tr td:last-child, tr th:last-child');
   fatCols.forEach(c => c.style.visibility = 'hidden');
-
-  // Oculta o botão de copiar durante o print
   if(btn) btn.style.visibility = 'hidden';
 
-  html2canvas(tblCard, {
-    backgroundColor: '#0d0f14',
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    onclone: function(doc) {
-      // Garante que o clone tem o fundo correto
-      doc.body.style.background = '#0d0f14';
-    }
-  }).then(canvas => {
-    // Restaura colunas e botão
-    fatCols.forEach(c => c.style.visibility = '');
-    if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
+  // Força o card a mostrar todo o conteúdo (remove overflow/height)
+  const tblWrap = tblCard.querySelector('.tbl-wrap');
+  const origOverflow = tblWrap ? tblWrap.style.overflow : '';
+  const origMaxH = tblWrap ? tblWrap.style.maxHeight : '';
+  if(tblWrap){ tblWrap.style.overflow='visible'; tblWrap.style.maxHeight='none'; }
 
-    // Copia para clipboard como imagem
-    canvas.toBlob(blob => {
-      try {
-        navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]).then(() => {
-          if(btn){
-            btn.innerHTML='<span>✅</span> Imagem copiada!';
-            btn.style.borderColor='var(--green)';
-            btn.style.color='var(--green)';
-            setTimeout(()=>{
-              btn.innerHTML='<span>📋</span> Copiar Imagem';
-              btn.style.borderColor='';
-              btn.style.color='';
-            }, 2500);
-          }
-        }).catch(() => {
-          // Fallback: abre imagem em nova aba para salvar manualmente
+  // Pequeno delay para o browser renderizar antes de capturar
+  setTimeout(function() {
+    html2canvas(tblCard, {
+      backgroundColor: '#0d0f14',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: tblCard.scrollWidth + 40,
+      windowHeight: tblCard.scrollHeight + 40,
+      height: tblCard.scrollHeight,
+      width: tblCard.scrollWidth,
+      onclone: function(doc) {
+        doc.body.style.background = '#0d0f14';
+        // No clone: remove overflow para capturar tudo
+        var cloneWrap = doc.querySelector('#marca-detalhe-content .tbl-wrap');
+        if(cloneWrap){ cloneWrap.style.overflow='visible'; cloneWrap.style.maxHeight='none'; cloneWrap.style.height='auto'; }
+        // Oculta coluna FAT no clone
+        doc.querySelectorAll('#marca-detalhe-content tr td:last-child, #marca-detalhe-content tr th:last-child')
+          .forEach(c => c.style.visibility='hidden');
+        // Oculta botão no clone
+        doc.querySelectorAll('[id^="btn-copiar-"]').forEach(b => b.style.display='none');
+      }
+    }).then(canvas => {
+      // Restaura
+      fatCols.forEach(c => c.style.visibility = '');
+      if(tblWrap){ tblWrap.style.overflow=origOverflow; tblWrap.style.maxHeight=origMaxH; }
+      if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
+
+      canvas.toBlob(blob => {
+        try {
+          navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]).then(() => {
+            if(btn){
+              btn.innerHTML='<span>✅</span> Copiado!';
+              btn.style.borderColor='var(--green)'; btn.style.color='var(--green)';
+              setTimeout(()=>{ btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.style.borderColor=''; btn.style.color=''; }, 2500);
+            }
+          }).catch(() => {
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Lojas_'+marca+'_'+MES_SELECIONADO+'.png'; a.click();
+            if(btn){ btn.innerHTML='<span>📷</span> Baixado!'; setTimeout(()=>{ btn.innerHTML='<span>📋</span> Copiar Imagem'; },2500); }
+          });
+        } catch(e) {
           const url = canvas.toDataURL('image/png');
           const a = document.createElement('a');
-          a.href = url;
-          a.download = 'Lojas_' + marca + '_' + MES_SELECIONADO + '.png';
-          a.click();
-          if(btn){
-            btn.innerHTML='<span>📷</span> Imagem salva!';
-            setTimeout(()=>{btn.innerHTML='<span>📋</span> Copiar Imagem';},2500);
-          }
-        });
-      } catch(e) {
-        // Fallback: download direto
-        const url = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Lojas_' + marca + '_' + MES_SELECIONADO + '.png';
-        a.click();
-        if(btn){
-          btn.innerHTML='<span>📷</span> Imagem baixada!';
-          btn.disabled=false;
-          setTimeout(()=>{btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.style.borderColor=''; btn.style.color='';},2500);
+          a.href = url; a.download = 'Lojas_'+marca+'_'+MES_SELECIONADO+'.png'; a.click();
+          if(btn){ btn.innerHTML='<span>📷</span> Baixado!'; btn.disabled=false; setTimeout(()=>{ btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.style.borderColor=''; btn.style.color=''; },2500); }
         }
-      }
-    }, 'image/png');
-  }).catch(err => {
-    fatCols.forEach(c => c.style.visibility = '');
-    if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
-    alert('Erro ao gerar imagem: ' + err);
-  });
+      }, 'image/png');
+    }).catch(err => {
+      fatCols.forEach(c => c.style.visibility = '');
+      if(tblWrap){ tblWrap.style.overflow=origOverflow; tblWrap.style.maxHeight=origMaxH; }
+      if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
+      alert('Erro: ' + err);
+    });
+  }, 100);
 }
 
 // função texto removida

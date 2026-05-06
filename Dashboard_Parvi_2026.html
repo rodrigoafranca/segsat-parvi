@@ -673,14 +673,20 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 
   <!-- PAGE: ESTOQUE -->
   <div class="page" id="page-estoque">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div id="estoque-hist-info" style="font-size:12px;color:var(--text3)">Médias baseadas no mês atual · Clique em "Calcular Histórico" para usar os últimos 3 meses</div>
+      <button onclick="carregarEstoqueHistorico()" id="btn-hist-estoque" style="display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="if(!_histCarregando)this.style.borderColor='var(--border2)',this.style.color='var(--text2)'">
+        <span>🔄</span> Calcular Histórico (3 meses)
+      </button>
+    </div>
     <div class="kpi-row" id="estoque-kpis"></div>
     <div class="g2" style="margin-bottom:12px">
       <div class="card">
-        <div class="card-hd"><div class="card-title">🔴 Lojas Críticas — Cobertura &lt; 7 dias</div><div class="card-sub">Necessitam reposição urgente</div></div>
+        <div class="card-hd"><div class="card-title">🔴 Lojas Críticas</div><div class="card-sub">Cobertura &lt; 7 dias — reposição urgente</div></div>
         <div id="estoque-criticas"></div>
       </div>
       <div class="card">
-        <div class="card-hd"><div class="card-title">📊 Cobertura por Praça</div><div class="card-sub">Dias de estoque por região</div></div>
+        <div class="card-hd"><div class="card-title">📊 Cobertura por Praça</div><div class="card-sub">Dias de estoque estimados por região</div></div>
         <div id="estoque-pracas"></div>
       </div>
     </div>
@@ -705,7 +711,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     </div>
   </div>
 
-  <!-- PAGE: COMISSOES -->
+
   <div class="page" id="page-comissoes">
     <div class="kpi-row" id="comm-kpis"></div>
     <div id="comissoes-content"></div>
@@ -845,7 +851,47 @@ function renderEstoque(filtroUFs) {
     </div>`;}).join('')}`:'<div style="padding:16px;color:var(--green);font-size:13px">✅ Todas as lojas com estoque adequado!</div>';
 }
 
-let _estoqueDataAtual=[];
+let _histCarregando = false;
+async function carregarEstoqueHistorico() {
+  if(_histCarregando) return;
+  _histCarregando = true;
+  const btn = document.getElementById('btn-hist-estoque');
+  const info = document.getElementById('estoque-hist-info');
+  if(btn){ btn.innerHTML='<span>⏳</span> Carregando histórico...'; btn.disabled=true; btn.style.borderColor='var(--blue)'; btn.style.color='var(--blue)'; }
+  if(info) info.textContent = 'Buscando vendas dos últimos 3 meses... Aguarde.';
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=estoque&mes=${encodeURIComponent(MES_SELECIONADO)}&ano=${ANO}`;
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 60000);
+    const res = await fetch(url, {signal: controller.signal});
+    clearTimeout(timer);
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
+    // Mescla dados históricos com ESTOQUE atual
+    if(json.estoque && json.estoque.length) {
+      const histMap = {};
+      json.estoque.forEach(e => { histMap[e.loja] = e; });
+      ESTOQUE = ESTOQUE.map(e => histMap[e.loja] ? {...e, ...histMap[e.loja], temHistorico:true} : e);
+      // Adiciona lojas que só aparecem no estoque (sem vendas no mês)
+      json.estoque.forEach(e => {
+        if(!ESTOQUE.find(ex=>ex.loja===e.loja)) ESTOQUE.push({...e, temHistorico:true});
+      });
+    }
+    if(btn){ btn.innerHTML='<span>✅</span> Histórico carregado!'; btn.style.borderColor='var(--green)'; btn.style.color='var(--green)'; }
+    if(info) info.textContent = `✅ Médias calculadas com base nos últimos 3 meses · ${json.geradoEm ? new Date(json.geradoEm).toLocaleTimeString('pt-BR') : ''}`;
+    renderEstoque();
+    setTimeout(()=>{
+      if(btn){ btn.innerHTML='<span>🔄</span> Recalcular Histórico'; btn.disabled=false; btn.style.borderColor=''; btn.style.color=''; }
+      _histCarregando=false;
+    }, 3000);
+  } catch(err) {
+    if(btn){ btn.innerHTML='<span>❌</span> Erro — Tentar novamente'; btn.disabled=false; btn.style.borderColor='var(--red)'; btn.style.color='var(--red)'; }
+    if(info) info.textContent = 'Erro ao carregar histórico: ' + err.message;
+    _histCarregando = false;
+  }
+}
+
+
 function _renderEstoqueTable(dados){
   const sorted=[...dados].sort((a,b)=>a.cobertura-b.cobertura);
   const si=s=>s==='critico'?'🔴':s==='ideal'?'🟡':'🔵';

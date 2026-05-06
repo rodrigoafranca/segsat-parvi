@@ -793,12 +793,17 @@ let ALL_STORES=[], DAILY=[], PLANOS=[], STORE_PLANS={}, META={};
 let ESTOQUE = [];
 
 function renderEstoque(filtroUFs) {
+  const isHist = _estoqueAbaAtual === 'hist';
   const dados = filtroUFs ? ESTOQUE.filter(e=>filtroUFs.includes(e.uf)) : ESTOQUE;
   if(!dados.length){
     document.getElementById('estoque-kpis').innerHTML='<div style="padding:20px;color:var(--text3)">Sem dados de estoque. Verifique a aba ESTOQUE na planilha.</div>';
     return;
   }
-  const tEnviado=dados.reduce((a,e)=>a+e.totalEnviado,0);
+  // Para aba histórico usa totalEnviadoAcum, para mês atual usa totalEnviado
+  const getEnviado = e => isHist ? (e.totalEnviadoAcum||e.totalEnviado) : e.totalEnviado;
+  const getVendas  = e => isHist ? (e.totalVendidoAcum||e.totalVendido) : (e.vendMesAtual||e.totalVendido||0);
+
+  const tEnviado=dados.reduce((a,e)=>a+getEnviado(e),0);
   const tVendido=dados.reduce((a,e)=>a+e.totalVendido,0);
   const tAtual=dados.reduce((a,e)=>a+e.estoqueAtual,0);
   const tSugestao=dados.reduce((a,e)=>a+e.sugestaoEnvio,0);
@@ -956,8 +961,8 @@ function _renderEstoqueTable(dados){
     <td style="${TD};text-align:center;color:var(--text3)">${i+1}</td>
     <td style="${TD};text-align:left;font-weight:500">${e.loja}</td>
     <td style="${TD};text-align:center;color:var(--text3)">${e.uf}</td>
-    <td style="${TD};text-align:right;color:var(--blue);font-weight:600">${e.totalEnviado}</td>
-    <td style="${TD};text-align:right;color:var(--green);font-weight:600">${e.vendMesAtual||e.totalVendido||0}</td>
+    <td style="${TD};text-align:right;color:var(--blue);font-weight:600">${isHist?(e.totalEnviadoAcum||e.totalEnviado):e.totalEnviado}</td>
+    <td style="${TD};text-align:right;color:var(--green);font-weight:600">${isHist?(e.totalVendidoAcum||e.totalVendido||0):(e.vendMesAtual||e.totalVendido||0)}</td>
     <td style="${TD};text-align:right;color:var(--gold);font-weight:600">${e.estoqueAtual}</td>
     <td style="${TD};text-align:right">${e.mediaVendas}</td>
     <td style="${TD};text-align:right;font-weight:700;color:${cor}">${e.cobertura===999?'∞':e.cobertura+' dias'}</td>

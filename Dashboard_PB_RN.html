@@ -359,6 +359,9 @@ tr:hover td{background:var(--surface2);}
 
 
 
+
+
+
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 #login-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px 40px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
@@ -376,6 +379,8 @@ tr:hover td{background:var(--surface2);}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
+
+
 
 
 
@@ -667,6 +672,41 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     <div id="marca-detalhe-content"></div>
   </div>
 
+  
+  <!-- PAGE: ESTOQUE -->
+  <div class="page" id="page-estoque">
+    <div class="kpi-row" id="estoque-kpis"></div>
+    <div class="g2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🔴 Lojas Críticas — Cobertura &lt; 7 dias</div><div class="card-sub">Necessitam reposição urgente</div></div>
+        <div id="estoque-criticas"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📊 Estoque da Praça</div><div class="card-sub">Enviado · Ativado · Atual · Cobertura</div></div>
+        <div id="estoque-pracas"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd">
+        <div><div class="card-title">📦 Mapeamento de Estoque por Loja</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="estoque-search" placeholder="🔍 Filtrar loja..." style="padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:180px" oninput="filtrarEstoque()">
+          <select id="estoque-status-filter" onchange="filtrarEstoque()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+            <option value="">Todos</option>
+            <option value="critico">🔴 Crítico</option>
+            <option value="ideal">🟡 Ideal</option>
+            <option value="excesso">🔵 Excesso</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table id="estoque-table"></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">💡 Plano de Ação · Estoque</div></div>
+      <div id="estoque-plano"></div>
+    </div>
+  </div>
+
   <!-- PAGE: COMISSOES -->
   <div class="page" id="page-comissoes">
     <div class="kpi-row" id="comm-kpis"></div>
@@ -692,7 +732,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 // ============================================================
 // ⚙️  CONFIGURAÇÃO
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAkbdcZnRi5znrmqfKqgl1n4mOhrmCIj2d3LZlXcTfHrWdDuM_1v4HmTa91mjM7FGKcQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyawaR3M1_beR_OtBvnSgpkq0BXLNDErcMJajutxXH58532EPUonk25MN4-q9WdFv3mxg/exec';
 const ANO = '2026';
 const MESES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
 const TRIMESTRES = {
@@ -1905,8 +1945,10 @@ function copiarTabelaMarca(marca) {
   const origWrapMaxH = tblWrap ? tblWrap.style.maxHeight : '';
   const origWrapH = tblWrap ? tblWrap.style.height : '';
   const origCardOverflow = tblCard.style.overflow;
+  const origTblLayout = tbl ? tbl.style.tableLayout : '';
+  const origTblWidth = tbl ? tbl.style.width : '';
 
-  // Expande temporariamente para mostrar tudo
+  // Expande o wrapper
   if(tblWrap){
     tblWrap.style.overflow = 'visible';
     tblWrap.style.maxHeight = 'none';
@@ -1914,27 +1956,32 @@ function copiarTabelaMarca(marca) {
   }
   tblCard.style.overflow = 'visible';
 
-  // Oculta coluna FAT (última) e botão
-  const fatCols = tblCard.querySelectorAll('tr td:last-child, tr th[rowspan]:last-of-type');
-  // Mais confiável: oculta pela posição — última td/th de cada linha
+  // Muda table-layout para auto para que as colunas se expandam naturalmente
+  if(tbl){
+    tbl.style.tableLayout = 'auto';
+    tbl.style.width = 'auto';
+  }
+
+  // Oculta coluna FAT via visibility (não remove do layout)
   const allRows = tblCard.querySelectorAll('tr');
   const hiddenCells = [];
   allRows.forEach(row => {
     const cells = row.querySelectorAll('td, th');
     if(cells.length > 0){
       const last = cells[cells.length - 1];
-      last.setAttribute('data-hide', '1');
-      hiddenCells.push(last);
-      last.style.display = 'none';
+      hiddenCells.push({el: last, orig: last.style.visibility});
+      last.style.visibility = 'hidden';
     }
   });
+
+  // Oculta botão
   if(btn) btn.style.visibility = 'hidden';
 
-  // Aguarda repaint
+  // Duplo requestAnimationFrame para garantir repaint completo
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      const W = tblCard.offsetWidth + 4;
-      const H = tblCard.offsetHeight + 4;
+      const W = Math.max(tblCard.offsetWidth, tbl ? tbl.offsetWidth : 0) + 40;
+      const H = tblCard.offsetHeight + 40;
 
       html2canvas(tblCard, {
         backgroundColor: '#0d0f14',
@@ -1949,9 +1996,10 @@ function copiarTabelaMarca(marca) {
         y: 0,
       }).then(canvas => {
         // Restaura tudo
-        hiddenCells.forEach(c => { c.style.display = ''; c.removeAttribute('data-hide'); });
+        hiddenCells.forEach(c => { c.el.style.visibility = c.orig; });
         if(tblWrap){ tblWrap.style.overflow=origWrapOverflow; tblWrap.style.maxHeight=origWrapMaxH; tblWrap.style.height=origWrapH; }
         tblCard.style.overflow = origCardOverflow;
+        if(tbl){ tbl.style.tableLayout=origTblLayout; tbl.style.width=origTblWidth; }
         if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
 
         canvas.toBlob(blob => {
@@ -1977,9 +2025,10 @@ function copiarTabelaMarca(marca) {
           }
         }, 'image/png');
       }).catch(err => {
-        hiddenCells.forEach(c => { c.style.display = ''; });
+        hiddenCells.forEach(c => { c.el.style.visibility = c.orig; });
         if(tblWrap){ tblWrap.style.overflow=origWrapOverflow; tblWrap.style.maxHeight=origWrapMaxH; tblWrap.style.height=origWrapH; }
         tblCard.style.overflow = origCardOverflow;
+        if(tbl){ tbl.style.tableLayout=origTblLayout; tbl.style.width=origTblWidth; }
         if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
         alert('Erro: ' + err);
       });
@@ -2432,6 +2481,101 @@ renderAll = function() {
   setTimeout(_ocultarComissao, 300);
 };
 
+// ESTOQUE local da praça PB / RN
+let ESTOQUE = [];
+let _estoqueDataAtual = [];
+
+function renderEstoque() {
+  const ufs = ['PB', 'RN'];
+  const dados = ESTOQUE.filter(e => ufs.includes(e.uf));
+  if(!dados.length){
+    document.getElementById('estoque-kpis').innerHTML='<div style="padding:20px;color:var(--text3)">Sem dados de estoque para esta praça.</div>';
+    return;
+  }
+  const tEnviado=dados.reduce((a,e)=>a+e.totalEnviado,0);
+  const tVendido=dados.reduce((a,e)=>a+e.totalVendido,0);
+  const tAtual=dados.reduce((a,e)=>a+e.estoqueAtual,0);
+  const tSugestao=dados.reduce((a,e)=>a+e.sugestaoEnvio,0);
+  const nCritico=dados.filter(e=>e.status==='critico').length;
+  const nIdeal=dados.filter(e=>e.status==='ideal').length;
+  const nExcesso=dados.filter(e=>e.status==='excesso').length;
+  document.getElementById('estoque-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${tEnviado}</div><div class="kpi-lbl">Total Enviado</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${tVendido}</div><div class="kpi-lbl">Total Ativado</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--gold)">${tAtual}</div><div class="kpi-lbl">Estoque Atual</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">🔴</div><div class="kpi-val" style="color:var(--red)">${nCritico}</div><div class="kpi-lbl">Críticas</div><div class="kpi-accent r"></div></div>
+    <div class="kpi"><div class="kpi-ico">🟡</div><div class="kpi-val" style="color:var(--gold)">${nIdeal}</div><div class="kpi-lbl">Ideal</div><div class="kpi-accent o"></div></div>
+    <div class="kpi"><div class="kpi-ico">🔵</div><div class="kpi-val" style="color:var(--blue)">${nExcesso}</div><div class="kpi-lbl">Excesso</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:var(--orange)">${tSugestao}</div><div class="kpi-lbl">Sugestão Próx. Mês</div><div class="kpi-accent o"></div></div>`;
+  const criticas=dados.filter(e=>e.status==='critico').sort((a,b)=>a.cobertura-b.cobertura);
+  document.getElementById('estoque-criticas').innerHTML=criticas.length
+    ?criticas.map(e=>`<div class="opp-card critica" style="margin-bottom:8px"><div class="opp-icon">🔴</div><div class="opp-body"><div class="opp-title">${e.loja}</div><div class="opp-sub">${e.uf} · Est: <strong style="color:var(--red)">${e.estoqueAtual}</strong> · Cob: <strong style="color:var(--red)">${e.cobertura} dias</strong></div></div><div class="opp-metric" style="color:var(--red)">Enviar ${e.sugestaoEnvio}</div></div>`).join('')
+    :'<div style="padding:16px;color:var(--green);font-size:13px">✅ Nenhuma loja crítica!</div>';
+  const env=tEnviado,atv=tVendido,est=tAtual;
+  const cvg=dados.reduce((a,e)=>a+e.mediaVendasDia,0);
+  const dias=cvg>0?Math.round(est/cvg):0;
+  const cor=dias<7?'var(--red)':dias<=20?'var(--gold)':'var(--blue)';
+  document.getElementById('estoque-pracas').innerHTML=`<div style="padding:14px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Enviado</div><div style="font-size:22px;font-weight:700;color:var(--blue)">${env}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Ativado</div><div style="font-size:22px;font-weight:700;color:var(--green)">${atv}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Estoque</div><div style="font-size:22px;font-weight:700;color:var(--gold)">${est}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Cobertura</div><div style="font-size:22px;font-weight:700;color:${cor}">${dias} dias</div></div>
+    </div>
+  </div>`;
+  _estoqueDataAtual=dados;
+  _renderEstoqueTable(dados);
+  const precisam=dados.filter(e=>e.sugestaoEnvio>0).sort((a,b)=>b.sugestaoEnvio-a.sugestaoEnvio);
+  document.getElementById('estoque-plano').innerHTML=precisam.length?precisam.slice(0,15).map(e=>{
+    const cor=e.status==='critico'?'var(--red)':e.status==='ideal'?'var(--gold)':'var(--blue)';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);margin-bottom:6px">
+      <span>${e.status==='critico'?'🔴':'🟡'}</span>
+      <span style="flex:1;font-size:12px;font-weight:600">${e.loja}</span>
+      <span style="font-size:11px;color:var(--text3)">Est:${e.estoqueAtual}</span>
+      <span style="font-size:11px;color:var(--text3)">Méd:${e.mediaVendas}/mês</span>
+      <span style="font-size:12px;font-weight:700;color:${cor};background:${cor}22;padding:2px 10px;border-radius:99px">Enviar ${e.sugestaoEnvio}</span>
+    </div>`;
+  }).join(''):'<div style="padding:16px;color:var(--green)">✅ Estoque adequado!</div>';
+}
+
+function _renderEstoqueTable(dados){
+  const sorted=[...dados].sort((a,b)=>a.cobertura-b.cobertura);
+  const si=s=>s==='critico'?'🔴':s==='ideal'?'🟡':'🔵';
+  const sc=s=>s==='critico'?'var(--red)':s==='ideal'?'var(--gold)':'var(--blue)';
+  document.getElementById('estoque-table').innerHTML=`<thead><tr>
+    <th style="text-align:left;font-size:10px;color:var(--text2)">Loja</th>
+    <th style="font-size:10px;color:var(--blue)">Enviado</th>
+    <th style="font-size:10px;color:var(--green)">Ativado</th>
+    <th style="font-size:10px;color:var(--gold)">Estoque</th>
+    <th style="font-size:10px;color:var(--text2)">Méd/mês</th>
+    <th style="font-size:10px;color:var(--text2)">Cobertura</th>
+    <th style="font-size:10px;color:var(--text2)">Status</th>
+    <th style="font-size:10px;color:var(--orange)">Sugestão</th>
+  </tr></thead><tbody>${sorted.map(e=>{
+    const cor=sc(e.status);
+    return`<tr><td class="td-main" style="font-size:12px">${e.loja}</td>
+    <td style="font-size:11px;color:var(--blue);font-weight:600;text-align:right">${e.totalEnviado}</td>
+    <td style="font-size:11px;color:var(--green);font-weight:600;text-align:right">${e.totalVendido}</td>
+    <td style="font-size:11px;color:var(--gold);font-weight:600;text-align:right">${e.estoqueAtual}</td>
+    <td style="font-size:11px;text-align:right">${e.mediaVendas}</td>
+    <td style="font-size:11px;font-weight:700;color:${cor};text-align:right">${e.cobertura===999?'∞':e.cobertura+' dias'}</td>
+    <td style="text-align:center"><span style="font-size:10px;background:${cor}22;color:${cor};padding:2px 8px;border-radius:99px;font-weight:600">${si(e.status)} ${e.status}</span></td>
+    <td style="font-size:11px;font-weight:700;color:var(--orange);text-align:right">${e.sugestaoEnvio>0?e.sugestaoEnvio:'—'}</td></tr>`;
+  }).join('')}</tbody>`;
+}
+
+function filtrarEstoque(){
+  const s=(document.getElementById('estoque-search')||{value:''}).value.toLowerCase();
+  const st=(document.getElementById('estoque-status-filter')||{value:''}).value;
+  _renderEstoqueTable(_estoqueDataAtual.filter(e=>(!s||e.loja.toLowerCase().includes(s))&&(!st||e.status===st)));
+}
+
+// ESTOQUE navTo override
+const _origNavToEst = navTo;
+navTo = function(page, btn) {
+  _origNavToEst(page, btn);
+  if(page==='estoque') setTimeout(renderEstoque, 100);
+};
 </script>
 </body>
 </html>

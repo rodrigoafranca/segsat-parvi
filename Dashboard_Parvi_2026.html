@@ -673,13 +673,36 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 
   <!-- PAGE: ESTOQUE -->
   <div class="page" id="page-estoque">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div id="estoque-hist-info" style="font-size:12px;color:var(--text3)">Médias baseadas no mês atual · Clique em "Calcular Histórico" para usar os últimos 3 meses</div>
-      <button onclick="carregarEstoqueHistorico()" id="btn-hist-estoque" style="display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="if(!_histCarregando)this.style.borderColor='var(--border2)',this.style.color='var(--text2)'">
-        <span>🔄</span> Calcular Histórico (3 meses)
+    <!-- Abas Mês / Histórico -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px">
+        <button id="tab-est-mes" onclick="setEstoqueAba('mes')" style="padding:6px 18px;border-radius:7px;border:none;background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 1px 4px rgba(0,0,0,0.15)">📅 Mês atual</button>
+        <button id="tab-est-hist" onclick="setEstoqueAba('hist')" style="padding:6px 18px;border-radius:7px;border:none;background:transparent;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📊 Histórico 3 meses</button>
+      </div>
+      <div id="estoque-hist-info" style="font-size:11px;color:var(--text3)">Médias baseadas no mês atual</div>
+      <button onclick="carregarEstoqueHistorico()" id="btn-hist-estoque" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="if(!_histCarregando)this.style.borderColor='var(--border2)',this.style.color='var(--text2)'">
+        <span>🔄</span> Calcular Histórico
       </button>
     </div>
+    <!-- KPIs -->
     <div class="kpi-row" id="estoque-kpis"></div>
+    <!-- Tabela primeiro -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd">
+        <div><div class="card-title">📦 Mapeamento de Estoque por Loja</div><div class="card-sub">Enviado · Vendas · Estoque atual · Cobertura · Sugestão próximo mês</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="estoque-search" placeholder="🔍 Filtrar loja..." style="padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:170px" oninput="filtrarEstoque()">
+          <select id="estoque-status-filter" onchange="filtrarEstoque()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+            <option value="">Todos os status</option>
+            <option value="critico">🔴 Crítico</option>
+            <option value="ideal">🟡 Ideal</option>
+            <option value="excesso">🔵 Excesso</option>
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table id="estoque-table" style="table-layout:fixed;width:100%"></table></div>
+    </div>
+    <!-- Críticas + Praças -->
     <div class="g2" style="margin-bottom:12px">
       <div class="card">
         <div class="card-hd"><div class="card-title">🔴 Lojas Críticas</div><div class="card-sub">Cobertura &lt; 7 dias — reposição urgente</div></div>
@@ -690,26 +713,13 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
         <div id="estoque-pracas"></div>
       </div>
     </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-hd">
-        <div><div class="card-title">📦 Mapeamento de Estoque por Loja</div><div class="card-sub">Enviado · Vendido · Atual · Cobertura · Sugestão próximo mês</div></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="estoque-search" placeholder="🔍 Filtrar loja..." style="padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:180px" oninput="filtrarEstoque()">
-          <select id="estoque-status-filter" onchange="filtrarEstoque()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
-            <option value="">Todos os status</option>
-            <option value="critico">🔴 Crítico</option>
-            <option value="ideal">🟡 Ideal</option>
-            <option value="excesso">🔵 Excesso</option>
-          </select>
-        </div>
-      </div>
-      <div class="tbl-wrap"><table id="estoque-table"></table></div>
-    </div>
+    <!-- Plano de ação -->
     <div class="card">
       <div class="card-hd"><div class="card-title">💡 Plano de Ação · Estoque</div><div class="card-sub">Sugestões de reposição para o próximo mês</div></div>
       <div id="estoque-plano"></div>
     </div>
   </div>
+
 
 
   <div class="page" id="page-comissoes">
@@ -852,6 +862,32 @@ function renderEstoque(filtroUFs) {
 }
 
 let _histCarregando = false;
+let _estoqueAbaAtual = 'mes';
+
+function setEstoqueAba(aba) {
+  _estoqueAbaAtual = aba;
+  const btnMes  = document.getElementById('tab-est-mes');
+  const btnHist = document.getElementById('tab-est-hist');
+  const info    = document.getElementById('estoque-hist-info');
+  if(aba==='mes') {
+    if(btnMes)  { btnMes.style.background='var(--surface)'; btnMes.style.color='var(--text)'; btnMes.style.boxShadow='0 1px 4px rgba(0,0,0,0.15)'; }
+    if(btnHist) { btnHist.style.background='transparent'; btnHist.style.color='var(--text3)'; btnHist.style.boxShadow='none'; }
+    if(info) info.textContent = 'Médias baseadas no mês atual';
+    renderEstoque();
+  } else {
+    if(btnHist) { btnHist.style.background='var(--surface)'; btnHist.style.color='var(--text)'; btnHist.style.boxShadow='0 1px 4px rgba(0,0,0,0.15)'; }
+    if(btnMes)  { btnMes.style.background='transparent'; btnMes.style.color='var(--text3)'; btnMes.style.boxShadow='none'; }
+    // Verifica se já carregou histórico
+    const temHist = ESTOQUE.some(e=>e.temHistorico);
+    if(!temHist) {
+      if(info) info.textContent = 'Clique em "Calcular Histórico" para carregar os 3 meses anteriores';
+      carregarEstoqueHistorico();
+    } else {
+      if(info) info.textContent = 'Médias calculadas com base nos últimos 3 meses';
+      renderEstoque();
+    }
+  }
+}
 async function carregarEstoqueHistorico() {
   if(_histCarregando) return;
   _histCarregando = true;
@@ -896,28 +932,37 @@ function _renderEstoqueTable(dados){
   const sorted=[...dados].sort((a,b)=>a.cobertura-b.cobertura);
   const si=s=>s==='critico'?'🔴':s==='ideal'?'🟡':'🔵';
   const sc=s=>s==='critico'?'var(--red)':s==='ideal'?'var(--gold)':'var(--blue)';
-  document.getElementById('estoque-table').innerHTML=`<thead><tr>
-    <th style="text-align:left;font-size:10px;color:var(--text2)">#</th>
-    <th style="text-align:left;font-size:10px;color:var(--text2)">Loja</th>
-    <th style="font-size:10px;color:var(--text2)">UF</th>
-    <th style="font-size:10px;color:var(--blue)">Enviado</th>
-    <th style="font-size:10px;color:var(--green)">Ativado</th>
-    <th style="font-size:10px;color:var(--gold)">Estoque</th>
-    <th style="font-size:10px;color:var(--text2)">Méd/mês</th>
-    <th style="font-size:10px;color:var(--text2)">Cobertura</th>
-    <th style="font-size:10px;color:var(--text2)">Status</th>
-    <th style="font-size:10px;color:var(--orange)">Sugestão</th>
-  </tr></thead><tbody>${sorted.map((e,i)=>{const cor=sc(e.status);return`<tr>
-    <td style="font-size:11px;color:var(--text3)">${i+1}</td>
-    <td class="td-main" style="font-size:12px">${e.loja}</td>
-    <td style="font-size:11px;text-align:center">${e.uf}</td>
-    <td style="font-size:11px;color:var(--blue);font-weight:600;text-align:right">${e.totalEnviado}</td>
-    <td style="font-size:11px;color:var(--green);font-weight:600;text-align:right">${e.totalVendido}</td>
-    <td style="font-size:11px;color:var(--gold);font-weight:600;text-align:right">${e.estoqueAtual}</td>
-    <td style="font-size:11px;text-align:right">${e.mediaVendas}</td>
-    <td style="font-size:11px;font-weight:700;color:${cor};text-align:right">${e.cobertura===999?'∞':e.cobertura+' dias'}</td>
-    <td style="text-align:center"><span style="font-size:10px;background:${cor}22;color:${cor};padding:2px 8px;border-radius:99px;font-weight:600">${si(e.status)} ${e.status}</span></td>
-    <td style="font-size:11px;font-weight:700;color:var(--orange);text-align:right">${e.sugestaoEnvio>0?e.sugestaoEnvio:'—'}</td>
+  const TH='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border)';
+  const TD='padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
+  document.getElementById('estoque-table').innerHTML=`
+  <colgroup>
+    <col style="width:32px"><col style="width:28%"><col style="width:42px">
+    <col style="width:9%"><col style="width:9%"><col style="width:9%">
+    <col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:9%">
+  </colgroup>
+  <thead><tr>
+    <th style="${TH};text-align:center;color:var(--text3)">#</th>
+    <th style="${TH};text-align:left;color:var(--text2)">Loja</th>
+    <th style="${TH};text-align:center;color:var(--text2)">UF</th>
+    <th style="${TH};text-align:right;color:var(--blue)">Enviado</th>
+    <th style="${TH};text-align:right;color:var(--green)">Vendas</th>
+    <th style="${TH};text-align:right;color:var(--gold)">Estoque</th>
+    <th style="${TH};text-align:right;color:var(--text2)">Méd/mês</th>
+    <th style="${TH};text-align:right;color:var(--text2)">Cobertura</th>
+    <th style="${TH};text-align:center;color:var(--text2)">Status</th>
+    <th style="${TH};text-align:right;color:var(--orange)">Sugestão</th>
+  </tr></thead>
+  <tbody>${sorted.map((e,i)=>{const cor=sc(e.status);return`<tr>
+    <td style="${TD};text-align:center;color:var(--text3)">${i+1}</td>
+    <td style="${TD};text-align:left;font-weight:500">${e.loja}</td>
+    <td style="${TD};text-align:center;color:var(--text3)">${e.uf}</td>
+    <td style="${TD};text-align:right;color:var(--blue);font-weight:600">${e.totalEnviado}</td>
+    <td style="${TD};text-align:right;color:var(--green);font-weight:600">${e.vendMesAtual||e.totalVendido||0}</td>
+    <td style="${TD};text-align:right;color:var(--gold);font-weight:600">${e.estoqueAtual}</td>
+    <td style="${TD};text-align:right">${e.mediaVendas}</td>
+    <td style="${TD};text-align:right;font-weight:700;color:${cor}">${e.cobertura===999?'∞':e.cobertura+' dias'}</td>
+    <td style="${TD};text-align:center"><span style="font-size:10px;background:${cor}22;color:${cor};padding:2px 8px;border-radius:99px;font-weight:600">${si(e.status)} ${e.status}</span></td>
+    <td style="${TD};text-align:right;font-weight:700;color:var(--orange)">${e.sugestaoEnvio>0?e.sugestaoEnvio:'—'}</td>
   </tr>`;}).join('')}</tbody>`;
 }
 

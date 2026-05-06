@@ -881,22 +881,122 @@ function filtrarEstoque(){
   _renderEstoqueTable(_estoqueDataAtual.filter(e=>(!s||e.loja.toLowerCase().includes(s)||e.uf.toLowerCase().includes(s))&&(!st||e.status===st)));
 }
 
-// Filtro de loja no Detalhe por Marca
-function filtrarLojaMarca(marca) {
-  const inp = document.getElementById('filtro-loja-'+marca);
-  const q = inp ? inp.value.toLowerCase().trim() : '';
+// ── DROPDOWN FILTRO LOJAS POR MARCA ──
+const _ddAberto = {};
+const _ddSelecionadas = {};
+
+function toggleDDLoja(marca) {
+  const menu = document.getElementById('dd-menu-'+marca);
+  const isOpen = _ddAberto[marca];
+  // Fecha todos os outros
+  Object.keys(_ddAberto).forEach(m => {
+    if(m !== marca && _ddAberto[m]) {
+      _ddAberto[m] = false;
+      const mm = document.getElementById('dd-menu-'+m);
+      if(mm) mm.style.display='none';
+      const chev = document.getElementById('dd-chev-'+m);
+      if(chev) chev.textContent='▼';
+    }
+  });
+  _ddAberto[marca] = !isOpen;
+  menu.style.display = _ddAberto[marca] ? 'block' : 'none';
+  const chev = document.getElementById('dd-chev-'+marca);
+  if(chev) chev.textContent = _ddAberto[marca] ? '▲' : '▼';
+  if(_ddAberto[marca]) {
+    renderDDLojas(marca);
+    setTimeout(() => { const s = document.getElementById('dd-search-'+marca); if(s) s.focus(); }, 50);
+  }
+}
+
+function renderDDLojas(marca) {
+  const search = (document.getElementById('dd-search-'+marca)||{value:''}).value.toLowerCase();
+  const sel = _ddSelecionadas[marca] || new Set();
+  // Pega lojas da marca atual
+  const lojasMarca = ALL_STORES
+    .filter(s => (s.marca||getMarcaByName(s.loja)) === marca)
+    .map(s => s.loja)
+    .sort((a,b) => a.localeCompare(b));
+  const filtradas = lojasMarca.filter(l => l.toLowerCase().includes(search));
+  const list = document.getElementById('dd-list-'+marca);
+  if(!list) return;
+  list.innerHTML = filtradas.map(l => `
+    <div onclick="ddToggle('${marca}','${l.replace(/'/g,"\\'")}',event)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:12px;color:var(--text)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <input type="checkbox" ${sel.has(l)?'checked':''} onclick="event.stopPropagation();ddToggle('${marca}','${l.replace(/'/g,"\\'")}',event)" style="width:14px;height:14px;accent-color:var(--blue);cursor:pointer;flex-shrink:0">
+      <span style="flex:1">${l}</span>
+    </div>`).join('');
+}
+
+function ddToggle(marca, loja, e) {
+  if(!_ddSelecionadas[marca]) _ddSelecionadas[marca] = new Set();
+  if(_ddSelecionadas[marca].has(loja)) _ddSelecionadas[marca].delete(loja);
+  else _ddSelecionadas[marca].add(loja);
+  renderDDLojas(marca);
+  ddAtualizarBadge(marca);
+}
+
+function ddSelAll(marca) {
+  if(!_ddSelecionadas[marca]) _ddSelecionadas[marca] = new Set();
+  const search = (document.getElementById('dd-search-'+marca)||{value:''}).value.toLowerCase();
+  ALL_STORES.filter(s=>(s.marca||getMarcaByName(s.loja))===marca && s.loja.toLowerCase().includes(search))
+    .forEach(s => _ddSelecionadas[marca].add(s.loja));
+  renderDDLojas(marca); ddAtualizarBadge(marca);
+}
+
+function ddLimpar(marca) {
+  _ddSelecionadas[marca] = new Set();
+  renderDDLojas(marca); ddAtualizarBadge(marca);
+}
+
+function ddAtualizarBadge(marca) {
+  const n = (_ddSelecionadas[marca]||new Set()).size;
+  const badge = document.getElementById('dd-badge-'+marca);
+  const btn = document.getElementById('dd-btn-'+marca);
+  if(badge) { badge.style.display = n>0?'inline-flex':'none'; badge.textContent=n; }
+  if(btn) btn.style.borderColor = n>0?'var(--blue)':'';
+}
+
+function ddAplicar(marca) {
+  _ddAberto[marca] = false;
+  const menu = document.getElementById('dd-menu-'+marca);
+  if(menu) menu.style.display='none';
+  const chev = document.getElementById('dd-chev-'+marca);
+  if(chev) chev.textContent='▼';
+  // Aplica filtro na tabela
+  const sel = _ddSelecionadas[marca]||new Set();
   const tbl = document.querySelector('#marca-detalhe-content table');
   if(!tbl) return;
-  const rows = tbl.querySelectorAll('tbody tr');
-  rows.forEach(row => {
-    const lojaTd = row.querySelector('td');
-    if(!lojaTd) return;
-    const nome = lojaTd.textContent.toLowerCase();
-    // Mostra linha TOTAL sempre
-    if(nome.includes('total')) { row.style.display=''; return; }
-    row.style.display = (!q || nome.includes(q)) ? '' : 'none';
+  tbl.querySelectorAll('tbody tr').forEach(row => {
+    const td = row.querySelector('td');
+    if(!td) return;
+    const nome = td.textContent.replace(/^[0-9°]+\s*/,'').trim();
+    if(nome.toUpperCase().startsWith('TOTAL')) { row.style.display=''; return; }
+    row.style.display = (sel.size===0 || sel.has(nome)) ? '' : 'none';
   });
 }
+
+// Fecha dropdown ao clicar fora
+document.addEventListener('click', e => {
+  Object.keys(_ddAberto).forEach(marca => {
+    if(_ddAberto[marca]) {
+      const wrap = document.getElementById('dd-wrap-'+marca);
+      if(wrap && !wrap.contains(e.target)) {
+        _ddAberto[marca] = false;
+        const menu = document.getElementById('dd-menu-'+marca);
+        if(menu) menu.style.display='none';
+        const chev = document.getElementById('dd-chev-'+marca);
+        if(chev) chev.textContent='▼';
+      }
+    }
+  });
+});
+
+// Limpa filtro quando troca de marca
+const _origRenderMD = renderMarcaDetalhe;
+renderMarcaDetalhe = function(marca) {
+  _ddSelecionadas[marca] = new Set();
+  _ddAberto[marca] = false;
+  _origRenderMD(marca);
+};
 
 
 let MES_SELECIONADO  = MESES[MES_ATUAL] || 'ABRIL';
@@ -2290,7 +2390,26 @@ function renderMarcaDetalhe(marca) {
           <span style="color:var(--gold)">Family Gold</span>
         </div></div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input id="filtro-loja-${marca}" placeholder="🔍 Filtrar loja..." oninput="filtrarLojaMarca('${marca}')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:160px;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border2)'">
+          <div style="position:relative;display:inline-block" id="dd-wrap-${marca}">
+            <button onclick="toggleDDLoja('${marca}')" id="dd-btn-${marca}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="if(!_ddAberto['${marca}'])this.style.borderColor='var(--border2)'">
+              <span>🔍 Filtrar lojas</span>
+              <span id="dd-badge-${marca}" style="display:none;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:99px;background:var(--blue);color:#fff;font-size:10px;font-weight:700"></span>
+              <span id="dd-chev-${marca}" style="font-size:10px;color:var(--text3)">▼</span>
+            </button>
+            <div id="dd-menu-${marca}" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:240px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:999;overflow:hidden">
+              <div style="padding:8px 10px;border-bottom:0.5px solid var(--border)">
+                <input type="text" placeholder="Buscar..." id="dd-search-${marca}" oninput="renderDDLojas('${marca}')" style="width:100%;padding:5px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+              </div>
+              <div style="display:flex;border-bottom:0.5px solid var(--border)">
+                <button onclick="ddSelAll('${marca}')" style="flex:1;padding:5px 0;font-size:11px;font-weight:500;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif">Todas</button>
+                <button onclick="ddLimpar('${marca}')" style="flex:1;padding:5px 0;font-size:11px;font-weight:500;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif">Limpar</button>
+              </div>
+              <div id="dd-list-${marca}" style="max-height:200px;overflow-y:auto"></div>
+              <div style="padding:8px 10px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end">
+                <button onclick="ddAplicar('${marca}')" style="padding:5px 14px;border-radius:5px;border:none;background:var(--blue);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Aplicar</button>
+              </div>
+            </div>
+          </div>
           <button onclick="copiarTabelaMarca('${marca}')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'" id="btn-copiar-${marca}">
             <span>📋</span> Copiar Imagem
           </button>

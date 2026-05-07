@@ -963,7 +963,7 @@ function _renderEstoqueTable(dados){
     <td style="${TD};text-align:center;color:var(--text3)">${e.uf}</td>
     <td style="${TD};text-align:right;color:var(--blue);font-weight:600">${isHist?(e.totalEnviadoAcum||e.totalEnviado):e.totalEnviado}</td>
     <td style="${TD};text-align:right;color:var(--green);font-weight:600">${isHist?(e.totalVendidoAcum||e.totalVendido||0):(e.vendMesAtual||e.totalVendido||0)}</td>
-    <td style="${TD};text-align:right;color:var(--gold);font-weight:600">${e.estoqueAtual}</td>
+    <td style="${TD};text-align:right;color:${e.estoqueAtual<0?'var(--red)':'var(--gold)'};font-weight:600">${e.estoqueAtual}</td>
     <td style="${TD};text-align:right">${e.mediaVendas}</td>
     <td style="${TD};text-align:right;font-weight:700;color:${cor}">${e.cobertura===999?'∞':e.cobertura+' dias'}</td>
     <td style="${TD};text-align:center"><span style="font-size:10px;background:${cor}22;color:${cor};padding:2px 8px;border-radius:99px;font-weight:600">${si(e.status)} ${e.status}</span></td>

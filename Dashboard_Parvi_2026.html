@@ -494,6 +494,8 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('pracas',this);setEstado('BASE')"><span class="ni">📍</span> BA / SE</button>
   <button class="nav-item" onclick="navTo('pracas',this);setEstado('PBRN')"><span class="ni">📍</span> PB / RN</button>
   <button class="nav-item" onclick="navTo('pracas',this);setEstado('MA')"><span class="ni">📍</span> MA / PA</button>
+  <div class="nav-section">Capacitação</div>
+  <button class="nav-item" onclick="navTo('treinamentos',this)"><span class="ni">🎓</span> Treinamentos <span class="nav-badge" id="badge-treinamentos" style="background:#00d084;display:none">NEW</span></button>
   <div class="nav-footer">
     <p id="nav-footer-lojas">— lojas mapeadas</p>
     <p style="margin-top:2px;color:var(--text3)">VENDAS 2026</p>
@@ -739,7 +741,155 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     <div id="praca-content"></div>
   </div>
 
-</div><!-- /main -->
+  <!-- PAGE: TREINAMENTOS -->
+  <div class="page" id="page-treinamentos">
+
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="flex:1;font-size:15px;font-weight:600;color:var(--text);">Treinamentos <span style="font-size:12px;font-weight:400;color:var(--text3)">· Grupo Parvi</span></div>
+      <select id="trn-f-mes" onchange="trnAplicarFiltros()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;">
+        <option value="">Todos os meses</option>
+        <option value="2026-01">Jan 2026</option>
+        <option value="2026-02">Fev 2026</option>
+        <option value="2026-03">Mar 2026</option>
+        <option value="2026-04">Abr 2026</option>
+        <option value="2026-05" selected>Mai 2026</option>
+        <option value="2026-06">Jun 2026</option>
+        <option value="2026-07">Jul 2026</option>
+        <option value="2026-08">Ago 2026</option>
+        <option value="2026-09">Set 2026</option>
+        <option value="2026-10">Out 2026</option>
+        <option value="2026-11">Nov 2026</option>
+        <option value="2026-12">Dez 2026</option>
+      </select>
+      <select id="trn-f-apresentador" onchange="trnAplicarFiltros()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;">
+        <option value="">Todos os apresentadores</option>
+        <option>Lozania Fontes</option>
+        <option>Jairo Sodré</option>
+        <option>Clayton Barbosa</option>
+        <option>Paulo Vitor</option>
+        <option>Rodrigo França</option>
+      </select>
+      <select id="trn-f-praca" onchange="trnAplicarFiltros()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;">
+        <option value="">Todas as praças</option>
+        <option value="PE">Pernambuco</option>
+        <option value="AM">Amazonas / RR</option>
+        <option value="BA">Bahia / SE</option>
+        <option value="PB">Paraíba / RN</option>
+        <option value="MA">Maranhão / PA</option>
+      </select>
+      <button onclick="trnCarregarDados()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Atualizar
+      </button>
+      <span id="trn-last-update" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;padding:4px 10px;background:var(--surface2);border-radius:20px;">Aguardando...</span>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+      <div class="card" style="border-top:2px solid var(--blue);">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;">Sessões realizadas</div>
+        <div id="trn-kpi-sessoes" style="font-size:26px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;">no período</div>
+      </div>
+      <div class="card" style="border-top:2px solid #00d084;">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;">Avaliações coletadas</div>
+        <div id="trn-kpi-avaliacoes" style="font-size:26px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;">respostas</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold);">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;">Nota média geral</div>
+        <div id="trn-kpi-nota" style="font-size:26px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;">de 5,0</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--purple,#a78bfa);">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;">Sentem-se preparados</div>
+        <div id="trn-kpi-preparo" style="font-size:26px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;">após o treino</div>
+      </div>
+    </div>
+
+    <!-- Barras + Gráfico -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Nota por apresentador</div><span id="trn-lbl-apr" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;"></span></div>
+        <div id="trn-bars-apr"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Nota por praça</div><span id="trn-lbl-praca" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;"></span></div>
+        <div id="trn-bars-praca"></div>
+      </div>
+    </div>
+
+    <!-- Evolução + Temas -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Evolução mensal da nota</div></div>
+        <svg id="trn-chart-svg" style="width:100%;height:160px;display:block;"></svg>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Temas abordados</div></div>
+        <div id="trn-tag-temas" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+      </div>
+    </div>
+
+    <!-- Últimos comentários -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-hd"><div class="card-title">Últimas sugestões dos vendedores</div></div>
+      <div id="trn-comentarios" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Tabela apresentadores -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-hd"><div class="card-title">Detalhamento por apresentador</div></div>
+      <div class="tbl-wrap">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Apresentador</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Sessões</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Avaliações</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Clareza</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Domínio</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Aplicab.</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Duração</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Média</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;white-space:nowrap;">Preparados</th>
+            </tr>
+          </thead>
+          <tbody id="trn-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QR Code info -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Link do formulário · QR Code</div></div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="width:88px;height:88px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="56" height="56" viewBox="0 0 100 100" fill="var(--text2)" opacity=".5">
+            <rect x="10" y="10" width="30" height="30" rx="3" fill="none" stroke="currentColor" stroke-width="5"/>
+            <rect x="20" y="20" width="10" height="10"/>
+            <rect x="60" y="10" width="30" height="30" rx="3" fill="none" stroke="currentColor" stroke-width="5"/>
+            <rect x="70" y="20" width="10" height="10"/>
+            <rect x="10" y="60" width="30" height="30" rx="3" fill="none" stroke="currentColor" stroke-width="5"/>
+            <rect x="20" y="70" width="10" height="10"/>
+            <rect x="60" y="60" width="10" height="10"/><rect x="75" y="60" width="10" height="10"/>
+            <rect x="60" y="75" width="10" height="10"/><rect x="75" y="75" width="10" height="10"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Formulário de avaliação para vendedores</div>
+          <div style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:6px;">Apresente o QR Code ou envie o link no grupo da loja ao final de cada treinamento. O vendedor avalia em 2 minutos pelo celular.</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--blue);">https://rodrigoafranca.github.io/segsat-parvi/Formulario_Treinamento_Segsat.html</div>
+          <div style="margin-top:8px;font-size:10px;color:var(--text3);">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00d084;margin-right:4px;vertical-align:middle;"></span>Respostas chegam automaticamente em tempo real
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-treinamentos -->
 </div><!-- /layout -->
 
 <script>
@@ -1426,7 +1576,8 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores',pracas:'Visão por Praça'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
+  if(page==='treinamentos') trnCarregarDados();
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
   if(page==='estoque') renderEstoque();
 }
@@ -2618,6 +2769,236 @@ window.addEventListener('load', ()=>{
 window.addEventListener('resize', ()=>{
   if(currentPage==='geral') setTimeout(()=>drawLineChart('chart-daily',DAILY),50);
 });
+
+// ============================================================
+// TREINAMENTOS — módulo completo
+// ============================================================
+var TRN_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAkbdcZnRi5znrmqfKqgl1n4mOhrmCIj2d3LZlXcTfHrWdDuM_1v4HmTa91mjM7FGKcQ/exec';
+var trnDados = [];
+
+var TRN_DEMO = [
+  {timestamp:'2026-05-02T10:30:00Z',apresentador:'Lozania Fontes',loja:'AM · Manaus — Centro',nota_clareza:5,nota_apresentador:5,nota_aplic:4,nota_duracao:4,nota_media:4.5,temas:'Seguro prestamista; Garantia estendida; Técnicas de oferta',preparo:'sim',sugestao:'Mais exemplos práticos de contorno de objeções',comentario:'Excelente apresentação!'},
+  {timestamp:'2026-05-02T11:00:00Z',apresentador:'Lozania Fontes',loja:'AM · Manaus — Centro',nota_clareza:4,nota_apresentador:5,nota_aplic:4,nota_duracao:3,nota_media:4.0,temas:'Seguro prestamista; Garantia estendida; Técnicas de oferta',preparo:'sim',sugestao:'',comentario:''},
+  {timestamp:'2026-05-03T14:00:00Z',apresentador:'Clayton Barbosa',loja:'PE · Recife — Boa Viagem',nota_clareza:5,nota_apresentador:4,nota_aplic:5,nota_duracao:4,nota_media:4.5,temas:'Proteção financeira; Contorno de objeções; Pós-venda',preparo:'sim',sugestao:'Scripts prontos para cada produto',comentario:''},
+  {timestamp:'2026-05-03T14:30:00Z',apresentador:'Clayton Barbosa',loja:'PE · Recife — Boa Viagem',nota_clareza:3,nota_apresentador:4,nota_aplic:3,nota_duracao:3,nota_media:3.25,temas:'Proteção financeira; Contorno de objeções',preparo:'parcial',sugestao:'Precisamos de mais tempo para tirar dúvidas',comentario:''},
+  {timestamp:'2026-05-05T09:00:00Z',apresentador:'Jairo Sodré',loja:'BA · Salvador — Iguatemi',nota_clareza:4,nota_apresentador:4,nota_aplic:4,nota_duracao:5,nota_media:4.25,temas:'Seguro de vida; Assistência 24h; Precificação',preparo:'sim',sugestao:'Diferença entre os produtos na prática',comentario:'Muito bom!'},
+  {timestamp:'2026-05-06T15:00:00Z',apresentador:'Paulo Vitor',loja:'PB · João Pessoa — Tambaú',nota_clareza:5,nota_apresentador:5,nota_aplic:5,nota_duracao:4,nota_media:4.75,temas:'Garantia estendida; Técnicas de oferta; Precificação',preparo:'sim',sugestao:'Simulação de vendas ao vivo',comentario:'Melhor treinamento que participei!'},
+  {timestamp:'2026-05-07T10:00:00Z',apresentador:'Rodrigo França',loja:'RN · Natal — Lagoa Nova',nota_clareza:4,nota_apresentador:5,nota_aplic:3,nota_duracao:4,nota_media:4.0,temas:'Seguro prestamista; Proteção financeira',preparo:'parcial',sugestao:'Material de apoio para consulta depois',comentario:''},
+  {timestamp:'2026-05-08T11:00:00Z',apresentador:'Lozania Fontes',loja:'RR · Boa Vista',nota_clareza:5,nota_apresentador:5,nota_aplic:5,nota_duracao:5,nota_media:5.0,temas:'Técnicas de oferta; Contorno de objeções; Pós-venda',preparo:'sim',sugestao:'',comentario:'Perfeito! Muito bem explicado.'},
+  {timestamp:'2026-04-15T10:00:00Z',apresentador:'Clayton Barbosa',loja:'PE · Recife — Caruaru',nota_clareza:4,nota_apresentador:4,nota_aplic:4,nota_duracao:3,nota_media:3.75,temas:'Seguro prestamista; Garantia estendida',preparo:'sim',sugestao:'Scripts prontos',comentario:''},
+  {timestamp:'2026-03-20T09:00:00Z',apresentador:'Jairo Sodré',loja:'BA · Feira de Santana',nota_clareza:3,nota_apresentador:4,nota_aplic:3,nota_duracao:3,nota_media:3.25,temas:'Seguro de vida',preparo:'nao',sugestao:'Mais tempo de treinamento',comentario:''},
+];
+
+function trnFiltrar(){
+  var mes=document.getElementById('trn-f-mes').value;
+  var apr=document.getElementById('trn-f-apresentador').value;
+  var praca=document.getElementById('trn-f-praca').value;
+  return trnDados.filter(function(d){
+    if(mes && !d.timestamp.startsWith(mes)) return false;
+    if(apr && d.apresentador!==apr) return false;
+    if(praca && d.loja.indexOf(praca.split('/')[0].trim())<0) return false;
+    return true;
+  });
+}
+
+function trnMedia(arr,key){
+  var vals=arr.map(function(d){return parseFloat(d[key])||0;}).filter(function(v){return v>0;});
+  if(!vals.length) return null;
+  return vals.reduce(function(a,b){return a+b;},0)/vals.length;
+}
+
+function trnCorNota(n){
+  if(!n) return 'var(--text3)';
+  return n>=4?'#00d084':n>=3?'var(--gold)':'var(--red)';
+}
+
+function trnRenderKPIs(d){
+  var sessoes=new Set(d.map(function(r){return r.timestamp.substring(0,10)+'_'+r.apresentador;})).size;
+  document.getElementById('trn-kpi-sessoes').textContent=sessoes||'0';
+  document.getElementById('trn-kpi-avaliacoes').textContent=d.length||'0';
+  var med=trnMedia(d,'nota_media');
+  document.getElementById('trn-kpi-nota').textContent=med?med.toFixed(1)+' ★':'—';
+  document.getElementById('trn-kpi-nota').style.color=med?trnCorNota(med):'var(--text)';
+  var preps=d.filter(function(r){return r.preparo==='sim';}).length;
+  document.getElementById('trn-kpi-preparo').textContent=d.length?Math.round(preps/d.length*100)+'%':'—';
+}
+
+function trnRenderBars(containerId, lblId, mapFn, d){
+  var grp={};
+  d.forEach(function(r){
+    var k=mapFn(r); if(!k) return;
+    if(!grp[k]) grp[k]={soma:0,cnt:0};
+    if(r.nota_media){grp[k].soma+=parseFloat(r.nota_media);grp[k].cnt++;}
+  });
+  var lista=Object.keys(grp).map(function(k){return{nome:k,v:grp[k].cnt?grp[k].soma/grp[k].cnt:0};}).sort(function(a,b){return b.v-a.v;});
+  document.getElementById(lblId).textContent=lista.length;
+  if(!lista.length){document.getElementById(containerId).innerHTML='<p style="font-size:12px;color:var(--text3);text-align:center;padding:20px 0;">Sem dados</p>';return;}
+  document.getElementById(containerId).innerHTML=lista.map(function(r){
+    var pct=Math.round(r.v/5*100);
+    var cor=trnCorNota(r.v);
+    var nome=r.nome.length>16?r.nome.substring(0,15)+'…':r.nome;
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:11px;">'
+      +'<div style="width:90px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">'+nome+'</div>'
+      +'<div style="flex:1;background:var(--surface2);border-radius:3px;height:10px;overflow:hidden;">'
+      +'<div style="width:'+pct+'%;height:10px;border-radius:3px;background:'+cor+';transition:width .5s;"></div></div>'
+      +'<div style="width:28px;text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:500;color:'+cor+';">'+r.v.toFixed(1)+'</div></div>';
+  }).join('');
+}
+
+function trnRenderChart(d){
+  var svg=document.getElementById('trn-chart-svg');
+  if(!svg) return;
+  var mesesMap={'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+  var byMes={};
+  trnDados.forEach(function(r){
+    var m=r.timestamp.substring(0,7);
+    if(!byMes[m]) byMes[m]={soma:0,cnt:0};
+    if(r.nota_media){byMes[m].soma+=parseFloat(r.nota_media);byMes[m].cnt++;}
+  });
+  var keys=Object.keys(byMes).sort();
+  var vals=keys.map(function(k){return byMes[k].cnt?byMes[k].soma/byMes[k].cnt:null;});
+  var W=svg.clientWidth||560, H=160;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  if(!keys.length){svg.innerHTML='<text x="50%" y="50%" text-anchor="middle" fill="#555d75" font-size="12">Sem dados</text>';return;}
+  var pad={t:16,r:16,b:30,l:32};
+  var iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+  var xStep=keys.length>1?iW/(keys.length-1):iW/2;
+  var yMin=0, yMax=5;
+  function yPx(v){return pad.t+iH*(1-(v-yMin)/(yMax-yMin));}
+  function xPx(i){return pad.l+(keys.length>1?i*xStep:iW/2);}
+  var html='';
+  // Grid lines
+  [1,2,3,4,5].forEach(function(v){
+    var y=Math.round(yPx(v));
+    html+='<line x1="'+pad.l+'" y1="'+y+'" x2="'+(W-pad.r)+'" y2="'+y+'" stroke="#2a2d3a" stroke-width="0.5"/>';
+    html+='<text x="'+(pad.l-4)+'" y="'+(y+4)+'" text-anchor="end" fill="#555d75" font-size="9">'+v+'</text>';
+  });
+  // Area
+  if(vals.length>1){
+    var pts=vals.map(function(v,i){return xPx(i)+','+yPx(v||0);}).join(' ');
+    var area='M '+xPx(0)+','+yPx(yMin)+' L '+vals.map(function(v,i){return xPx(i)+' '+yPx(v||0);}).join(' L ')+' L '+xPx(vals.length-1)+','+yPx(yMin)+' Z';
+    html+='<path d="'+area+'" fill="rgba(77,138,255,0.08)"/>';
+    html+='<polyline points="'+pts+'" fill="none" stroke="#4d8aff" stroke-width="2" stroke-linejoin="round"/>';
+  }
+  // Dots + labels
+  vals.forEach(function(v,i){
+    if(v===null) return;
+    var cx=xPx(i), cy=yPx(v);
+    html+='<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#4d8aff"/>';
+    html+='<text x="'+cx+'" y="'+(cy-8)+'" text-anchor="middle" fill="#9097a8" font-size="10" font-weight="500">'+v.toFixed(1)+'</text>';
+    var lbl=mesesMap[keys[i].substring(5,7)]||keys[i].substring(5,7);
+    html+='<text x="'+cx+'" y="'+(H-8)+'" text-anchor="middle" fill="#555d75" font-size="9">'+lbl+'</text>';
+  });
+  svg.innerHTML=html;
+}
+
+function trnRenderTemas(d){
+  var cont={};
+  d.forEach(function(r){
+    if(!r.temas) return;
+    r.temas.split(';').forEach(function(t){var k=t.trim();if(k)cont[k]=(cont[k]||0)+1;});
+  });
+  var lista=Object.keys(cont).sort(function(a,b){return cont[b]-cont[a];});
+  var max=lista.length?cont[lista[0]]:1;
+  var el=document.getElementById('trn-tag-temas');
+  if(!lista.length){el.innerHTML='<span style="font-size:12px;color:var(--text3);">Sem dados</span>';return;}
+  el.innerHTML=lista.map(function(k){
+    var r=cont[k]/max;
+    var bg=r>0.6?'rgba(0,208,132,.12)':r>0.3?'rgba(245,166,35,.1)':'var(--surface2)';
+    var col=r>0.6?'#00d084':r>0.3?'var(--gold)':'var(--text2)';
+    var bdr=r>0.6?'rgba(0,208,132,.25)':r>0.3?'rgba(245,166,35,.2)':'var(--border2)';
+    return '<span style="font-size:11px;padding:4px 10px;border-radius:20px;background:'+bg+';color:'+col+';border:1px solid '+bdr+';font-weight:500;">'+k+' <b style="opacity:.55">'+cont[k]+'</b></span>';
+  }).join('');
+}
+
+function trnRenderComentarios(d){
+  var com=d.filter(function(r){return r.comentario||r.sugestao;}).slice(-4).reverse();
+  var el=document.getElementById('trn-comentarios');
+  if(!com.length){el.innerHTML='<p style="font-size:12px;color:var(--text3);text-align:center;padding:16px 0;">Nenhuma sugestão registrada ainda</p>';return;}
+  el.innerHTML=com.map(function(r){
+    var dt=new Date(r.timestamp).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    var txt=r.comentario||r.sugestao;
+    return '<div style="background:var(--surface2);border-radius:8px;padding:10px 14px;border-left:2px solid var(--blue);">'
+      +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px;display:flex;gap:12px;font-family:\'DM Mono\',monospace;">'
+      +'<span>'+r.apresentador+'</span><span>'+r.loja+'</span><span>'+dt+'</span></div>'
+      +'<div style="font-size:12px;color:var(--text2);line-height:1.5;">'+txt+'</div></div>';
+  }).join('');
+}
+
+function trnRenderTabela(d){
+  var apr={};
+  d.forEach(function(r){
+    if(!apr[r.apresentador]) apr[r.apresentador]={sess:new Set(),cnt:0,cl:0,pr:0,ap:0,du:0,me:0,prep:0};
+    var a=apr[r.apresentador];
+    a.sess.add(r.timestamp.substring(0,10));
+    a.cnt++;
+    if(r.nota_clareza) a.cl+=parseFloat(r.nota_clareza);
+    if(r.nota_apresentador) a.pr+=parseFloat(r.nota_apresentador);
+    if(r.nota_aplic) a.ap+=parseFloat(r.nota_aplic);
+    if(r.nota_duracao) a.du+=parseFloat(r.nota_duracao);
+    if(r.nota_media) a.me+=parseFloat(r.nota_media);
+    if(r.preparo==='sim') a.prep++;
+  });
+  var rows=Object.keys(apr).map(function(k){
+    var a=apr[k],n=a.cnt||1;
+    return {nome:k,sess:a.sess.size,cnt:a.cnt,cl:a.cl/n,pr:a.pr/n,ap:a.ap/n,du:a.du/n,me:a.me/n,prep:Math.round(a.prep/a.cnt*100)};
+  }).sort(function(a,b){return b.me-a.me;});
+  var tbody=document.getElementById('trn-tbody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sem dados</td></tr>';return;}
+  tbody.innerHTML=rows.map(function(r,i){
+    var cor=trnCorNota(r.me);
+    var prepCls=r.prep>=70?'#00d084':r.prep>=40?'var(--gold)':'var(--red)';
+    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    return '<tr style="border-bottom:1px solid var(--border);">'
+      +'<td style="padding:9px 10px;font-weight:600;color:var(--text);">'+medal+' '+r.nome+'</td>'
+      +'<td style="padding:9px 10px;color:var(--text3);font-family:\'DM Mono\',monospace;">'+r.sess+'</td>'
+      +'<td style="padding:9px 10px;font-family:\'DM Mono\',monospace;">'+r.cnt+'</td>'
+      +'<td style="padding:9px 10px;">'+r.cl.toFixed(1)+'</td>'
+      +'<td style="padding:9px 10px;">'+r.pr.toFixed(1)+'</td>'
+      +'<td style="padding:9px 10px;">'+r.ap.toFixed(1)+'</td>'
+      +'<td style="padding:9px 10px;">'+r.du.toFixed(1)+'</td>'
+      +'<td style="padding:9px 10px;font-weight:700;font-family:\'DM Mono\',monospace;color:'+cor+';">'+r.me.toFixed(2)+'</td>'
+      +'<td style="padding:9px 10px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:'+prepCls+'22;color:'+prepCls+';">'+r.prep+'%</span></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function trnRenderTudo(d){
+  trnRenderKPIs(d);
+  trnRenderBars('trn-bars-apr','trn-lbl-apr',function(r){return r.apresentador;},d);
+  trnRenderBars('trn-bars-praca','trn-lbl-praca',function(r){return r.loja?r.loja.split('·')[0].trim():'';},d);
+  trnRenderChart(d);
+  trnRenderTemas(d);
+  trnRenderComentarios(d);
+  trnRenderTabela(d);
+}
+
+function trnAplicarFiltros(){trnRenderTudo(trnFiltrar());}
+
+function trnCarregarDados(){
+  var el=document.getElementById('trn-last-update');
+  if(!el) return;
+  el.textContent='Carregando...';
+  if(TRN_APPS_SCRIPT_URL==='https://script.google.com/macros/s/AKfycbwAkbdcZnRi5znrmqfKqgl1n4mOhrmCIj2d3LZlXcTfHrWdDuM_1v4HmTa91mjM7FGKcQ/exec'){
+    trnDados=TRN_DEMO;
+    el.textContent='Demo · '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    trnRenderTudo(trnFiltrar());
+    // Mostrar badge NEW no menu
+    var badge=document.getElementById('badge-treinamentos');
+    if(badge) badge.style.display='';
+    return;
+  }
+  fetch(TRN_APPS_SCRIPT_URL+'?sheet=treinamentos')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      trnDados=Array.isArray(data)?data:[];
+      el.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      trnRenderTudo(trnFiltrar());
+    })
+    .catch(function(){
+      el.textContent='Erro ao carregar';
+    });
+}
 </script>
 </body>
 </html>

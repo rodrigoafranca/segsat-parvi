@@ -677,11 +677,11 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px">
         <button id="tab-est-mes" onclick="setEstoqueAba('mes')" style="padding:6px 18px;border-radius:7px;border:none;background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 1px 4px rgba(0,0,0,0.15)">📅 Mês atual</button>
-        <button id="tab-est-hist" onclick="setEstoqueAba('hist')" style="padding:6px 18px;border-radius:7px;border:none;background:transparent;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📊 Histórico 3 meses</button>
+        <button id="tab-est-hist" onclick="setEstoqueAba('hist')" style="padding:6px 18px;border-radius:7px;border:none;background:transparent;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📊 Acumulado</button>
       </div>
       <div id="estoque-hist-info" style="font-size:11px;color:var(--text3)">Médias baseadas no mês atual</div>
       <button onclick="carregarEstoqueHistorico()" id="btn-hist-estoque" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="if(!_histCarregando)this.style.borderColor='var(--border2)',this.style.color='var(--text2)'">
-        <span>🔄</span> Calcular Histórico
+        <span>🔄</span> Calcular Acumulado
       </button>
     </div>
     <!-- KPIs -->
@@ -793,30 +793,39 @@ let ALL_STORES=[], DAILY=[], PLANOS=[], STORE_PLANS={}, META={};
 let ESTOQUE = [];
 
 function renderEstoque(filtroUFs) {
-  const isHist = _estoqueAbaAtual === 'hist';
+  const isAcum = _estoqueAbaAtual === 'hist';
   const dados = filtroUFs ? ESTOQUE.filter(e=>filtroUFs.includes(e.uf)) : ESTOQUE;
   if(!dados.length){
     document.getElementById('estoque-kpis').innerHTML='<div style="padding:20px;color:var(--text3)">Sem dados de estoque. Verifique a aba ESTOQUE na planilha.</div>';
     return;
   }
-  // Para aba histórico usa totalEnviadoAcum, para mês atual usa totalEnviado
-  const getEnviado = e => isHist ? (e.totalEnviadoAcum||e.totalEnviado) : e.totalEnviado;
-  const getVendas  = e => isHist ? (e.totalVendidoAcum||e.totalVendido) : (e.vendMesAtual||e.totalVendido||0);
 
-  const tEnviado=dados.reduce((a,e)=>a+getEnviado(e),0);
-  const tVendido=dados.reduce((a,e)=>a+e.totalVendido,0);
-  const tAtual=dados.reduce((a,e)=>a+e.estoqueAtual,0);
-  const tSugestao=dados.reduce((a,e)=>a+e.sugestaoEnvio,0);
-  const nCritico=dados.filter(e=>e.status==='critico').length;
-  const nIdeal=dados.filter(e=>e.status==='ideal').length;
-  const nExcesso=dados.filter(e=>e.status==='excesso').length;
+  // MÊS ATUAL: enviado do mês, ativado mês anterior, vendido mês anterior, estoque = enviado - vendido ant
+  // ACUMULADO: tudo acumulado desde janeiro
+  const getEnviado  = e => isAcum ? (e.totalEnviadoAcum||e.totalEnviado) : e.totalEnviado;
+  const getAtivado  = e => isAcum ? (e.utilizados||0) : (e.ativadoMesAnt||e.utilizados||0);
+  const getVendido  = e => isAcum ? (e.totalVendidoAcum||e.totalVendido||0) : (e.vendasAnt||e.vendMesAtual||0);
+  const getSaldo    = e => isAcum ? (e.saldoAcum!=null?e.saldoAcum:e.saldo||0) : e.saldo||0;
+
+  const tEnviado = dados.reduce((a,e)=>a+getEnviado(e),0);
+  const tAtivado = dados.reduce((a,e)=>a+getAtivado(e),0);
+  const tVendido = dados.reduce((a,e)=>a+getVendido(e),0);
+  const tSaldo   = dados.reduce((a,e)=>a+getSaldo(e),0);
+  const tSugestao = dados.reduce((a,e)=>a+e.sugestaoEnvio,0);
+  const nCritico  = dados.filter(e=>e.status==='critico').length;
+  const nIdeal    = dados.filter(e=>e.status==='ideal').length;
+  const nExcesso  = dados.filter(e=>e.status==='excesso').length;
+  const lblEnv   = isAcum ? 'Total Enviado (Acum.)' : `Enviado · ${MES_SELECIONADO||'Mês'}`;
+  const lblAtiv  = isAcum ? 'Total Ativado (Acum.)' : 'Ativado · Mês Ant.';
+  const lblVend  = isAcum ? 'Total Vendido (Acum.)' : 'Vendido · Mês Ant.';
+  const lblSaldo = isAcum ? 'Saldo Acumulado' : 'Estoque Atual';
   document.getElementById('estoque-kpis').innerHTML=`
-    <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${tEnviado}</div><div class="kpi-lbl">Total Enviado</div><div class="kpi-accent b"></div></div>
-    <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${tVendido}</div><div class="kpi-lbl">Total Ativado</div><div class="kpi-accent g"></div></div>
-    <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--gold)">${tAtual}</div><div class="kpi-lbl">Estoque Atual</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${tEnviado}</div><div class="kpi-lbl">${lblEnv}</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">🔌</div><div class="kpi-val" style="color:var(--purple)">${tAtivado}</div><div class="kpi-lbl">${lblAtiv}</div><div class="kpi-accent p"></div></div>
+    <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${tVendido}</div><div class="kpi-lbl">${lblVend}</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:${tSaldo<0?'var(--red)':'var(--gold)'}">${tSaldo}</div><div class="kpi-lbl">${lblSaldo}</div><div class="kpi-accent gold"></div></div>
     <div class="kpi"><div class="kpi-ico">🔴</div><div class="kpi-val" style="color:var(--red)">${nCritico}</div><div class="kpi-lbl">Críticas</div><div class="kpi-accent r"></div></div>
     <div class="kpi"><div class="kpi-ico">🟡</div><div class="kpi-val" style="color:var(--gold)">${nIdeal}</div><div class="kpi-lbl">Ideal</div><div class="kpi-accent o"></div></div>
-    <div class="kpi"><div class="kpi-ico">🔵</div><div class="kpi-val" style="color:var(--blue)">${nExcesso}</div><div class="kpi-lbl">Excesso</div><div class="kpi-accent b"></div></div>
     <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:var(--orange)">${tSugestao}</div><div class="kpi-lbl">Sugestão Próx. Mês</div><div class="kpi-accent o"></div></div>`;
   // Críticas
   const criticas=dados.filter(e=>e.status==='critico').sort((a,b)=>a.cobertura-b.cobertura);
@@ -908,10 +917,10 @@ function setEstoqueAba(aba) {
     // Verifica se já carregou histórico
     const temHist = ESTOQUE.some(e=>e.temHistorico);
     if(!temHist) {
-      if(info) info.textContent = 'Clique em "Calcular Histórico" para carregar os 3 meses anteriores';
+      if(info) info.textContent = 'Clique em "Calcular Acumulado" para carregar os 3 meses anteriores';
       carregarEstoqueHistorico();
     } else {
-      if(info) info.textContent = 'Médias calculadas com base nos últimos 3 meses';
+      if(info) info.textContent = 'Dados acumulados carregados';
       renderEstoque();
     }
   }
@@ -942,7 +951,7 @@ async function carregarEstoqueHistorico() {
       });
     }
     if(btn){ btn.innerHTML='<span>✅</span> Histórico carregado!'; btn.style.borderColor='var(--green)'; btn.style.color='var(--green)'; }
-    if(info) info.textContent = `✅ Médias calculadas com base nos últimos 3 meses · ${json.geradoEm ? new Date(json.geradoEm).toLocaleTimeString('pt-BR') : ''}`;
+    if(info) info.textContent = `✅ Dados acumulados carregados · ${json.geradoEm ? new Date(json.geradoEm).toLocaleTimeString('pt-BR') : ''}`;
     renderEstoque();
     setTimeout(()=>{
       if(btn){ btn.innerHTML='<span>🔄</span> Recalcular Histórico'; btn.disabled=false; btn.style.borderColor=''; btn.style.color=''; }
@@ -962,7 +971,7 @@ function _renderEstoqueTable(dados){
   const sc=s=>s==='critico'?'var(--red)':s==='ideal'?'var(--gold)':'var(--blue)';
   const TH='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border)';
   const TD='padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
-  const isH = _estoqueAbaAtual==='hist';
+  const isH = _estoqueAbaAtual==='hist'; // isAcum
   document.getElementById('estoque-table').innerHTML=`
   <colgroup>
     <col style="width:28px"><col style="width:26%"><col style="width:38px">
@@ -987,7 +996,7 @@ function _renderEstoqueTable(dados){
     const enviado = isH?(e.totalEnviadoAcum||e.totalEnviado):e.totalEnviado;
     const vendas  = isH?(e.totalVendidoAcum||e.totalVendido||0):(e.vendMesAtual||e.totalVendido||0);
     const util    = e.utilizados||0;
-    const saldo   = e.saldo!=null ? e.saldo : (enviado-util);
+    const saldo   = isH ? (e.saldoAcum!=null?e.saldoAcum:e.saldo||0) : (e.saldo!=null?e.saldo:(enviado-util));
     const saldoCor= saldo<0?'var(--red)':'var(--gold)';
     return`<tr>
     <td style="${TD};text-align:center;color:var(--text3)">${i+1}</td>

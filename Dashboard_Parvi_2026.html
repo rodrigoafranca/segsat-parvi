@@ -803,9 +803,10 @@ function renderEstoque(filtroUFs) {
   // MÊS ATUAL: enviado do mês, ativado mês anterior, vendido mês anterior, estoque = enviado - vendido ant
   // ACUMULADO: tudo acumulado desde janeiro
   const getEnviado  = e => isAcum ? (e.totalEnviadoAcum||e.totalEnviado) : e.totalEnviado;
-  const getAtivado  = e => isAcum ? (e.utilizados||0) : (e.ativadoMesAnt||e.utilizados||0);
-  const getVendido  = e => isAcum ? (e.totalVendidoAcum||e.totalVendido||0) : (e.vendasAnt||e.vendMesAtual||0);
-  const getSaldo    = e => isAcum ? (e.saldoAcum!=null?e.saldoAcum:e.saldo||0) : e.saldo||0;
+  const getAtivado  = e => isAcum ? (e.utilizados||0) : (e.ativadoMesAnt||0);
+  const getVendido  = e => isAcum ? (e.totalVendidoAcum||e.totalVendido||0) : (e.vendasAnt||0);
+  // Estoque Atual (Mês) = enviado mês - vendido mês ant
+  const getSaldo    = e => isAcum ? (e.saldoAcum!=null?e.saldoAcum:e.saldo||0) : ((e.totalEnviado||0)-(e.vendasAnt||0));
 
   const tEnviado = dados.reduce((a,e)=>a+getEnviado(e),0);
   const tAtivado = dados.reduce((a,e)=>a+getAtivado(e),0);
@@ -944,8 +945,24 @@ async function carregarEstoqueHistorico() {
     if(json.estoque && json.estoque.length) {
       const histMap = {};
       json.estoque.forEach(e => { histMap[e.loja] = e; });
-      ESTOQUE = ESTOQUE.map(e => histMap[e.loja] ? {...e, ...histMap[e.loja], temHistorico:true} : e);
-      // Adiciona lojas que só aparecem no estoque (sem vendas no mês)
+      ESTOQUE = ESTOQUE.map(e => {
+        if(!histMap[e.loja]) return e;
+        const h = histMap[e.loja];
+        // Preserva campos do mês atual, adiciona apenas os campos acumulados
+        return {
+          ...e,
+          totalEnviadoAcum: h.totalEnviadoAcum || e.totalEnviadoAcum || e.totalEnviado,
+          totalVendidoAcum: h.totalVendidoAcum || e.totalVendidoAcum || e.totalVendido,
+          mediaVendas:      h.mediaVendas,
+          mediaVendasDia:   h.mediaVendasDia,
+          cobertura:        h.cobertura,
+          status:           h.status,
+          sugestaoEnvio:    h.sugestaoEnvio,
+          temHistorico:     true
+          // totalEnviado, ativadoMesAnt, vendasAnt permanecem do mês atual
+        };
+      });
+      // Adiciona lojas que só aparecem no histórico
       json.estoque.forEach(e => {
         if(!ESTOQUE.find(ex=>ex.loja===e.loja)) ESTOQUE.push({...e, temHistorico:true});
       });

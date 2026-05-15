@@ -1021,7 +1021,7 @@ function _renderEstoqueTable(dados){
     const cor=sc(e.status);
     const enviado = isH?(e.totalEnviadoAcum||e.totalEnviado||0):(e.totalEnviado||0);
     const vendas  = isH?(e.totalVendidoAcum||e.totalVendido||0):(e.vendasAnt||e.vendMesAtual||e.totalVendido||0);
-    const util    = e.utilizados||0;
+    const util    = isH?(e.utilizados||0):(e.ativadoMesAnt||0);
     const saldo   = isH ? (e.saldoAcum!=null?e.saldoAcum:(e.saldo||0)) : ((e.totalEnviado||0)-(e.vendasAnt||0));
     const saldoCor= saldo<0?'var(--red)':'var(--gold)';
     return`<tr>

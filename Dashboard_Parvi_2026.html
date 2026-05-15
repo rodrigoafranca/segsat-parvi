@@ -816,13 +816,13 @@ function renderEstoque(filtroUFs) {
   const nIdeal    = dados.filter(e=>e.status==='ideal').length;
   const nExcesso  = dados.filter(e=>e.status==='excesso').length;
   const lblEnv   = isAcum ? 'Total Enviado (Acum.)' : `Enviado · ${MES_SELECIONADO||'Mês'}`;
-  const lblAtiv  = isAcum ? 'Total Ativado (Acum.)' : 'Ativado · Mês Ant.';
   const lblVend  = isAcum ? 'Total Vendido (Acum.)' : 'Vendido · Mês Ant.';
+  const lblAtiv  = isAcum ? 'Total Ativado (Acum.)' : 'Ativado · Mês Ant.';
   const lblSaldo = isAcum ? 'Saldo Acumulado' : 'Estoque Atual';
   document.getElementById('estoque-kpis').innerHTML=`
     <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${tEnviado}</div><div class="kpi-lbl">${lblEnv}</div><div class="kpi-accent b"></div></div>
-    <div class="kpi"><div class="kpi-ico">🔌</div><div class="kpi-val" style="color:var(--purple)">${tAtivado}</div><div class="kpi-lbl">${lblAtiv}</div><div class="kpi-accent p"></div></div>
     <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${tVendido}</div><div class="kpi-lbl">${lblVend}</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">🔌</div><div class="kpi-val" style="color:var(--purple)">${tAtivado}</div><div class="kpi-lbl">${lblAtiv}</div><div class="kpi-accent p"></div></div>
     <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:${tSaldo<0?'var(--red)':'var(--gold)'}">${tSaldo}</div><div class="kpi-lbl">${lblSaldo}</div><div class="kpi-accent gold"></div></div>
     <div class="kpi"><div class="kpi-ico">🔴</div><div class="kpi-val" style="color:var(--red)">${nCritico}</div><div class="kpi-lbl">Críticas</div><div class="kpi-accent r"></div></div>
     <div class="kpi"><div class="kpi-ico">🟡</div><div class="kpi-val" style="color:var(--gold)">${nIdeal}</div><div class="kpi-lbl">Ideal</div><div class="kpi-accent o"></div></div>
@@ -997,7 +997,7 @@ function _renderEstoqueTable(dados){
   const sc=s=>s==='critico'?'var(--red)':s==='ideal'?'var(--gold)':'var(--blue)';
   const TH='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border)';
   const TD='padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
-  const isH = _estoqueAbaAtual==='hist'; // isAcum
+  const isH = _estoqueAbaAtual==='hist';
   document.getElementById('estoque-table').innerHTML=`
   <colgroup>
     <col style="width:28px"><col style="width:26%"><col style="width:38px">
@@ -1020,7 +1020,7 @@ function _renderEstoqueTable(dados){
   <tbody>${sorted.map((e,i)=>{
     const cor=sc(e.status);
     const enviado = isH?(e.totalEnviadoAcum||e.totalEnviado||0):(e.totalEnviado||0);
-    const vendas  = isH?(e.totalVendidoAcum||e.totalVendido||0):(e.vendMesAtual||e.totalVendido||0);
+    const vendas  = isH?(e.totalVendidoAcum||e.totalVendido||0):(e.vendasAnt||e.vendMesAtual||e.totalVendido||0);
     const util    = e.utilizados||0;
     const saldo   = isH ? (e.saldoAcum!=null?e.saldoAcum:(e.saldo||0)) : ((e.totalEnviado||0)-(e.vendasAnt||0));
     const saldoCor= saldo<0?'var(--red)':'var(--gold)';

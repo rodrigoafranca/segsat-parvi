@@ -488,6 +488,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
   <button class="nav-item" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
   <button class="nav-item" onclick="navTo('estoque',this)"><span class="ni">📦</span> Estoque</button>
+  <button class="nav-item" onclick="navTo('treinamentos',this)"><span class="ni">🎓</span> Treinamentos</button>
   <div class="nav-section">Praças</div>
   <button class="nav-item" onclick="navTo('pracas',this);setEstado('PE')"><span class="ni">📍</span> Pernambuco</button>
   <button class="nav-item" onclick="navTo('pracas',this);setEstado('AM')"><span class="ni">📍</span> AM / RR</button>
@@ -727,8 +728,55 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     <div id="comissoes-content"></div>
   </div>
 
-  <!-- PAGE: PRACAS -->
-  <div class="page" id="page-pracas">
+  <!-- PAGE: TREINAMENTOS -->
+  <div class="page" id="page-treinamentos">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="trn-filtro-mes" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          <option value="">Todos os meses</option>
+        </select>
+        <select id="trn-filtro-apres" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          <option value="">Todos os apresentadores</option>
+          <option>Lozania Fontes</option>
+          <option>Jairo Sodré</option>
+          <option>Clayton Barbosa</option>
+          <option>Paulo Vitor</option>
+          <option>Rodrigo França</option>
+        </select>
+        <select id="trn-filtro-praca" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          <option value="">Todas as praças</option>
+          <option>Pernambuco</option><option>AM / RR</option><option>BA / SE</option><option>PB / RN</option><option>MA / PA</option>
+        </select>
+      </div>
+      <a href="https://rodrigoafranca.github.io/segsat-parvi/Formulario_Treinamento_Segsat.html" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:var(--blue);color:#fff;font-size:12px;font-weight:600;text-decoration:none">
+        📋 Formulário de Avaliação
+      </a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row" id="trn-kpis" style="margin-bottom:14px"></div>
+
+    <!-- Notas por apresentador + Temas -->
+    <div class="g2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⭐ Nota por Apresentador</div><div class="card-sub">Média das avaliações recebidas</div></div>
+        <div id="trn-chart-apres"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📚 Temas mais Avaliados</div><div class="card-sub">Frequência por tema abordado</div></div>
+        <div id="trn-chart-temas"></div>
+      </div>
+    </div>
+
+    <!-- Tabela detalhada -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📋 Avaliações Detalhadas</div><div class="card-sub">Todas as respostas do formulário</div></div>
+      <div class="tbl-wrap"><table id="trn-table"></table></div>
+    </div>
+  </div>
+  <!-- /page-treinamentos -->
+
+
     <div class="state-tabs">
       <button class="state-tab active" onclick="setEstado('PE')">Pernambuco</button>
       <button class="state-tab" onclick="setEstado('AM')">AM / RR</button>
@@ -1047,6 +1095,118 @@ function filtrarEstoque(){
 
 // ── DROPDOWN FILTRO LOJAS POR MARCA ──
 const _ddAberto = {};
+
+// ============================================================
+// MÓDULO TREINAMENTOS
+// ============================================================
+let TRN_DADOS = [];
+
+async function trnCarregarDados() {
+  const kpis = document.getElementById('trn-kpis');
+  if(kpis) kpis.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">⏳ Carregando avaliações...</div>';
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=treinamentos`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
+    TRN_DADOS = Array.isArray(json.treinamentos) ? json.treinamentos : (Array.isArray(json) ? json : []);
+    const meses = [...new Set(TRN_DADOS.map(r=>r.mes||r.mes_ano||'').filter(Boolean))].sort();
+    const selMes = document.getElementById('trn-filtro-mes');
+    if(selMes) selMes.innerHTML = '<option value="">Todos os meses</option>' + meses.map(m=>`<option>${m}</option>`).join('');
+    trnRenderizar();
+  } catch(e) {
+    if(kpis) kpis.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px">Erro ao carregar: ${e.message}</div>`;
+  }
+}
+
+function trnFiltrar() {
+  const mes   = (document.getElementById('trn-filtro-mes')?.value||'').trim();
+  const apres = (document.getElementById('trn-filtro-apres')?.value||'').trim();
+  const praca = (document.getElementById('trn-filtro-praca')?.value||'').trim();
+  const UF_PRACA = {'Pernambuco':['PE'],'AM / RR':['AM','RR'],'BA / SE':['BA','SE'],'PB / RN':['PB','RN'],'MA / PA':['MA','PA']};
+  return TRN_DADOS.filter(r => {
+    if(mes   && (r.mes||r.mes_ano||'') !== mes) return false;
+    if(apres && (r.apresentador||'') !== apres) return false;
+    if(praca && !(UF_PRACA[praca]||[]).includes(r.uf||'')) return false;
+    return true;
+  });
+}
+
+function trnRenderizar() {
+  const dados = trnFiltrar();
+  const TH = 'font-size:10px;font-weight:700;text-transform:uppercase;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border);color:var(--text2)';
+  const TD = 'padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
+  const total = dados.length;
+  const medias = dados.map(r=>parseFloat(r.nota_media||r.nota_m_dia||0)).filter(v=>v>0);
+  const notaMedia = medias.length ? (medias.reduce((a,b)=>a+b,0)/medias.length).toFixed(1) : '—';
+  const preparados = dados.filter(r=>String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('sim')).length;
+  const pctPrep = total ? Math.round((preparados/total)*100) : 0;
+  const apresSet = new Set(dados.map(r=>r.apresentador||'').filter(Boolean));
+  const kpiEl = document.getElementById('trn-kpis');
+  if(kpiEl) kpiEl.innerHTML = `
+    <div class="kpi"><div class="kpi-ico">🎓</div><div class="kpi-val" style="color:var(--blue)">${total}</div><div class="kpi-lbl">Avaliações</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">⭐</div><div class="kpi-val" style="color:var(--gold)">${notaMedia}</div><div class="kpi-lbl">Nota Média</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${pctPrep}%</div><div class="kpi-lbl">Se Sentem Preparados</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">👤</div><div class="kpi-val" style="color:var(--purple)">${apresSet.size}</div><div class="kpi-lbl">Apresentadores Avaliados</div><div class="kpi-accent p"></div></div>`;
+  const APRES = ['Lozania Fontes','Jairo Sodré','Clayton Barbosa','Paulo Vitor','Rodrigo França'];
+  const apresEl = document.getElementById('trn-chart-apres');
+  if(apresEl) apresEl.innerHTML = APRES.map(a => {
+    const rows = dados.filter(r=>(r.apresentador||'')===a);
+    const ns = rows.map(r=>parseFloat(r.nota_media||r.nota_m_dia||0)).filter(v=>v>0);
+    const med = ns.length ? (ns.reduce((x,y)=>x+y,0)/ns.length) : 0;
+    const cor = med>=8?'var(--green)':med>=6?'var(--gold)':'var(--red)';
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--text);font-weight:500">${a}</span>
+        <span style="color:${cor};font-weight:700">${med?med.toFixed(1):'—'} <span style="color:var(--text3);font-weight:400">(${rows.length})</span></span>
+      </div>
+      <div style="height:6px;background:var(--border2);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${(med/10)*100}%;background:${cor};border-radius:99px"></div>
+      </div></div>`;
+  }).join('');
+  const TEMAS = ['Autosegsat','Segsat Family','Livre','Técnica de ofertar','Contorno de objeções','Precificações'];
+  const temasEl = document.getElementById('trn-chart-temas');
+  if(temasEl) {
+    const ct = {};
+    dados.forEach(r=>{ const t=String(r.temas_abordados||r.temas||''); TEMAS.forEach(tm=>{ if(t.toLowerCase().includes(tm.toLowerCase())) ct[tm]=(ct[tm]||0)+1; }); });
+    const maxT = Math.max(...Object.values(ct),1);
+    temasEl.innerHTML = TEMAS.map(tm=>`<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--text)">${tm}</span><span style="color:var(--blue);font-weight:600">${ct[tm]||0}</span>
+      </div>
+      <div style="height:5px;background:var(--border2);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${((ct[tm]||0)/maxT)*100}%;background:var(--blue);border-radius:99px"></div>
+      </div></div>`).join('');
+  }
+  const tbl = document.getElementById('trn-table');
+  if(tbl) {
+    if(!dados.length){ tbl.innerHTML='<tr><td style="padding:20px;color:var(--text3);text-align:center">Nenhuma avaliação encontrada — acesse o formulário para coletar avaliações.</td></tr>'; return; }
+    tbl.innerHTML = `<thead><tr>
+      <th style="${TH};text-align:left">Data</th>
+      <th style="${TH};text-align:left">Apresentador</th>
+      <th style="${TH};text-align:left">Loja</th>
+      <th style="${TH};text-align:center">Nota</th>
+      <th style="${TH};text-align:center">Preparado?</th>
+      <th style="${TH};text-align:left">Temas</th>
+      <th style="${TH};text-align:left">Sugestão</th>
+    </tr></thead><tbody>${dados.map(r=>{
+      const nota=parseFloat(r.nota_media||r.nota_m_dia||0);
+      const cor=nota>=8?'var(--green)':nota>=6?'var(--gold)':'var(--red)';
+      const sim=String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('sim');
+      const data=r.timestamp?new Date(r.timestamp).toLocaleDateString('pt-BR'):(r.data||'');
+      return `<tr>
+        <td style="${TD};color:var(--text3)">${data}</td>
+        <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
+        <td style="${TD}">${r.loja||'—'}</td>
+        <td style="${TD};text-align:center;font-weight:700;color:${cor}">${nota?nota.toFixed(1):'—'}</td>
+        <td style="${TD};text-align:center"><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${sim?'rgba(100,204,50,0.1)':'rgba(226,75,74,0.1)'};color:${sim?'var(--green)':'var(--red)'}">${sim?'✅ Sim':'❌ Não'}</span></td>
+        <td style="${TD};font-size:11px;color:var(--text2)">${r.temas_abordados||r.temas||'—'}</td>
+        <td style="${TD};font-size:11px;color:var(--text3)">${r.sugestao||r.sugest_o||'—'}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+  }
+}
+
 const _ddSelecionadas = {};
 
 function toggleDDLoja(marca) {
@@ -1494,9 +1654,10 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores',pracas:'Visão por Praça'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
   if(page==='estoque') renderEstoque();
+  if(page==='treinamentos') trnCarregarDados();
 }
 
 // ============================================================

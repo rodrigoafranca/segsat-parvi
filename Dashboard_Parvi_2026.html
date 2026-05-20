@@ -773,6 +773,31 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
       <div class="card-hd"><div class="card-title">📋 Avaliações Detalhadas</div><div class="card-sub">Todas as respostas do formulário</div></div>
       <div class="tbl-wrap"><table id="trn-table"></table></div>
     </div>
+
+    <!-- Card Treinamentos por Loja -->
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="card-title">🏪 Treinamentos por Loja</div><div class="card-sub">3+ avaliações no mesmo dia = treinamento realizado · Reciclagem a cada 90 dias</div></div>
+        <div style="display:flex;gap:6px">
+          <button id="trn-loja-tab-todas"  onclick="trnLojaFiltrar('todas')"  style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--blue);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Todas</button>
+          <button id="trn-loja-tab-ok"     onclick="trnLojaFiltrar('ok')"     style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Treinadas</button>
+          <button id="trn-loja-tab-alerta" onclick="trnLojaFiltrar('alerta')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">⚠️ Alerta</button>
+          <button id="trn-loja-tab-vencido" onclick="trnLojaFiltrar('vencido')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔴 Vencidas</button>
+          <button id="trn-loja-tab-nunca"  onclick="trnLojaFiltrar('nunca')"  style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">⚫ Sem registro</button>
+        </div>
+      </div>
+      <!-- KPIs -->
+      <div id="trn-loja-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px"></div>
+      <!-- Legenda -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text3)">
+        <span><span style="color:var(--green);font-weight:600">Verde</span> &lt; 60 dias</span>
+        <span><span style="color:var(--gold);font-weight:600">Amarelo</span> 60–90 dias</span>
+        <span><span style="color:var(--red);font-weight:600">Vermelho</span> &gt; 90 dias</span>
+        <span><span style="color:var(--text3);font-weight:600">Cinza</span> Nunca treinada</span>
+      </div>
+      <!-- Lista -->
+      <div id="trn-loja-lista"></div>
+    </div>
   </div>
   <!-- /page-treinamentos -->
 
@@ -1094,7 +1119,125 @@ function filtrarEstoque(){
   _renderEstoqueTable(_estoqueDataAtual.filter(e=>(!s||e.loja.toLowerCase().includes(s)||e.uf.toLowerCase().includes(s))&&(!st||e.status===st)));
 }
 
-// ── DROPDOWN FILTRO LOJAS POR MARCA ──
+
+// ── TREINAMENTOS POR LOJA ────────────────────────────────────
+let _trnLojaStatus = 'todas';
+
+function trnCalcularTreinamentosPorLoja(dados) {
+  // Agrupa avaliações por loja + data (dia)
+  const porLojaData = {};
+  dados.forEach(function(r) {
+    const loja = r.loja || '—';
+    if(!loja || loja==='—') return;
+    let dataStr = '';
+    if(r.timestamp) {
+      const d = new Date(r.timestamp);
+      dataStr = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    } else if(r.data) { dataStr = r.data; }
+    if(!dataStr) return;
+    const key = loja + '||' + dataStr;
+    if(!porLojaData[key]) porLojaData[key] = { loja, data: dataStr, count: 0 };
+    porLojaData[key].count++;
+  });
+
+  // Sessões com 3+ avaliações = treinamento realizado
+  const treinamentosPorLoja = {}; // loja → [datas de treinamento]
+  Object.values(porLojaData).forEach(function(s) {
+    if(s.count >= 3) {
+      if(!treinamentosPorLoja[s.loja]) treinamentosPorLoja[s.loja] = [];
+      treinamentosPorLoja[s.loja].push(s.data);
+    }
+  });
+
+  const hoje = new Date();
+  hoje.setHours(0,0,0,0);
+
+  // Todas as lojas conhecidas
+  const todasLojas = (window.ALL_STORES||[]).length
+    ? [...new Set((window.ALL_STORES||[]).map(s=>s.loja).filter(Boolean))]
+    : [...new Set(dados.map(r=>r.loja||'').filter(Boolean))];
+
+  return todasLojas.map(function(loja) {
+    const treinos = (treinamentosPorLoja[loja]||[]).sort();
+    const ultimaData = treinos.length ? treinos[treinos.length-1] : null;
+    let diasDesde = null, status = 'nunca';
+    if(ultimaData) {
+      const d = new Date(ultimaData);
+      diasDesde = Math.floor((hoje - d) / 86400000);
+      status = diasDesde < 60 ? 'ok' : diasDesde <= 90 ? 'alerta' : 'vencido';
+    }
+    const marca = (window.ALL_STORES||[]).find(s=>s.loja===loja)?.marca || loja.split(' ')[0];
+    const uf    = (window.ALL_STORES||[]).find(s=>s.loja===loja)?.uf || '';
+    return { loja, marca, uf, ultimaData, diasDesde, status, totalTreinos: treinos.length };
+  }).sort(function(a,b) {
+    const ord = { vencido:0, nunca:1, alerta:2, ok:3 };
+    return (ord[a.status]||0) - (ord[b.status]||0) || a.loja.localeCompare(b.loja);
+  });
+}
+
+function trnLojaFiltrar(status) {
+  _trnLojaStatus = status;
+  // Atualiza botões
+  ['todas','ok','alerta','vencido','nunca'].forEach(function(s) {
+    const btn = document.getElementById('trn-loja-tab-'+s);
+    if(!btn) return;
+    btn.style.background = s===status ? 'var(--blue)' : 'var(--surface2)';
+    btn.style.color      = s===status ? '#fff' : 'var(--text2)';
+  });
+  trnRenderizarLoja();
+}
+
+function trnRenderizarLoja() {
+  const dados = trnFiltrar();
+  const lojas = trnCalcularTreinamentosPorLoja(dados);
+
+  const nOk      = lojas.filter(l=>l.status==='ok').length;
+  const nAlerta  = lojas.filter(l=>l.status==='alerta').length;
+  const nVencido = lojas.filter(l=>l.status==='vencido').length;
+  const nNunca   = lojas.filter(l=>l.status==='nunca').length;
+  const total    = lojas.length;
+
+  const kpisEl = document.getElementById('trn-loja-kpis');
+  if(kpisEl) kpisEl.innerHTML = `
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px"><div style="font-size:20px;font-weight:500;color:var(--green)">${nOk}</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:2px">Treinadas &lt;60d</div></div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px"><div style="font-size:20px;font-weight:500;color:var(--gold)">${nAlerta}</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:2px">Alerta 60–90d</div></div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px"><div style="font-size:20px;font-weight:500;color:var(--red)">${nVencido}</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:2px">Vencidas &gt;90d</div></div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px"><div style="font-size:20px;font-weight:500;color:var(--text3)">${nNunca}</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:2px">Sem registro</div></div>`;
+
+  const filtradas = _trnLojaStatus === 'todas' ? lojas : lojas.filter(l=>l.status===_trnLojaStatus);
+
+  const corStatus = { ok:'var(--green)', alerta:'var(--gold)', vencido:'var(--red)', nunca:'var(--text3)' };
+  const labelStatus = { ok:'ok', alerta:'alerta', vencido:'vencido', nunca:'sem registro' };
+  const bgStatus = { ok:'rgba(100,204,50,0.1)', alerta:'rgba(245,166,35,0.12)', vencido:'rgba(226,75,74,0.1)', nunca:'var(--surface2)' };
+
+  const listaEl = document.getElementById('trn-loja-lista');
+  if(!listaEl) return;
+
+  if(!filtradas.length) { listaEl.innerHTML='<div style="padding:16px;color:var(--text3);text-align:center">Nenhuma loja encontrada</div>'; return; }
+
+  listaEl.innerHTML = filtradas.map(function(l) {
+    const pct = l.diasDesde !== null ? Math.min(100, Math.round((l.diasDesde/90)*100)) : 100;
+    const cor  = corStatus[l.status];
+    const dataFmt = l.ultimaData
+      ? (function(){ const p=l.ultimaData.split('-'); return (p[2]||'')+'/'+(p[1]||'')+'/'+(p[0]||''); })()
+      : '—';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);margin-bottom:5px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${l.loja}</div>
+        <div style="font-size:10px;color:var(--text3)">${l.marca}${l.uf?' · '+l.uf:''}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);min-width:90px;text-align:right">Último: ${dataFmt}</div>
+      <div style="width:80px;height:5px;background:var(--border2);border-radius:99px;overflow:hidden;flex-shrink:0">
+        <div style="height:100%;width:${pct}%;background:${cor};border-radius:99px"></div>
+      </div>
+      <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:${bgStatus[l.status]};color:${cor};min-width:70px;text-align:center">
+        ${l.diasDesde !== null ? l.diasDesde+' dias' : 'sem registro'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+
 const _ddAberto = {};
 
 // ============================================================
@@ -1212,6 +1355,7 @@ function trnRenderizar() {
       </tr>`;
     }).join('')}</tbody>`;
   }
+  trnRenderizarLoja();
 }
 
 const _ddSelecionadas = {};

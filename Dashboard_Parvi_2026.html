@@ -1025,6 +1025,7 @@ async function carregarEstoqueHistorico() {
           ...e,
           totalEnviadoAcum: h.totalEnviadoAcum || e.totalEnviadoAcum || e.totalEnviado || 0,
           totalVendidoAcum: h.totalVendidoAcum || e.totalVendidoAcum || e.totalVendido || 0,
+          saldoAcum:        h.saldoAcum        != null ? h.saldoAcum : (e.saldoAcum != null ? e.saldoAcum : null),
           mediaVendas:      h.mediaVendas      || e.mediaVendas      || 0,
           mediaVendasDia:   h.mediaVendasDia   || e.mediaVendasDia   || 0,
           cobertura:        h.cobertura        != null ? h.cobertura : e.cobertura,

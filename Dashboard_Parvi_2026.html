@@ -488,6 +488,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
   <button class="nav-item" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
   <button class="nav-item" onclick="navTo('estoque',this)"><span class="ni">📦</span> Estoque</button>
+  <button class="nav-item" onclick="navTo('estoque-at',this);carregarEstoqueAtualizado()"><span class="ni">📡</span> Estoque Atualizado</button>
   <button class="nav-item" onclick="navTo('treinamentos',this)"><span class="ni">🎓</span> Treinamentos</button>
   <div class="nav-section">Praças</div>
   <button class="nav-item" onclick="navTo('pracas',this);setEstado('PE')"><span class="ni">📍</span> Pernambuco</button>
@@ -722,6 +723,45 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   </div>
 
 
+
+  <!-- PAGE: ESTOQUE ATUALIZADO -->
+  <div class="page" id="page-estoque-at">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">📡 Estoque Atualizado · Rastreadores</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Dados em tempo real da planilha Estoque Parvi</div>
+      </div>
+      <button id="btn-ea-atualizar" onclick="carregarEstoqueAtualizado()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s">
+        <span id="ea-refresh-icon">🔄</span> Atualizar Dados
+      </button>
+    </div>
+    <div id="ea-loading" style="display:none;text-align:center;padding:60px 20px">
+      <div style="font-size:32px;margin-bottom:12px">⏳</div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:6px">Carregando dados da planilha Estoque Parvi...</div>
+      <div style="font-size:11px;color:var(--text3)">Isso pode levar alguns segundos</div>
+    </div>
+    <div id="ea-erro" style="display:none;padding:20px;background:var(--red-bg);border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px;margin-bottom:16px"></div>
+    <div id="ea-conteudo" style="display:none">
+      <div class="kpi-row" id="ea-kpis"></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hd">
+          <div><div class="card-title">👤 Mapeamento por Coordenador</div><div class="card-sub">Enviado · Vendas · Saldo · Média/mês · Cobertura de dias</div></div>
+          <div class="card-tag blue">4 coordenadores</div>
+        </div>
+        <div class="tbl-wrap"><table id="ea-tabela-coord"></table></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div><div class="card-title">🏢 Mapeamento por Marca e Loja</div><div class="card-sub">Clique na marca para expandir as lojas</div></div>
+          <div style="display:flex;gap:6px">
+            <button onclick="eaExpandirTudo(true)"  style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Expandir tudo</button>
+            <button onclick="eaExpandirTudo(false)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Recolher tudo</button>
+          </div>
+        </div>
+        <div id="ea-marcas"></div>
+      </div>
+    </div>
+  </div>
 
   <div class="page" id="page-comissoes">
     <div class="kpi-row" id="comm-kpis"></div>
@@ -1806,9 +1846,10 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
   if(page==='estoque') renderEstoque();
+  if(page==='estoque-at') carregarEstoqueAtualizado();
   if(page==='treinamentos') trnCarregarDados();
 }
 
@@ -2973,6 +3014,140 @@ function renderComissoes(marcasAll, totalSeg) {
         </tr>`).join('')}</tbody>
       </table></div>
     </div>`;
+}
+
+// ============================================================
+// ESTOQUE ATUALIZADO
+// ============================================================
+let _eaCarregado = false;
+
+async function carregarEstoqueAtualizado() {
+  if(document.getElementById('ea-loading').style.display === 'block') return;
+  document.getElementById('ea-loading').style.display  = 'block';
+  document.getElementById('ea-conteudo').style.display = 'none';
+  document.getElementById('ea-erro').style.display     = 'none';
+  const btn = document.getElementById('ea-refresh-icon');
+  if(btn) btn.textContent = '⏳';
+  try {
+    const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+    const ano = parseInt(ANO);
+    const url = `${APPS_SCRIPT_URL}?action=estoque-atualizado&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`;
+    const res  = await fetch(url);
+    const dados = await res.json();
+    if(dados.erro) throw new Error(dados.erro);
+    renderEstoqueAtualizado(dados);
+    document.getElementById('ea-loading').style.display  = 'none';
+    document.getElementById('ea-conteudo').style.display = 'block';
+    _eaCarregado = true;
+  } catch(err) {
+    document.getElementById('ea-loading').style.display = 'none';
+    document.getElementById('ea-erro').style.display    = 'block';
+    document.getElementById('ea-erro').textContent      = '❌ Erro ao carregar: ' + err.message;
+  } finally {
+    if(btn) btn.textContent = '🔄';
+  }
+}
+
+function renderEstoqueAtualizado(dados) {
+  // ── KPIs ──────────────────────────────────────────────────
+  const k = dados.kpis || {};
+  document.getElementById('ea-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${k.totalEnviado||0}</div><div class="kpi-lbl">Total Enviado</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${k.totalVendido||0}</div><div class="kpi-lbl">Total Vendido</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--gold)">${k.estoqueAtual||0}</div><div class="kpi-lbl">Estoque Atual</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:var(--orange)">${k.sugestaoEnvio||0}</div><div class="kpi-lbl">Sugestão Próx. Mês</div><div class="kpi-accent o"></div></div>`;
+
+  // ── TABELA COORDENADORES ───────────────────────────────────
+  const TH = 'font-size:9px;font-family:DM Mono,monospace;letter-spacing:0.8px;color:var(--text3);text-transform:uppercase;padding:8px 10px;background:var(--surface2);text-align:right';
+  const TD = 'padding:9px 10px;border-bottom:0.5px solid var(--border);font-size:13px;text-align:right';
+  const coords = dados.coordenadores || [];
+  document.getElementById('ea-tabela-coord').innerHTML = `
+    <thead><tr>
+      <th style="${TH};text-align:left">Coordenador</th>
+      <th style="${TH}">Enviado</th>
+      <th style="${TH}">Vendas</th>
+      <th style="${TH}">Saldo</th>
+      <th style="${TH}">Média/Mês</th>
+      <th style="${TH}">Cobertura</th>
+    </tr></thead>
+    <tbody>${coords.map(c => {
+      const cor = c.cobertura === 0 ? 'var(--text3)' : c.cobertura < 15 ? 'var(--red)' : c.cobertura <= 30 ? 'var(--gold)' : 'var(--green)';
+      const bg  = c.cobertura === 0 ? 'var(--surface2)' : c.cobertura < 15 ? 'var(--red-bg)' : c.cobertura <= 30 ? 'var(--gold-bg)' : 'var(--green-bg)';
+      return `<tr>
+        <td style="${TD};text-align:left;font-weight:600;color:var(--text)">${c.nome||'—'}</td>
+        <td style="${TD};color:var(--blue);font-weight:600">${c.enviado}</td>
+        <td style="${TD};color:var(--green);font-weight:600">${c.vendido}</td>
+        <td style="${TD};color:${c.saldo<0?'var(--red)':'var(--gold)'};font-weight:700">${c.saldo}</td>
+        <td style="${TD};color:var(--text2)">${c.media}</td>
+        <td style="${TD}"><span style="background:${bg};color:${cor};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace">${c.cobertura} dias</span></td>
+      </tr>`;
+    }).join('')}</tbody>`;
+
+  // ── MARCAS / LOJAS ─────────────────────────────────────────
+  const marcas = dados.marcas || [];
+  const CORES_MARCA = {
+    'AMERICA':'#1565C0','AUDI':'#424242','AUTOPARVI':'#1976D2','BREMEN':'#E65100',
+    'BYD':'#2E7D32','FIORI':'#6A1B9A','JEEP':'#558B2F','LAND ROVER':'#004D40',
+    'LEXUS':'#37474F','MARDISA':'#AD1457','PATEO':'#00838F','RAM':'#B71C1C','TOYOLEX':'#F57F17'
+  };
+  document.getElementById('ea-marcas').innerHTML = marcas.map((m, mi) => {
+    const cor = CORES_MARCA[m.marca] || '#4d8aff';
+    const lojas = (m.lojas || []).sort((a,b) => b.enviado - a.enviado);
+    return `
+      <div style="margin-bottom:6px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <div onclick="eaToggleMarca(${mi})" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);cursor:pointer;user-select:none">
+          <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0"></div>
+          <div style="flex:1;font-size:13px;font-weight:700;color:var(--text)">${m.marca}</div>
+          <div style="display:flex;gap:16px;font-size:11px;color:var(--text3)">
+            <span>Enviado: <strong style="color:var(--blue)">${m.enviado}</strong></span>
+            <span>Vendido: <strong style="color:var(--green)">${m.vendido}</strong></span>
+            <span>Estoque: <strong style="color:var(--gold)">${m.estoqueAtual}</strong></span>
+            <span style="color:var(--text3)">${lojas.length} loja${lojas.length!==1?'s':''}</span>
+          </div>
+          <span id="ea-chev-${mi}" style="font-size:10px;color:var(--text3);margin-left:8px">▼</span>
+        </div>
+        <div id="ea-body-${mi}" style="display:none">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:1px solid var(--border)">
+              <th style="padding:7px 14px;text-align:left;font-size:9px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;background:var(--surface)">Loja</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--blue);text-transform:uppercase;background:var(--surface)">Enviado</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;background:var(--surface)">Vendido</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--gold);text-transform:uppercase;background:var(--surface)">Estoque</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;background:var(--surface)">Cobertura</th>
+            </tr></thead>
+            <tbody>${lojas.map((l,li) => {
+              const bc = l.cobertura===0?'var(--text3)':l.cobertura<15?'var(--red)':l.cobertura<=30?'var(--gold)':'var(--green)';
+              const bb = l.cobertura===0?'var(--surface2)':l.cobertura<15?'var(--red-bg)':l.cobertura<=30?'var(--gold-bg)':'var(--green-bg)';
+              return `<tr style="border-bottom:0.5px solid var(--border)">
+                <td style="padding:8px 14px;color:var(--text2);font-size:12px">↳ ${l.loja}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--blue);font-weight:600">${l.enviado}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--green);font-weight:600">${l.vendido}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--gold);font-weight:700">${l.estoqueAtual}</td>
+                <td style="padding:8px 10px;text-align:right"><span style="background:${bb};color:${bc};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace">${l.cobertura>0?l.cobertura+' d':'—'}</span></td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function eaToggleMarca(i) {
+  const body = document.getElementById('ea-body-'+i);
+  const chev = document.getElementById('ea-chev-'+i);
+  if(!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if(chev) chev.textContent = open ? '▼' : '▲';
+}
+
+function eaExpandirTudo(expand) {
+  const marcas = document.getElementById('ea-marcas');
+  if(!marcas) return;
+  const bodies = marcas.querySelectorAll('[id^="ea-body-"]');
+  const chevs  = marcas.querySelectorAll('[id^="ea-chev-"]');
+  bodies.forEach(b => b.style.display = expand ? 'block' : 'none');
+  chevs.forEach(c  => c.textContent   = expand ? '▲' : '▼');
 }
 
 // ── FALLBACK ESTÁTICO ──

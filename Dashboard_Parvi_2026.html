@@ -1987,9 +1987,9 @@ function renderAll() {
   // ── GERAL KPIs ──
   document.getElementById('geral-kpis').innerHTML=`
     <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--green)">${totalSeg}</div><div class="kpi-lbl">Segsat Vendidos</div><div class="kpi-change up">↑ ${ALL_STORES.length} lojas</div><div class="kpi-accent g"></div></div>
-    <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--orange)">${fBRL(totalFat)}</div><div class="kpi-lbl">Faturamento</div><div class="kpi-change warn">ticket ${fBRL(META.ticketMedio||0)}</div><div class="kpi-accent o"></div></div>
+    <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${fBRL(totalFat)}</div><div class="kpi-lbl">Faturamento</div><div class="kpi-change warn">ticket ${fBRL(META.ticketMedio||0)}</div><div class="kpi-accent g"></div></div>
     <div class="kpi"><div class="kpi-ico">🚗</div><div class="kpi-val" style="color:var(--blue)">${totalCar.toLocaleString('pt-BR')}</div><div class="kpi-lbl">Carros Vendidos</div><div class="kpi-change warn">${totalCar-totalSeg} sem Segsat</div><div class="kpi-accent b"></div></div>
-    <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--gold)">${fPct(conv)}</div><div class="kpi-lbl">Conversão Geral</div><div class="kpi-change down">${fPct(1-conv)} não convertido</div><div class="kpi-accent gold"></div></div>`;
+    <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--green)">${fPct(conv)}</div><div class="kpi-lbl">Conversão Geral</div><div class="kpi-change down">${fPct(1-conv)} não convertido</div><div class="kpi-accent g"></div></div>`;
 
   // Chart title tag
   document.getElementById('chart-dias-tag').textContent = `${DAILY.length} dias`;
@@ -2370,10 +2370,10 @@ function renderProjecao(totalSeg, totalFat) {
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
       <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--blue)">${projSeg}</div><div class="kpi-lbl">Projeção Segsat</div><div class="kpi-change up">${faltaSeg} p/ bater</div><div class="kpi-accent b"></div></div>
-      <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--orange)">${fBRL(projFat)}</div><div class="kpi-lbl">Projeção Fat.</div><div class="kpi-change warn">${fBRL(Math.round(totalFat/diaAtual))}/dia</div><div class="kpi-accent o"></div></div>
+      <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${fBRL(projFat)}</div><div class="kpi-lbl">Projeção Fat.</div><div class="kpi-change warn">${fBRL(Math.round(totalFat/diaAtual))}/dia</div><div class="kpi-accent g"></div></div>
       ${vsRef?`
       <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:${vsRef.cor}">${vsRef.sinal}${vsRef.diff}</div><div class="kpi-lbl">vs ${vsRef.nome} dia ${diaAtual}</div><div class="kpi-change ${vsRef.diff>=0?'up':'down'}">${vsRef.nome} tinha ${vsRef.acum} aqui</div><div class="kpi-accent ${vsRef.diff>=0?'g':'r'}"></div></div>
-      <div class="kpi"><div class="kpi-ico">🏆</div><div class="kpi-val" style="color:var(--gold)">${melhorMes[1].seg}</div><div class="kpi-lbl">Melhor mês (${melhorMes[0]})</div><div class="kpi-change ${projSeg>=melhorMes[1].seg?'up':'down'}">${projSeg>=melhorMes[1].seg?'Projeção bate!':'Faltam '+(melhorMes[1].seg-projSeg)}</div><div class="kpi-accent gold"></div></div>
+      <div class="kpi"><div class="kpi-ico">🏆</div><div class="kpi-val" style="color:var(--green)">${melhorMes[1].seg}</div><div class="kpi-lbl">Melhor mês (${melhorMes[0]})</div><div class="kpi-change ${projSeg>=melhorMes[1].seg?'up':'down'}">${projSeg>=melhorMes[1].seg?'Projeção bate!':'Faltam '+(melhorMes[1].seg-projSeg)}</div><div class="kpi-accent g"></div></div>
       `:`
       <div class="kpi"><div class="kpi-ico">📅</div><div class="kpi-val" style="color:var(--green)">${faltaSeg}</div><div class="kpi-lbl">Faltam (Segsat)</div><div class="kpi-change up">${diasRestantes} dias</div><div class="kpi-accent g"></div></div>
       <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:var(--text2)">—</div><div class="kpi-lbl">Sem referência</div><div class="kpi-accent b"></div></div>

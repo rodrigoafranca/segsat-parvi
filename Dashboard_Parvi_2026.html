@@ -2442,8 +2442,8 @@ function renderPraca(key) {
       <div class="kpi"><div class="kpi-ico">🏪</div><div class="kpi-val">${stores.length}</div><div class="kpi-lbl">Lojas</div><div class="kpi-accent b"></div></div>
       <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--green)">${tSeg}</div><div class="kpi-lbl">Segsat</div><div class="kpi-accent g"></div></div>
       <div class="kpi"><div class="kpi-ico">🚗</div><div class="kpi-val" style="color:var(--blue)">${tCar}</div><div class="kpi-lbl">Carros</div><div class="kpi-accent b"></div></div>
-      <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:${kpiC}">${fPct(conv)}</div><div class="kpi-lbl">Conversão</div><div class="kpi-accent ${conv>=0.3?'g':conv>=0.15?'gold':'r'}"></div></div>
-      <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--orange)">${fBRL(tFat)}</div><div class="kpi-lbl">Faturamento</div><div class="kpi-accent o"></div></div>
+      <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--green)">${fPct(conv)}</div><div class="kpi-lbl">Conversão</div><div class="kpi-accent g"></div></div>
+      <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${fBRL(tFat)}</div><div class="kpi-lbl">Faturamento</div><div class="kpi-accent g"></div></div>
     </div>
     ${zeradas>0?`<div style="background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.25);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:12.5px">
       <span>🚨</span><div><strong>${zeradas} lojas</strong> com zero Segsat · <strong>${potencial} carros</strong> sem rastreador · potencial <strong>${fBRL(potencial*999)}</strong></div>

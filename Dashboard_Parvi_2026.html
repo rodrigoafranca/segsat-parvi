@@ -2752,7 +2752,17 @@ function copiarTabelaMarca(marca) {
           if(tbl){ tbl.style.tableLayout=origTblLayout; tbl.style.width=origTblWidth; }
           if(btn){ btn.style.visibility=''; btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.disabled=false; }
 
-          canvas.toBlob(blob => {
+          // Recorta o canvas para eliminar espaço em branco à direita
+          const scaleFactor = 4;
+          const tblRealW = (tbl ? tbl.scrollWidth : tblCard.scrollWidth) + 28;
+          const cropW = Math.min(canvas.width, Math.round(tblRealW * scaleFactor));
+          const finalCanvas = document.createElement('canvas');
+          finalCanvas.width  = cropW;
+          finalCanvas.height = canvas.height;
+          const fCtx = finalCanvas.getContext('2d');
+          fCtx.drawImage(canvas, 0, 0, cropW, canvas.height, 0, 0, cropW, canvas.height);
+
+          finalCanvas.toBlob(blob => {
             try {
               navigator.clipboard.write([new ClipboardItem({'image/png': blob})])
                 .then(() => {
@@ -2763,13 +2773,13 @@ function copiarTabelaMarca(marca) {
                   }
                 }).catch(() => {
                   const a = document.createElement('a');
-                  a.href = canvas.toDataURL('image/png');
+                  a.href = finalCanvas.toDataURL('image/png');
                   a.download = 'Lojas_'+marca+'_'+MES_SELECIONADO+'.png'; a.click();
                   if(btn){ btn.innerHTML='<span>📷</span> Baixado!'; setTimeout(()=>{ btn.innerHTML='<span>📋</span> Copiar Imagem'; },2500); }
                 });
             } catch(e) {
               const a = document.createElement('a');
-              a.href = canvas.toDataURL('image/png');
+              a.href = finalCanvas.toDataURL('image/png');
               a.download = 'Lojas_'+marca+'_'+MES_SELECIONADO+'.png'; a.click();
               if(btn){ btn.innerHTML='<span>📷</span> Baixado!'; btn.disabled=false; setTimeout(()=>{ btn.innerHTML='<span>📋</span> Copiar Imagem'; btn.style.borderColor=''; btn.style.color=''; },2500); }
             }

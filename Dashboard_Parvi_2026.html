@@ -3128,19 +3128,22 @@ async function carregarEstoqueAtualizado() {
 function renderEstoqueAtualizado(dados) {
   // ── KPIs ──────────────────────────────────────────────────
   const k = dados.kpis || {};
-  const historico = k.historico || [];
-  const saldoCor  = k.estoqueAtual >= 0 ? 'var(--green)' : 'var(--red)';
+  const historico   = k.historico   || [];
+  const ultimosMeses = k.ultimosMeses || [];
+  const saldoCor    = k.estoqueAtual >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // Projeção: média de vendas dos últimos 2 meses - saldo atual
-  const ult2 = historico.slice(-2);
-  const mediaVendas2 = ult2.length > 0
-    ? Math.round(ult2.reduce((s,h) => s + h.vendido, 0) / ult2.length)
+  // Projeção: média dos 2 meses ANTERIORES ao selecionado - saldo atual
+  const mediaVendas2 = ultimosMeses.length > 0
+    ? Math.round(ultimosMeses.reduce((s,h) => s + h.vendido, 0) / ultimosMeses.length)
     : 0;
-  const projecao     = mediaVendas2 - (k.estoqueAtual || 0);
-  const projecaoCor  = projecao > 0 ? 'var(--orange)' : 'var(--green)';
-  const projecaoTxt  = projecao > 0
+  const projecao    = mediaVendas2 - (k.estoqueAtual || 0);
+  const projecaoCor = projecao > 0 ? 'var(--orange)' : 'var(--green)';
+  const projecaoTxt = projecao > 0
     ? `Enviar ~${projecao} unid.`
     : `Excesso de ${Math.abs(projecao)} unid.`;
+  const mediaDetalhe = ultimosMeses.map(h =>
+    `${h.mes.substring(0,3)}: ${h.vendido}`
+  ).join(' · ');
 
   const histHtml = historico.map(h =>
     `<span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">${h.mes.substring(0,3)}: <b style="color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo}</b></span>`
@@ -3170,7 +3173,7 @@ function renderEstoqueAtualizado(dados) {
       <div class="kpi-ico">🔮</div>
       <div class="kpi-val" style="color:${projecaoCor}">${projecao}</div>
       <div class="kpi-lbl">Projeção Próx. Mês</div>
-      <div style="font-size:9px;color:var(--text3);margin-top:4px">Média ${mediaVendas2} vendas/mês − saldo ${k.estoqueAtual||0}</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px">${mediaDetalhe ? `Média ${mediaVendas2} (${mediaDetalhe})` : `Média ${mediaVendas2} vendas/mês`} − saldo ${k.estoqueAtual||0}</div>
       <div style="font-size:10px;font-weight:600;color:${projecaoCor};margin-top:4px">${projecaoTxt}</div>
       <div class="kpi-accent ${projecao>0?'o':'g'}"></div>
     </div>`;

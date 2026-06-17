@@ -1622,6 +1622,11 @@ function selecionarMes(mes) {
   document.getElementById('dd-mes').classList.remove('open');
   buildSelectors();
   loadData();
+  // Se estiver na página Estoque Atualizado, atualiza automaticamente
+  if(document.getElementById('page-estoque-at') &&
+     document.getElementById('page-estoque-at').style.display !== 'none') {
+    carregarEstoqueAtualizado();
+  }
 }
 
 function selecionarTri(tri) {

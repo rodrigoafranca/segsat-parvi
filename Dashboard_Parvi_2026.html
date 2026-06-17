@@ -1622,11 +1622,7 @@ function selecionarMes(mes) {
   document.getElementById('dd-mes').classList.remove('open');
   buildSelectors();
   loadData();
-  // Se estiver na página Estoque Atualizado, atualiza automaticamente
-  if(document.getElementById('page-estoque-at') &&
-     document.getElementById('page-estoque-at').style.display !== 'none') {
-    carregarEstoqueAtualizado();
-  }
+  // Estoque Atualizado será atualizado após loadData() terminar
 }
 
 function selecionarTri(tri) {
@@ -1786,7 +1782,16 @@ async function loadData() {
     }
     setLoading(90,'Renderizando...');
     updateTopbar();
-    setTimeout(()=>{ lo.classList.add('hidden'); setTimeout(()=>{lo.style.display='none';},300); renderAll(); },200);
+    setTimeout(()=>{
+      lo.classList.add('hidden');
+      setTimeout(()=>{lo.style.display='none';},300);
+      renderAll();
+      // Se estiver na página Estoque Atualizado, atualiza as vendas com os novos dados
+      if(document.getElementById('page-estoque-at') &&
+         document.getElementById('page-estoque-at').style.display !== 'none') {
+        carregarEstoqueAtualizado();
+      }
+    },200);
   } catch(err) {
     if(ALL_STORES.length===0) loadStaticFallback();
     lo.classList.add('hidden'); setTimeout(()=>{lo.style.display='none';},300);

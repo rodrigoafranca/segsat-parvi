@@ -3044,9 +3044,16 @@ async function carregarEstoqueAtualizado() {
     const mesLabel = document.getElementById('mes-btn-label');
     const mes = (mesLabel ? mesLabel.textContent.trim() : null) || MES_SELECIONADO || MESES[new Date().getMonth()];
     const ano = ANO || new Date().getFullYear();
-    const url = `${APPS_SCRIPT_URL}?action=estoque-parvi&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`;
-    const res   = await fetch(url);
-    const parvi = await res.json();
+
+    // Faz as duas chamadas em paralelo para ser mais rápido
+    const [resParvi, resAcum] = await Promise.all([
+      fetch(`${APPS_SCRIPT_URL}?action=estoque-parvi&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`),
+      fetch(`${APPS_SCRIPT_URL}?action=estoque-acumulado&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`)
+    ]);
+
+    const parvi = await resParvi.json();
+    const acum  = await resAcum.json();
+
     if(parvi.erro) throw new Error(parvi.erro);
 
     // 2. Dados de vendas: usa ALL_STORES se já carregado, senão busca da API
@@ -3095,7 +3102,13 @@ async function carregarEstoqueAtualizado() {
       marcas[mk].lojas.push(item);
     });
     const dados = {
-      kpis: { totalEnviado, totalVendido, estoqueAtual, sugestaoEnvio },
+      kpis: {
+        totalEnviado,
+        totalVendido,
+        estoqueAtual: acum.saldoAtual !== undefined ? acum.saldoAtual : estoqueAtual,
+        sugestaoEnvio,
+        historico: acum.historico || []
+      },
       coordenadores: Object.values(coordenadores),
       marcas: Object.values(marcas).sort((a,b) => a.marca.localeCompare(b.marca))
     };
@@ -3115,11 +3128,15 @@ async function carregarEstoqueAtualizado() {
 function renderEstoqueAtualizado(dados) {
   // ── KPIs ──────────────────────────────────────────────────
   const k = dados.kpis || {};
+  const saldoCor = k.estoqueAtual >= 0 ? 'var(--green)' : 'var(--red)';
+  const histHtml = (k.historico||[]).map(h =>
+    `<span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">${h.mes.substring(0,3)}: <b style="color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo}</b></span>`
+  ).join(' · ');
+
   document.getElementById('ea-kpis').innerHTML = `
-    <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${k.totalEnviado||0}</div><div class="kpi-lbl">Total Enviado</div><div class="kpi-accent b"></div></div>
-    <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${k.totalVendido||0}</div><div class="kpi-lbl">Total Vendido</div><div class="kpi-accent g"></div></div>
-    <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--gold)">${k.estoqueAtual||0}</div><div class="kpi-lbl">Estoque Atual</div><div class="kpi-accent gold"></div></div>
-    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:var(--orange)">${k.sugestaoEnvio||0}</div><div class="kpi-lbl">Sugestão Próx. Mês</div><div class="kpi-accent o"></div></div>`;
+    <div class="kpi"><div class="kpi-ico">📤</div><div class="kpi-val" style="color:var(--blue)">${k.totalEnviado||0}</div><div class="kpi-lbl">Total Enviado · ${(document.getElementById('mes-btn-label')||{}).textContent||''}</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${k.totalVendido||0}</div><div class="kpi-lbl">Total Vendido · ${(document.getElementById('mes-btn-label')||{}).textContent||''}</div><div class="kpi-accent g"></div></div>
+    <div class="kpi" style="grid-column:span 2"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:${saldoCor}">${k.estoqueAtual!==undefined?k.estoqueAtual:0}</div><div class="kpi-lbl">Estoque Atual · Saldo Acumulado</div>${histHtml?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${histHtml}</div>`:''}<div class="kpi-accent ${k.estoqueAtual>=0?'g':'r'}"></div></div>`;
 
   // ── TABELA COORDENADORES ───────────────────────────────────
   const TH = 'font-size:9px;font-family:DM Mono,monospace;letter-spacing:0.8px;color:var(--text3);text-transform:uppercase;padding:8px 10px;background:var(--surface2);text-align:right';

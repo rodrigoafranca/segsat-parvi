@@ -3105,9 +3105,10 @@ async function carregarEstoqueAtualizado() {
       kpis: {
         totalEnviado,
         totalVendido,
-        estoqueAtual: acum.saldoAtual !== undefined ? acum.saldoAtual : estoqueAtual,
+        estoqueAtual:  acum.saldoAtual !== undefined ? acum.saldoAtual : estoqueAtual,
         sugestaoEnvio,
-        historico: acum.historico || []
+        historico:     acum.historico    || [],
+        ultimosMeses:  acum.ultimosMeses || []
       },
       coordenadores: Object.values(coordenadores),
       marcas: Object.values(marcas).sort((a,b) => a.marca.localeCompare(b.marca))

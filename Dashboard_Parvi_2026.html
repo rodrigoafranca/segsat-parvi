@@ -1787,8 +1787,7 @@ async function loadData() {
       setTimeout(()=>{lo.style.display='none';},300);
       renderAll();
       // Se estiver na página Estoque Atualizado, atualiza as vendas com os novos dados
-      if(document.getElementById('page-estoque-at') &&
-         document.getElementById('page-estoque-at').style.display !== 'none') {
+      if(currentPage === 'estoque-at') {
         carregarEstoqueAtualizado();
       }
     },200);

@@ -1792,6 +1792,8 @@ async function loadData() {
       }
     },200);
   } catch(err) {
+    // Ignora AbortError — acontece quando uma nova requisição cancela a anterior (normal ao trocar de mês)
+    if(err.name === 'AbortError' || err.message.includes('aborted') || err.message.includes('abort')) return;
     if(ALL_STORES.length===0) loadStaticFallback();
     lo.classList.add('hidden'); setTimeout(()=>{lo.style.display='none';},300);
     renderAll();

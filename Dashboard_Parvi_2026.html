@@ -3035,10 +3035,15 @@ async function carregarEstoqueAtualizado() {
     const parvi = await res.json();
     if(parvi.erro) throw new Error(parvi.erro);
 
-    // 2. Usa dados de vendas JÁ CARREGADOS no dashboard (_dados)
+    // 2. Usa dados de vendas JÁ CARREGADOS no dashboard (ALL_STORES e META)
     // Mesmo número que aparece nos chips do topbar
-    const allStores     = (_dados && _dados.allStores)          || [];
-    const totalVendido  = (_dados && _dados.meta && _dados.meta.totalSegsat) || 0;
+    const allStores    = (typeof ALL_STORES !== 'undefined' ? ALL_STORES : []);
+    const totalVendido = (typeof META !== 'undefined' && META.totalSegsat) ? META.totalSegsat : 0;
+
+    // Se dados ainda não foram carregados, avisa o usuário
+    if(!allStores.length && !totalVendido) {
+      throw new Error('Carregue o Dashboard principal primeiro antes de acessar o Estoque Atualizado.');
+    }
 
     // Monta lookup de vendas por loja
     const vendasPorLoja = {};

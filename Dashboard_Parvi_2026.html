@@ -3028,8 +3028,10 @@ async function carregarEstoqueAtualizado() {
   const btn = document.getElementById('ea-refresh-icon');
   if(btn) btn.textContent = '⏳';
   try {
-    // 1. Busca inventário do Estoque Parvi
-    const url = `${APPS_SCRIPT_URL}?action=estoque-parvi&t=${Date.now()}`;
+    // 1. Busca inventário do Estoque Parvi filtrado pelo mês selecionado
+    const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+    const ano = ANO || new Date().getFullYear();
+    const url = `${APPS_SCRIPT_URL}?action=estoque-parvi&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`;
     const res   = await fetch(url);
     const parvi = await res.json();
     if(parvi.erro) throw new Error(parvi.erro);
@@ -3066,12 +3068,14 @@ async function carregarEstoqueAtualizado() {
       totalEnviado  += item.enviado;
       estoqueAtual  += item.estoqueAtual;
       sugestaoEnvio += item.sugestao;
+
       const ck = item.primeiroCoordenador || 'NA';
-      if(!coordenadores[ck]) coordenadores[ck] = { nome: item.coordenador, enviado:0, vendido:0, saldo:0, contLojas:0 };
+      if(!coordenadores[ck]) coordenadores[ck] = { nome: item.coordenador, enviado:0, vendido:0, saldo:0, media:0, cobertura:0, contLojas:0 };
       coordenadores[ck].enviado += item.enviado;
       coordenadores[ck].vendido += vendido;
       coordenadores[ck].saldo   += item.saldo;
       coordenadores[ck].contLojas++;
+
       const mk = item.marca || 'OUTRAS';
       if(!marcas[mk]) marcas[mk] = { marca: mk, enviado:0, vendido:0, estoqueAtual:0, lojas:[] };
       marcas[mk].enviado      += item.enviado;

@@ -3034,11 +3034,21 @@ async function carregarEstoqueAtualizado() {
     const parvi = await res.json();
     if(parvi.erro) throw new Error(parvi.erro);
 
-    // 2. Usa dados de vendas já carregados (ALL_STORES e META)
-    const allStores   = (typeof ALL_STORES !== 'undefined' ? ALL_STORES : []);
-    const totalVendido = (typeof META !== 'undefined' && META.totalSegsat) ? META.totalSegsat : 0;
-    if(!allStores.length && !totalVendido) {
-      throw new Error('Carregue o Dashboard principal primeiro antes de acessar o Estoque Atualizado.');
+    // 2. Dados de vendas: usa ALL_STORES se já carregado, senão busca da API
+    let allStores    = (typeof ALL_STORES !== 'undefined' ? ALL_STORES : []);
+    let totalVendido = (typeof META !== 'undefined' && META.totalSegsat) ? META.totalSegsat : 0;
+
+    if(!allStores.length) {
+      // Busca dados de vendas diretamente (mesmo que o dashboard principal)
+      const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+      const ano = ANO || new Date().getFullYear();
+      const urlVendas = `${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`;
+      const resVendas = await fetch(urlVendas);
+      const dadosVendas = await resVendas.json();
+      if(dadosVendas && dadosVendas.allStores) {
+        allStores    = dadosVendas.allStores;
+        totalVendido = (dadosVendas.meta && dadosVendas.meta.totalSegsat) || 0;
+      }
     }
     const vendasPorLoja = {};
     allStores.forEach(s => { if(s.loja) vendasPorLoja[s.loja.toUpperCase()] = s.segsat || 0; });

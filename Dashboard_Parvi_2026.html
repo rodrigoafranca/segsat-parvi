@@ -3029,7 +3029,9 @@ async function carregarEstoqueAtualizado() {
   if(btn) btn.textContent = '⏳';
   try {
     // 1. Busca inventário do Estoque Parvi filtrado pelo mês selecionado
-    const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+    // Lê direto do dropdown para garantir o mês atual
+    const mesLabel = document.getElementById('mes-btn-label');
+    const mes = (mesLabel ? mesLabel.textContent.trim() : null) || MES_SELECIONADO || MESES[new Date().getMonth()];
     const ano = ANO || new Date().getFullYear();
     const url = `${APPS_SCRIPT_URL}?action=estoque-parvi&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`;
     const res   = await fetch(url);
@@ -3042,8 +3044,6 @@ async function carregarEstoqueAtualizado() {
 
     if(!allStores.length) {
       // Busca dados de vendas diretamente (mesmo que o dashboard principal)
-      const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
-      const ano = ANO || new Date().getFullYear();
       const urlVendas = `${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`;
       const resVendas = await fetch(urlVendas);
       const dadosVendas = await resVendas.json();

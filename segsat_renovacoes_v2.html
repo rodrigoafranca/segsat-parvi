@@ -9,173 +9,67 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1b2a; min-height: 100vh; }
 
-/* HEADER */
-.header {
-  background: #0a1628;
-  border-bottom: 3px solid #93d0fa;
-  padding: 14px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.header { background: #0a1628; border-bottom: 3px solid #93d0fa; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
 .header-left { display: flex; align-items: center; gap: 14px; }
-.logo-box {
-  background: #93d0fa;
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-weight: 800;
-  font-size: 15px;
-  color: #0a1628;
-  letter-spacing: 1.5px;
-}
+.logo-box { background: #93d0fa; border-radius: 8px; padding: 6px 12px; font-weight: 800; font-size: 15px; color: #0a1628; letter-spacing: 1.5px; }
 .header-title h1 { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; }
 .header-title p { font-size: 12px; color: #93d0fa; margin-top: 2px; }
 .header-right { text-align: right; }
 .header-right .timestamp { font-size: 14px; font-weight: 600; color: #ffffff; }
 .header-right .mes { font-size: 11px; color: #93d0fa; margin-top: 3px; }
 
-/* CONTENT */
 .content { padding: 20px 24px; }
 
-/* KPI GRID */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-.kpi-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 18px 20px;
-  text-align: center;
-  border-top: 4px solid #93d0fa;
-  position: relative;
-  overflow: hidden;
-}
-.kpi-card.highlight {
-  background: #1a3a5c;
-  border-top-color: #93d0fa;
-}
-.kpi-icon {
-  font-size: 22px;
-  color: #93d0fa;
-  margin-bottom: 6px;
-}
-.kpi-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #6b8aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 6px;
-}
+.kpi-card { background: #ffffff; border-radius: 12px; padding: 18px 20px; text-align: center; border-top: 4px solid #93d0fa; }
+.kpi-card.highlight { background: #1a3a5c; border-top-color: #93d0fa; }
+.kpi-icon { font-size: 22px; color: #93d0fa; margin-bottom: 6px; }
+.kpi-label { font-size: 10px; font-weight: 700; color: #6b8aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
 .kpi-card.highlight .kpi-label { color: #93d0fa; }
-.kpi-value {
-  font-size: 36px;
-  font-weight: 800;
-  color: #0d1b2a;
-  line-height: 1;
-}
+.kpi-value { font-size: 36px; font-weight: 800; color: #0d1b2a; line-height: 1; }
 .kpi-card.highlight .kpi-value { color: #ffffff; }
 .kpi-sub { font-size: 11px; color: #8aaac0; margin-top: 5px; }
 .kpi-card.highlight .kpi-sub { color: #93d0fa; opacity: 0.8; }
-.kpi-progress-wrap { margin-top: 10px; }
-.kpi-bar-bg { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; }
+.kpi-bar-bg { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; margin-top: 10px; }
 .kpi-bar-fill { height: 100%; background: #93d0fa; border-radius: 3px; transition: width 1.4s ease; }
 
-/* MAIN GRID */
 .main-grid { display: grid; grid-template-columns: 1fr 310px; gap: 16px; }
 
-/* TABLE CARD */
-.panel {
-  background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #e2eaf2;
-}
-.panel-header {
-  background: #0a1628;
-  padding: 12px 18px;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 2px solid #93d0fa;
-}
+.panel { background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2eaf2; }
+.panel-header { background: #0a1628; padding: 12px 18px; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #93d0fa; }
 .panel-header i { color: #93d0fa; font-size: 16px; }
 
 table.ct { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.ct thead tr { background: #f0f6fc; }
-table.ct th {
-  padding: 10px 14px;
-  text-align: left;
-  font-size: 10px;
-  font-weight: 700;
-  color: #4a6a8a;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid #d8e8f4;
-}
-table.ct td {
-  padding: 10px 14px;
-  border-bottom: 0.5px solid #eef4fa;
-  color: #1a2a3a;
-  vertical-align: middle;
-}
+table.ct th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #4a6a8a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #d8e8f4; }
+table.ct td { padding: 10px 14px; border-bottom: 0.5px solid #eef4fa; color: #1a2a3a; vertical-align: middle; }
 table.ct tr:last-child td { border-bottom: none; }
 table.ct tr:hover td { background: #f5faff; }
 
-.rank-badge {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
-  background: #e8f2fc; color: #3a6a9a;
-}
-.rank-badge.gold { background: #FFD700; color: #6a4800; }
+.rank-badge { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: #e8f2fc; color: #3a6a9a; }
+.rank-badge.gold   { background: #FFD700; color: #6a4800; }
 .rank-badge.silver { background: #b8b8b8; color: #2a2a2a; }
 .rank-badge.bronze { background: #CD7F32; color: #fff; }
 
 .prog-bar { width: 100%; height: 8px; background: #e4eef8; border-radius: 4px; overflow: hidden; }
 .prog-fill { height: 100%; border-radius: 4px; transition: width 1.2s; }
-
 .gap-red { color: #d94040; font-weight: 700; }
 .gap-ok  { color: #1e9a5a; font-weight: 700; }
-
-.legend {
-  display: flex; gap: 16px; padding: 10px 14px;
-  font-size: 11px; color: #6a8aaa;
-  align-items: center;
-  border-top: 1px solid #eef4fa;
-  background: #f8fbff;
-}
+.legend { display: flex; gap: 16px; padding: 10px 14px; font-size: 11px; color: #6a8aaa; align-items: center; border-top: 1px solid #eef4fa; background: #f8fbff; }
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 4px; }
 
-/* RIGHT COLUMN */
 .right-col { display: flex; flex-direction: column; gap: 16px; }
 
-/* TOP 3 */
 .top3-list { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.top3-item {
-  display: flex; align-items: center; gap: 10px;
-  border-radius: 10px; padding: 10px 12px;
-  border: 1px solid #e0eaf4;
-  background: #f8fbff;
-}
+.top3-item { display: flex; align-items: center; gap: 10px; border-radius: 10px; padding: 10px 12px; border: 1px solid #e0eaf4; background: #f8fbff; }
 .top3-item.first  { border-color: #e8c400; background: #fffdf0; }
 .top3-item.second { border-color: #b0b0b0; background: #f8f8f8; }
 .top3-item.third  { border-color: #c07828; background: #fff8f0; }
-
-.avatar {
-  width: 46px; height: 46px; border-radius: 50%; overflow: hidden;
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 15px; color: #1a6fa0;
-  background: #d8eeff; border: 2px solid #93d0fa;
-}
+.avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #1a6fa0; background: #d8eeff; border: 2px solid #93d0fa; }
 .avatar.gold   { border-color: #FFD700; background: #fff3c0; color: #7a5000; }
 .avatar.silver { border-color: #b8b8b8; background: #efefef; color: #444; }
 .avatar.bronze { border-color: #CD7F32; background: #fce8d0; color: #7a3a00; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
 .top3-info { flex: 1; min-width: 0; }
 .top3-name { font-size: 13px; font-weight: 700; color: #1a2a3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .top3-contracts { font-size: 11px; color: #6a8aaa; margin-top: 3px; }
@@ -185,19 +79,8 @@ table.ct tr:hover td { background: #f5faff; }
 .top3-pos.silver { color: #888; }
 .top3-pos.bronze { color: #9a5c1a; }
 
-/* FATURAMENTO */
 .fat-panel { background: #0a1628; border-radius: 12px; overflow: hidden; border: 1px solid #1e3a5a; }
-.fat-header {
-  background: #0a1628;
-  padding: 12px 18px;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex; align-items: center; gap: 8px;
-  border-bottom: 2px solid #93d0fa;
-}
+.fat-header { background: #0a1628; padding: 12px 18px; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #93d0fa; }
 .fat-header i { color: #93d0fa; }
 .fat-body { padding: 16px 18px; }
 .fat-row { margin-bottom: 12px; }
@@ -213,19 +96,7 @@ table.ct tr:hover td { background: #f5faff; }
 .fat-bar-fill { height: 100%; background: #93d0fa; border-radius: 5px; transition: width 1.4s; }
 .fat-msg { font-size: 11px; color: #5a8aaa; margin-top: 8px; text-align: center; }
 
-/* FOOTER */
-.footer {
-  background: #0a1628;
-  border-top: 2px solid #93d0fa;
-  text-align: center;
-  padding: 10px;
-  color: #93d0fa;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  margin-top: 4px;
-}
-
+.footer { background: #0a1628; border-top: 2px solid #93d0fa; text-align: center; padding: 10px; color: #93d0fa; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; margin-top: 4px; }
 .msg { color: #6a8aaa; font-size: 12px; padding: 12px 16px; }
 .err { color: #d94040; font-size: 12px; padding: 12px 16px; }
 </style>
@@ -271,17 +142,13 @@ table.ct tr:hover td { background: #f5faff; }
       <div class="kpi-label">% da meta</div>
       <div class="kpi-value" id="kpi-pct">—</div>
       <div class="kpi-sub">Percentual alcançado</div>
-      <div class="kpi-progress-wrap">
-        <div class="kpi-bar-bg"><div class="kpi-bar-fill" id="kpi-bar" style="width:0%"></div></div>
-      </div>
+      <div class="kpi-bar-bg"><div class="kpi-bar-fill" id="kpi-bar" style="width:0%"></div></div>
     </div>
   </div>
 
   <div class="main-grid">
     <div class="panel">
-      <div class="panel-header">
-        <i class="ti ti-users"></i> Desempenho dos Consultores
-      </div>
+      <div class="panel-header"><i class="ti ti-users"></i> Desempenho dos Consultores</div>
       <div id="table-area"><div class="msg">Carregando dados...</div></div>
       <div class="legend">
         <span><span class="dot" style="background:#1e9a5a"></span>Acima de 70%</span>
@@ -311,6 +178,12 @@ const GID_VENDAS = '1712783372';
 const ABA_FOTOS  = 'Consultores';
 const META_IND   = 72;
 
+// Linha 1 = cabeçalho → pula
+// Linhas 2–8 = consultores ativos (7 consultores)
+// Linha 9 = vaga/férias → pula
+const LINHA_INICIO = 1; // índice 0-based: pula linha 0 (cabeçalho)
+const LINHA_FIM    = 8; // índice 0-based exclusivo: lê até índice 7 (linha 8 da planilha)
+
 function fmtBRL(v) {
   return isNaN(v) ? 'R$ —' : v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
@@ -326,15 +199,15 @@ function norm(s) {
   return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
 
-// Filtra linhas que NÃO são consultores reais:
-// ignora linhas onde col A começa com número, está vazia, ou contém palavras de totais
-function isConsultor(nome) {
-  if (!nome || nome.trim() === '') return false;
-  const n = nome.trim();
-  if (/^\d/.test(n)) return false; // começa com número
-  const lower = n.toLowerCase();
-  const palavrasIgnorar = ['faturamento','total','meta','subtotal','realizado','soma'];
-  return !palavrasIgnorar.some(p => lower.includes(p));
+// Converte qualquer link do Drive para formato direto de imagem
+function normalizeDriveUrl(url) {
+  if (!url) return null;
+  // Já está no formato correto
+  if (url.includes('uc?export=view')) return url;
+  // Formato /file/d/ID/view → converter
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  return url;
 }
 
 function updateTs() {
@@ -360,7 +233,8 @@ async function loadFotos() {
       const c = row.c;
       if (!c || !c[0] || !c[0].v) return;
       const nome = norm(String(c[0].v));
-      const url  = (c[1] && c[1].v) ? String(c[1].v).trim() : null;
+      const rawUrl = (c[1] && c[1].v) ? String(c[1].v).trim() : null;
+      const url = normalizeDriveUrl(rawUrl);
       if (nome && url) map[nome] = url;
     });
   } catch(e) { console.warn('Fotos:', e.message); }
@@ -370,7 +244,7 @@ async function loadFotos() {
 function buildTable(rows) {
   if (!rows.length) return '<div class="err">Nenhum consultor encontrado.</div>';
   let h = `<table class="ct"><thead><tr>
-    <th>Rank</th><th>Consultor</th><th>Hoje</th><th>Mês</th>
+    <th>Rank</th><th>Consultor</th><th>Hoje</th><th>Mês (Acum.)</th>
     <th>Meta</th><th>Falta</th><th>%</th><th>Progresso</th>
   </tr></thead><tbody>`;
   rows.forEach((r, i) => {
@@ -378,13 +252,16 @@ function buildTable(rows) {
     const bc = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
     const pct = Math.round((r.acum / META_IND) * 100);
     const cor = progColor(pct);
+    // falta vem negativa da planilha, exibir como positivo com sinal
+    const faltaVal = Math.abs(r.falta);
+    const faltaCls = r.acum >= META_IND ? 'gap-ok' : 'gap-red';
     h += `<tr>
       <td><span class="rank-badge ${bc}">${rank}</span></td>
       <td style="font-weight:600">${r.nome}</td>
       <td style="text-align:center;font-weight:600;color:#1a6fa0">${r.hoje}</td>
       <td style="text-align:center;font-weight:800;color:#0d1b2a;font-size:14px">${r.acum}</td>
       <td style="text-align:center;color:#8aaac0">${META_IND}</td>
-      <td style="text-align:center"><span class="${r.falta>0?'gap-red':'gap-ok'}">${r.falta}</span></td>
+      <td style="text-align:center"><span class="${faltaCls}">${r.acum >= META_IND ? '✓' : faltaVal}</span></td>
       <td style="text-align:center"><b style="color:${cor};font-size:13px">${pct}%</b></td>
       <td style="min-width:90px">
         <div class="prog-bar"><div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${cor}"></div></div>
@@ -420,13 +297,18 @@ function buildTop3(rows, fotoMap) {
 }
 
 function buildFat(rows) {
-  let fat=0, falta=0;
+  let fat=0, metaFat=0;
   rows.forEach(r => {
-    if (!isNaN(r.faturado)) fat += r.faturado;
-    if (!isNaN(r.fatFalta)) falta += r.fatFalta;
+    if (!isNaN(r.faturado) && r.faturado > 0) fat += r.faturado;
+    // fatFalta vem negativo da planilha: meta = faturado + abs(fatFalta)
+    if (!isNaN(r.faturado) && !isNaN(r.fatFalta)) {
+      metaFat += r.faturado + Math.abs(r.fatFalta);
+    }
   });
-  const meta = fat + Math.abs(falta);
-  const pct  = meta>0 ? Math.round((fat/meta)*100) : 0;
+  // se metaFat não calculou corretamente, usa só fat como base
+  if (metaFat < fat) metaFat = fat;
+  const falta = metaFat - fat;
+  const pct = metaFat > 0 ? Math.round((fat/metaFat)*100) : 0;
   return `
     <div class="fat-row">
       <div class="fat-label">Realizado</div>
@@ -435,11 +317,11 @@ function buildFat(rows) {
     <div class="fat-divider"></div>
     <div class="fat-row">
       <div class="fat-label">Meta</div>
-      <div class="fat-val">${fmtBRL(meta)}</div>
+      <div class="fat-val">${fmtBRL(metaFat)}</div>
     </div>
     <div class="fat-row">
       <div class="fat-label">Falta para meta</div>
-      <div class="fat-val red">-${fmtBRL(Math.abs(falta))}</div>
+      <div class="fat-val red">-${fmtBRL(falta)}</div>
     </div>
     <div class="fat-divider"></div>
     <div class="fat-pct-label">
@@ -459,17 +341,18 @@ async function loadAll() {
       loadFotos()
     ]);
 
+    // Pula linha 0 (cabeçalho), lê linhas 1 a 7 (consultores ativos), ignora linha 8+ (férias/totais)
     let rows = [];
-    vendasRows.forEach(row => {
+    vendasRows.slice(LINHA_INICIO, LINHA_FIM).forEach(row => {
       const c = row.c;
       if (!c || !c[0] || !c[0].v) return;
       const nome = String(c[0].v).trim();
-      if (!isConsultor(nome)) return; // ignora linhas de totais/rodapé
+      if (!nome) return;
       rows.push({
         nome,
         hoje:     (c[1]&&c[1].v!=null) ? Number(c[1].v) : 0,
         acum:     (c[2]&&c[2].v!=null) ? Number(c[2].v) : 0,
-        falta:    (c[3]&&c[3].v!=null) ? Number(c[3].v) : META_IND,
+        falta:    (c[3]&&c[3].v!=null) ? Number(c[3].v) : -META_IND,
         faturado: (c[4]&&c[4].v!=null) ? Number(c[4].v) : NaN,
         fatFalta: (c[5]&&c[5].v!=null) ? Number(c[5].v) : NaN,
       });
@@ -477,8 +360,8 @@ async function loadAll() {
 
     rows.sort((a,b) => b.acum - a.acum);
 
-    const totalHoje = rows.reduce((s,r)=>s+r.hoje,0);
-    const totalMes  = rows.reduce((s,r)=>s+r.acum,0);
+    const totalHoje = rows.reduce((s,r)=>s+r.hoje, 0);
+    const totalMes  = rows.reduce((s,r)=>s+r.acum, 0);
     const metaTotal = rows.length * META_IND;
     const pctMeta   = metaTotal>0 ? Math.round((totalMes/metaTotal)*100) : 0;
 

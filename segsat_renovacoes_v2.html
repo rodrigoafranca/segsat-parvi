@@ -7,89 +7,227 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f8ff; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1b2a; min-height: 100vh; }
 
-.header { background: #93d0fa; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.logo-box { background: white; border-radius: 8px; padding: 5px 10px; font-weight: 700; font-size: 15px; color: #1a6fa0; letter-spacing: 1px; }
-.header-title h1 { font-size: 18px; font-weight: 700; color: white; letter-spacing: 0.5px; }
-.header-title p { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 2px; }
-.header-right { text-align: right; color: white; }
-.header-right .timestamp { font-size: 13px; font-weight: 500; }
-.header-right .mes { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+/* HEADER */
+.header {
+  background: #0a1628;
+  border-bottom: 3px solid #93d0fa;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo-box {
+  background: #93d0fa;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 800;
+  font-size: 15px;
+  color: #0a1628;
+  letter-spacing: 1.5px;
+}
+.header-title h1 { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; }
+.header-title p { font-size: 12px; color: #93d0fa; margin-top: 2px; }
+.header-right { text-align: right; }
+.header-right .timestamp { font-size: 14px; font-weight: 600; color: #ffffff; }
+.header-right .mes { font-size: 11px; color: #93d0fa; margin-top: 3px; }
 
-.content { padding: 16px; }
+/* CONTENT */
+.content { padding: 20px 24px; }
 
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.kpi-card { background: white; border-radius: 12px; padding: 14px 16px; text-align: center; border: 1px solid #d0e8f8; }
-.kpi-card.highlight { background: #93d0fa; border-color: #6ab8f0; }
-.kpi-label { font-size: 11px; font-weight: 600; color: #5a8aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.kpi-card.highlight .kpi-label { color: rgba(255,255,255,0.85); }
-.kpi-value { font-size: 32px; font-weight: 700; color: #1a6fa0; line-height: 1; }
-.kpi-card.highlight .kpi-value { color: white; }
-.kpi-sub { font-size: 11px; color: #7aaccc; margin-top: 4px; }
-.kpi-card.highlight .kpi-sub { color: rgba(255,255,255,0.75); }
-.loading-bar { width: 100%; height: 4px; background: #e0f0ff; border-radius: 2px; margin-top: 8px; overflow: hidden; }
-.loading-fill { height: 100%; background: #93d0fa; border-radius: 2px; transition: width 1.2s; }
-.kpi-card.highlight .loading-bar { background: rgba(255,255,255,0.3); }
-.kpi-card.highlight .loading-fill { background: white; }
+/* KPI GRID */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.kpi-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  border-top: 4px solid #93d0fa;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card.highlight {
+  background: #1a3a5c;
+  border-top-color: #93d0fa;
+}
+.kpi-icon {
+  font-size: 22px;
+  color: #93d0fa;
+  margin-bottom: 6px;
+}
+.kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6b8aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+.kpi-card.highlight .kpi-label { color: #93d0fa; }
+.kpi-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: #0d1b2a;
+  line-height: 1;
+}
+.kpi-card.highlight .kpi-value { color: #ffffff; }
+.kpi-sub { font-size: 11px; color: #8aaac0; margin-top: 5px; }
+.kpi-card.highlight .kpi-sub { color: #93d0fa; opacity: 0.8; }
+.kpi-progress-wrap { margin-top: 10px; }
+.kpi-bar-bg { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; }
+.kpi-bar-fill { height: 100%; background: #93d0fa; border-radius: 3px; transition: width 1.4s ease; }
 
-.main-grid { display: grid; grid-template-columns: 1fr 300px; gap: 14px; }
+/* MAIN GRID */
+.main-grid { display: grid; grid-template-columns: 1fr 310px; gap: 16px; }
 
-.table-card { background: white; border-radius: 12px; border: 1px solid #d0e8f8; overflow: hidden; }
-.table-card-header { background: #93d0fa; padding: 10px 16px; color: white; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+/* TABLE CARD */
+.panel {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2eaf2;
+}
+.panel-header {
+  background: #0a1628;
+  padding: 12px 18px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #93d0fa;
+}
+.panel-header i { color: #93d0fa; font-size: 16px; }
+
 table.ct { width: 100%; border-collapse: collapse; font-size: 13px; }
-table.ct thead tr { background: #e8f5ff; }
-table.ct th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #5a8aaa; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid #d0e8f8; }
-table.ct td { padding: 9px 12px; border-bottom: 0.5px solid #eef5fc; color: #1a3a50; vertical-align: middle; }
+table.ct thead tr { background: #f0f6fc; }
+table.ct th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4a6a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #d8e8f4;
+}
+table.ct td {
+  padding: 10px 14px;
+  border-bottom: 0.5px solid #eef4fa;
+  color: #1a2a3a;
+  vertical-align: middle;
+}
 table.ct tr:last-child td { border-bottom: none; }
-table.ct tr:hover td { background: #f5fbff; }
-.rank-badge { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: #e0f0ff; color: #1a6fa0; }
-.rank-badge.gold { background: #FFD700; color: #7a5900; }
-.rank-badge.silver { background: #C0C0C0; color: #3a3a3a; }
-.rank-badge.bronze { background: #CD7F32; color: white; }
-.prog-bar { width: 100%; height: 8px; background: #e0f0ff; border-radius: 4px; overflow: hidden; }
+table.ct tr:hover td { background: #f5faff; }
+
+.rank-badge {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  background: #e8f2fc; color: #3a6a9a;
+}
+.rank-badge.gold { background: #FFD700; color: #6a4800; }
+.rank-badge.silver { background: #b8b8b8; color: #2a2a2a; }
+.rank-badge.bronze { background: #CD7F32; color: #fff; }
+
+.prog-bar { width: 100%; height: 8px; background: #e4eef8; border-radius: 4px; overflow: hidden; }
 .prog-fill { height: 100%; border-radius: 4px; transition: width 1.2s; }
-.gap-red { color: #e05555; font-weight: 700; }
-.gap-ok { color: #2a9a5a; font-weight: 700; }
-.legend { display: flex; gap: 12px; padding: 8px 12px; font-size: 11px; color: #5a8aaa; align-items: center; border-top: 0.5px solid #e0f0ff; }
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
 
-.right-col { display: flex; flex-direction: column; gap: 14px; }
+.gap-red { color: #d94040; font-weight: 700; }
+.gap-ok  { color: #1e9a5a; font-weight: 700; }
 
-.top3-card { background: white; border-radius: 12px; border: 1px solid #d0e8f8; overflow: hidden; }
-.top3-header { background: #93d0fa; padding: 10px 16px; color: white; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px; }
-.top3-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.top3-item { display: flex; align-items: center; gap: 10px; border-radius: 10px; padding: 8px 10px; border: 1px solid #d0e8f8; background: #f5fbff; }
-.top3-item.first { border-color: #FFD700; background: #fffbea; }
-.top3-item.second { border-color: #C0C0C0; background: #f8f8f8; }
-.top3-item.third { border-color: #CD7F32; background: #fff6ee; }
-.avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid #93d0fa; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: #1a6fa0; background: #e0f0ff; }
-.avatar.gold { border-color: #FFD700; }
-.avatar.silver { border-color: #C0C0C0; }
-.avatar.bronze { border-color: #CD7F32; }
+.legend {
+  display: flex; gap: 16px; padding: 10px 14px;
+  font-size: 11px; color: #6a8aaa;
+  align-items: center;
+  border-top: 1px solid #eef4fa;
+  background: #f8fbff;
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+/* RIGHT COLUMN */
+.right-col { display: flex; flex-direction: column; gap: 16px; }
+
+/* TOP 3 */
+.top3-list { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.top3-item {
+  display: flex; align-items: center; gap: 10px;
+  border-radius: 10px; padding: 10px 12px;
+  border: 1px solid #e0eaf4;
+  background: #f8fbff;
+}
+.top3-item.first  { border-color: #e8c400; background: #fffdf0; }
+.top3-item.second { border-color: #b0b0b0; background: #f8f8f8; }
+.top3-item.third  { border-color: #c07828; background: #fff8f0; }
+
+.avatar {
+  width: 46px; height: 46px; border-radius: 50%; overflow: hidden;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px; color: #1a6fa0;
+  background: #d8eeff; border: 2px solid #93d0fa;
+}
+.avatar.gold   { border-color: #FFD700; background: #fff3c0; color: #7a5000; }
+.avatar.silver { border-color: #b8b8b8; background: #efefef; color: #444; }
+.avatar.bronze { border-color: #CD7F32; background: #fce8d0; color: #7a3a00; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.top3-info { flex: 1; }
-.top3-name { font-size: 13px; font-weight: 600; color: #1a3a50; }
-.top3-contracts { font-size: 11px; color: #5a8aaa; margin-top: 2px; }
-.top3-contracts b { font-size: 17px; font-weight: 700; color: #1a6fa0; }
-.top3-pos { font-size: 18px; font-weight: 700; }
-.top3-pos.gold { color: #c8a000; }
+
+.top3-info { flex: 1; min-width: 0; }
+.top3-name { font-size: 13px; font-weight: 700; color: #1a2a3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top3-contracts { font-size: 11px; color: #6a8aaa; margin-top: 3px; }
+.top3-contracts b { font-size: 16px; font-weight: 800; color: #1a6fa0; }
+.top3-pos { font-size: 20px; font-weight: 800; flex-shrink: 0; }
+.top3-pos.gold   { color: #c8a000; }
 .top3-pos.silver { color: #888; }
 .top3-pos.bronze { color: #9a5c1a; }
 
-.fat-card { background: white; border-radius: 12px; border: 1px solid #d0e8f8; overflow: hidden; }
-.fat-header { background: #1a6fa0; padding: 10px 16px; color: white; font-size: 13px; font-weight: 700; text-transform: uppercase; }
-.fat-body { padding: 14px 16px; }
-.fat-row { margin-bottom: 10px; }
-.fat-label { font-size: 11px; color: #5a8aaa; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
-.fat-val { font-size: 15px; font-weight: 700; color: #1a3a50; }
-.fat-val.green { color: #2a9a5a; }
-.fat-val.red { color: #e05555; }
+/* FATURAMENTO */
+.fat-panel { background: #0a1628; border-radius: 12px; overflow: hidden; border: 1px solid #1e3a5a; }
+.fat-header {
+  background: #0a1628;
+  padding: 12px 18px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 2px solid #93d0fa;
+}
+.fat-header i { color: #93d0fa; }
+.fat-body { padding: 16px 18px; }
+.fat-row { margin-bottom: 12px; }
+.fat-label { font-size: 10px; font-weight: 700; color: #93d0fa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.fat-val { font-size: 16px; font-weight: 700; color: #ffffff; }
+.fat-val.green { color: #4ad88a; }
+.fat-val.red   { color: #ff7070; }
+.fat-divider { height: 1px; background: #1e3a5a; margin: 12px 0; }
+.fat-pct-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.fat-pct-label span { font-size: 10px; font-weight: 700; color: #93d0fa; text-transform: uppercase; letter-spacing: 0.5px; }
+.fat-pct-label b { font-size: 22px; font-weight: 800; color: #ffffff; }
+.fat-bar-bg { height: 10px; background: #1e3a5a; border-radius: 5px; overflow: hidden; }
+.fat-bar-fill { height: 100%; background: #93d0fa; border-radius: 5px; transition: width 1.4s; }
+.fat-msg { font-size: 11px; color: #5a8aaa; margin-top: 8px; text-align: center; }
 
-.footer { background: #93d0fa; text-align: center; padding: 9px; color: white; font-size: 12px; margin-top: 4px; }
-.msg { color: #5a8aaa; font-size: 12px; padding: 10px 14px; }
-.err { color: #e05555; font-size: 12px; padding: 10px 14px; }
+/* FOOTER */
+.footer {
+  background: #0a1628;
+  border-top: 2px solid #93d0fa;
+  text-align: center;
+  padding: 10px;
+  color: #93d0fa;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  margin-top: 4px;
+}
+
+.msg { color: #6a8aaa; font-size: 12px; padding: 12px 16px; }
+.err { color: #d94040; font-size: 12px; padding: 12px 16px; }
 </style>
 </head>
 <body>
@@ -99,7 +237,7 @@ table.ct tr:hover td { background: #f5fbff; }
     <div class="logo-box">SEGSAT</div>
     <div class="header-title">
       <h1>RENOVAÇÕES DE CONTRATOS</h1>
-      <p>Gestora: Andréia Paiva &nbsp;|&nbsp; Acompanhamento em tempo real</p>
+      <p>Gestora: Andréia Paiva &nbsp;·&nbsp; Acompanhamento em tempo real</p>
     </div>
   </div>
   <div class="header-right">
@@ -111,48 +249,54 @@ table.ct tr:hover td { background: #f5fbff; }
 <div class="content">
   <div class="kpi-grid">
     <div class="kpi-card">
+      <div class="kpi-icon"><i class="ti ti-bolt"></i></div>
       <div class="kpi-label">Realizado hoje</div>
       <div class="kpi-value" id="kpi-hoje">—</div>
       <div class="kpi-sub">Total de vendas do dia</div>
     </div>
     <div class="kpi-card">
+      <div class="kpi-icon"><i class="ti ti-calendar-check"></i></div>
       <div class="kpi-label">Total renovados no mês</div>
       <div class="kpi-value" id="kpi-mes">—</div>
       <div class="kpi-sub">Contratos renovados</div>
     </div>
     <div class="kpi-card">
+      <div class="kpi-icon"><i class="ti ti-target"></i></div>
       <div class="kpi-label">Meta do mês</div>
       <div class="kpi-value" id="kpi-meta">—</div>
       <div class="kpi-sub" id="kpi-meta-sub">consultores × 72</div>
     </div>
     <div class="kpi-card highlight">
+      <div class="kpi-icon"><i class="ti ti-chart-pie"></i></div>
       <div class="kpi-label">% da meta</div>
       <div class="kpi-value" id="kpi-pct">—</div>
       <div class="kpi-sub">Percentual alcançado</div>
-      <div class="loading-bar"><div class="loading-fill" id="kpi-bar" style="width:0%"></div></div>
+      <div class="kpi-progress-wrap">
+        <div class="kpi-bar-bg"><div class="kpi-bar-fill" id="kpi-bar" style="width:0%"></div></div>
+      </div>
     </div>
   </div>
 
   <div class="main-grid">
-    <div class="table-card">
-      <div class="table-card-header">
-        <i class="ti ti-users"></i> &nbsp;Desempenho dos Consultores
+    <div class="panel">
+      <div class="panel-header">
+        <i class="ti ti-users"></i> Desempenho dos Consultores
       </div>
       <div id="table-area"><div class="msg">Carregando dados...</div></div>
       <div class="legend">
-        <span><span class="dot" style="background:#2a9a5a"></span>Acima de 70%</span>
+        <span><span class="dot" style="background:#1e9a5a"></span>Acima de 70%</span>
         <span><span class="dot" style="background:#f0a020"></span>40–69%</span>
-        <span><span class="dot" style="background:#e05555"></span>Abaixo de 40%</span>
+        <span><span class="dot" style="background:#d94040"></span>Abaixo de 40%</span>
       </div>
     </div>
 
     <div class="right-col">
-      <div class="top3-card">
-        <div class="top3-header"><i class="ti ti-trophy"></i> Top 3 Renovadores</div>
+      <div class="panel">
+        <div class="panel-header"><i class="ti ti-trophy"></i> Top 3 Renovadores</div>
         <div class="top3-list" id="top3-list"><div class="msg">Carregando...</div></div>
       </div>
-      <div class="fat-card">
-        <div class="fat-header"><i class="ti ti-currency-dollar"></i> &nbsp;Faturamento do Mês</div>
+      <div class="fat-panel">
+        <div class="fat-header"><i class="ti ti-currency-dollar"></i> Faturamento do Mês</div>
         <div class="fat-body" id="fat-body"><div class="msg">Carregando...</div></div>
       </div>
     </div>
@@ -162,16 +306,16 @@ table.ct tr:hover td { background: #f5fbff; }
 <div class="footer">⭐ Cada renovação faz a diferença! Conte com o time e vá além!</div>
 
 <script>
-const SHEET_ID = '15o8wKA_X71quxVd6_jQx9FVeX3JLnfDq';
+const SHEET_ID   = '15o8wKA_X71quxVd6_jQx9FVeX3JLnfDq';
 const GID_VENDAS = '1712783372';
-const ABA_FOTOS = 'Consultores'; // Coluna A = Nome, Coluna B = URL da foto
-const META_IND = 72;
+const ABA_FOTOS  = 'Consultores';
+const META_IND   = 72;
 
 function fmtBRL(v) {
-  return isNaN(v) ? 'R$ —' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return isNaN(v) ? 'R$ —' : v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
 function progColor(p) {
-  return p >= 70 ? '#2a9a5a' : p >= 40 ? '#f0a020' : '#e05555';
+  return p >= 70 ? '#1e9a5a' : p >= 40 ? '#f0a020' : '#d94040';
 }
 function initials(n) {
   if (!n) return '?';
@@ -181,6 +325,18 @@ function initials(n) {
 function norm(s) {
   return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
+
+// Filtra linhas que NÃO são consultores reais:
+// ignora linhas onde col A começa com número, está vazia, ou contém palavras de totais
+function isConsultor(nome) {
+  if (!nome || nome.trim() === '') return false;
+  const n = nome.trim();
+  if (/^\d/.test(n)) return false; // começa com número
+  const lower = n.toLowerCase();
+  const palavrasIgnorar = ['faturamento','total','meta','subtotal','realizado','soma'];
+  return !palavrasIgnorar.some(p => lower.includes(p));
+}
+
 function updateTs() {
   const n = new Date();
   document.getElementById('ts').textContent =
@@ -204,17 +360,15 @@ async function loadFotos() {
       const c = row.c;
       if (!c || !c[0] || !c[0].v) return;
       const nome = norm(String(c[0].v));
-      const url = (c[1] && c[1].v) ? String(c[1].v).trim() : null;
+      const url  = (c[1] && c[1].v) ? String(c[1].v).trim() : null;
       if (nome && url) map[nome] = url;
     });
-  } catch(e) {
-    console.warn('Fotos:', e.message);
-  }
+  } catch(e) { console.warn('Fotos:', e.message); }
   return map;
 }
 
 function buildTable(rows) {
-  if (!rows.length) return '<div class="err">Nenhum dado encontrado.</div>';
+  if (!rows.length) return '<div class="err">Nenhum consultor encontrado.</div>';
   let h = `<table class="ct"><thead><tr>
     <th>Rank</th><th>Consultor</th><th>Hoje</th><th>Mês</th>
     <th>Meta</th><th>Falta</th><th>%</th><th>Progresso</th>
@@ -222,17 +376,17 @@ function buildTable(rows) {
   rows.forEach((r, i) => {
     const rank = i+1;
     const bc = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
-    const pct = Math.round((r.acum/META_IND)*100);
+    const pct = Math.round((r.acum / META_IND) * 100);
     const cor = progColor(pct);
     h += `<tr>
       <td><span class="rank-badge ${bc}">${rank}</span></td>
       <td style="font-weight:600">${r.nome}</td>
-      <td style="text-align:center;font-weight:600">${r.hoje}</td>
-      <td style="text-align:center;font-weight:700;color:#1a6fa0">${r.acum}</td>
-      <td style="text-align:center;color:#5a8aaa">${META_IND}</td>
+      <td style="text-align:center;font-weight:600;color:#1a6fa0">${r.hoje}</td>
+      <td style="text-align:center;font-weight:800;color:#0d1b2a;font-size:14px">${r.acum}</td>
+      <td style="text-align:center;color:#8aaac0">${META_IND}</td>
       <td style="text-align:center"><span class="${r.falta>0?'gap-red':'gap-ok'}">${r.falta}</span></td>
-      <td style="text-align:center"><b style="color:${cor}">${pct}%</b></td>
-      <td style="min-width:80px">
+      <td style="text-align:center"><b style="color:${cor};font-size:13px">${pct}%</b></td>
+      <td style="min-width:90px">
         <div class="prog-bar"><div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${cor}"></div></div>
       </td>
     </tr>`;
@@ -242,23 +396,23 @@ function buildTable(rows) {
 
 function buildTop3(rows, fotoMap) {
   const medals = [
-    {cls:'first', pos:'1º', badge:'gold'},
+    {cls:'first',  pos:'1º', badge:'gold'},
     {cls:'second', pos:'2º', badge:'silver'},
-    {cls:'third', pos:'3º', badge:'bronze'},
+    {cls:'third',  pos:'3º', badge:'bronze'},
   ];
   return rows.slice(0,3).map((r,i) => {
     const m = medals[i];
     const pct = Math.round((r.acum/META_IND)*100);
     const foto = fotoMap[norm(r.nome)] || null;
-    const ini = initials(r.nome);
-    const avatarHtml = foto
-      ? `<img src="${foto}" alt="${r.nome}" onload="this.style.opacity=1" onerror="this.parentElement.innerHTML='${ini}'" style="opacity:0;transition:opacity .3s">`
+    const ini  = initials(r.nome);
+    const avatarInner = foto
+      ? `<img src="${foto}" alt="${r.nome}" onerror="this.parentElement.innerHTML='${ini}'">`
       : ini;
     return `<div class="top3-item ${m.cls}">
-      <div class="avatar ${m.badge}">${avatarHtml}</div>
+      <div class="avatar ${m.badge}">${avatarInner}</div>
       <div class="top3-info">
         <div class="top3-name">${r.nome}</div>
-        <div class="top3-contracts"><b>${r.acum}</b> contratos &nbsp;|&nbsp; ${pct}% da meta</div>
+        <div class="top3-contracts"><b>${r.acum}</b> contratos &nbsp;·&nbsp; ${pct}% meta</div>
       </div>
       <div class="top3-pos ${m.badge}">${m.pos}</div>
     </div>`;
@@ -272,21 +426,30 @@ function buildFat(rows) {
     if (!isNaN(r.fatFalta)) falta += r.fatFalta;
   });
   const meta = fat + Math.abs(falta);
-  const pct = meta>0 ? Math.round((fat/meta)*100) : 0;
+  const pct  = meta>0 ? Math.round((fat/meta)*100) : 0;
   return `
-    <div class="fat-row"><div class="fat-label">Realizado</div><div class="fat-val green">${fmtBRL(fat)}</div></div>
-    <div class="fat-row"><div class="fat-label">Meta</div><div class="fat-val">${fmtBRL(meta)}</div></div>
-    <div class="fat-row"><div class="fat-label">Falta para meta</div><div class="fat-val red">-${fmtBRL(Math.abs(falta))}</div></div>
-    <div style="margin-top:8px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#5a8aaa;margin-bottom:4px">
-        <span>% Meta de faturamento</span>
-        <span style="font-size:18px;font-weight:700;color:#1a6fa0">${pct}%</span>
-      </div>
-      <div style="height:12px;background:#e0f0ff;border-radius:6px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:#93d0fa;border-radius:6px;transition:width 1.2s"></div>
-      </div>
-      <div style="font-size:11px;color:#5a8aaa;margin-top:4px;text-align:center">Estamos no caminho! Vamos juntos até o final do mês!</div>
-    </div>`;
+    <div class="fat-row">
+      <div class="fat-label">Realizado</div>
+      <div class="fat-val green">${fmtBRL(fat)}</div>
+    </div>
+    <div class="fat-divider"></div>
+    <div class="fat-row">
+      <div class="fat-label">Meta</div>
+      <div class="fat-val">${fmtBRL(meta)}</div>
+    </div>
+    <div class="fat-row">
+      <div class="fat-label">Falta para meta</div>
+      <div class="fat-val red">-${fmtBRL(Math.abs(falta))}</div>
+    </div>
+    <div class="fat-divider"></div>
+    <div class="fat-pct-label">
+      <span>% Meta de faturamento</span>
+      <b>${pct}%</b>
+    </div>
+    <div class="fat-bar-bg">
+      <div class="fat-bar-fill" style="width:${Math.min(pct,100)}%"></div>
+    </div>
+    <div class="fat-msg">Estamos no caminho! Vamos juntos até o final do mês!</div>`;
 }
 
 async function loadAll() {
@@ -301,7 +464,7 @@ async function loadAll() {
       const c = row.c;
       if (!c || !c[0] || !c[0].v) return;
       const nome = String(c[0].v).trim();
-      if (!nome) return;
+      if (!isConsultor(nome)) return; // ignora linhas de totais/rodapé
       rows.push({
         nome,
         hoje:     (c[1]&&c[1].v!=null) ? Number(c[1].v) : 0,
@@ -319,18 +482,19 @@ async function loadAll() {
     const metaTotal = rows.length * META_IND;
     const pctMeta   = metaTotal>0 ? Math.round((totalMes/metaTotal)*100) : 0;
 
-    document.getElementById('kpi-hoje').textContent    = totalHoje;
-    document.getElementById('kpi-mes').textContent     = totalMes;
-    document.getElementById('kpi-meta').textContent    = metaTotal;
-    document.getElementById('kpi-meta-sub').textContent= `${rows.length} consultores × ${META_IND}`;
-    document.getElementById('kpi-pct').textContent     = pctMeta + '%';
-    document.getElementById('kpi-bar').style.width     = Math.min(pctMeta,100) + '%';
-    document.getElementById('table-area').innerHTML    = buildTable(rows);
-    document.getElementById('top3-list').innerHTML     = buildTop3(rows, fotoMap);
-    document.getElementById('fat-body').innerHTML      = buildFat(rows);
+    document.getElementById('kpi-hoje').textContent     = totalHoje;
+    document.getElementById('kpi-mes').textContent      = totalMes;
+    document.getElementById('kpi-meta').textContent     = metaTotal;
+    document.getElementById('kpi-meta-sub').textContent = `${rows.length} consultores × ${META_IND}`;
+    document.getElementById('kpi-pct').textContent      = pctMeta + '%';
+    document.getElementById('kpi-bar').style.width      = Math.min(pctMeta,100) + '%';
+    document.getElementById('table-area').innerHTML     = buildTable(rows);
+    document.getElementById('top3-list').innerHTML      = buildTop3(rows, fotoMap);
+    document.getElementById('fat-body').innerHTML       = buildFat(rows);
+
   } catch(e) {
     document.getElementById('table-area').innerHTML =
-      `<div class="err">Erro ao carregar dados. Verifique se a planilha está pública (Qualquer pessoa com o link pode ver).<br><small>${e.message}</small></div>`;
+      `<div class="err">Erro ao carregar dados. Verifique se a planilha está pública.<br><small>${e.message}</small></div>`;
   }
 }
 

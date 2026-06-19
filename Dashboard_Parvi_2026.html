@@ -3088,11 +3088,19 @@ async function carregarEstoqueAtualizado() {
       sugestaoEnvio += item.sugestao;
 
       const ck = item.primeiroCoordenador || 'NA';
-      if(!coordenadores[ck]) coordenadores[ck] = { nome: item.coordenador, enviado:0, vendido:0, saldo:0, media:0, cobertura:0, contLojas:0 };
+      if(!coordenadores[ck]) coordenadores[ck] = { nome: item.coordenador, enviado:0, vendido:0, saldo:0, media:0, cobertura:0, contLojas:0, lojas:[] };
       coordenadores[ck].enviado += item.enviado;
       coordenadores[ck].vendido += vendido;
       coordenadores[ck].saldo   += item.saldo;
       coordenadores[ck].contLojas++;
+      coordenadores[ck].lojas.push({
+        loja:      item.loja,
+        marca:     item.marca,
+        enviado:   item.enviado,
+        vendido:   vendido,
+        estoque:   item.estoqueAtual,
+        saldo:     item.saldo
+      });
 
       const mk = item.marca || 'OUTRAS';
       if(!marcas[mk]) marcas[mk] = { marca: mk, enviado:0, vendido:0, estoqueAtual:0, lojas:[] };
@@ -3179,31 +3187,75 @@ function renderEstoqueAtualizado(dados) {
       <div class="kpi-accent ${projecao>0?'o':'g'}"></div>
     </div>`;
 
-  // ── TABELA COORDENADORES ───────────────────────────────────
+  // ── TABELA COORDENADORES (ACCORDION) ──────────────────────
   const TH = 'font-size:9px;font-family:DM Mono,monospace;letter-spacing:0.8px;color:var(--text3);text-transform:uppercase;padding:8px 10px;background:var(--surface2);text-align:right';
   const TD = 'padding:9px 10px;border-bottom:0.5px solid var(--border);font-size:13px;text-align:right';
   const coords = dados.coordenadores || [];
-  document.getElementById('ea-tabela-coord').innerHTML = `
+
+  const CORES_COORD = {
+    'CLAYTON':'#009474','LOZANIA':'#7C3AED','JAIRO':'#0284C7','PAULO':'#c05000'
+  };
+
+  document.getElementById('ea-tabela-coord').innerHTML = coords.map((c, ci) => {
+    const primeiro = (c.nome||'').split(' ')[0].toUpperCase();
+    const cor      = CORES_COORD[primeiro] || 'var(--green)';
+    const lojas    = (c.lojas||[]).sort((a,b) => b.enviado - a.enviado);
+    const lojasHtml = lojas.map(l => `
+      <tr style="background:var(--surface)">
+        <td style="${TD};text-align:left;padding-left:32px;font-size:11px;color:var(--text2)">${l.loja}</td>
+        <td style="${TD};font-size:11px;color:var(--text3)">${l.marca}</td>
+        <td style="${TD};color:var(--blue);font-size:11px">${l.enviado}</td>
+        <td style="${TD};color:var(--green);font-size:11px">${l.vendido}</td>
+        <td style="${TD};color:${l.saldo<0?'var(--red)':'var(--gold)'};font-weight:700;font-size:11px">${l.saldo}</td>
+        <td style="${TD}"></td>
+      </tr>`).join('');
+
+    return `
+      <tr onclick="eaToggleCoord(${ci})" style="cursor:pointer;user-select:none;background:var(--surface2)">
+        <td style="${TD};text-align:left;font-weight:700;color:var(--text)">
+          <span style="display:inline-flex;align-items:center;gap:8px">
+            <span style="width:9px;height:9px;border-radius:50%;background:${cor};display:inline-block;flex-shrink:0"></span>
+            ${c.nome||'—'}
+          </span>
+        </td>
+        <td style="${TD};color:var(--blue);font-weight:600">${c.enviado}</td>
+        <td style="${TD};color:var(--green);font-weight:600">${c.vendido}</td>
+        <td style="${TD};color:${c.saldo<0?'var(--red)':'var(--gold)'};font-weight:700">${c.saldo}</td>
+        <td style="${TD};color:var(--text2)">${c.media||0}</td>
+        <td style="${TD}">
+          <span style="display:inline-flex;align-items:center;gap:6px">
+            <span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">${lojas.length} loja${lojas.length!==1?'s':''}</span>
+            <span id="ea-coord-chev-${ci}" style="font-size:10px;color:var(--text3)">▼</span>
+          </span>
+        </td>
+      </tr>
+      <tr id="ea-coord-rows-${ci}" style="display:none">
+        <td colspan="6" style="padding:0">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="${TH};text-align:left;padding-left:32px;background:var(--surface)">Loja</th>
+              <th style="${TH};background:var(--surface)">Marca</th>
+              <th style="${TH};background:var(--surface)">Enviado</th>
+              <th style="${TH};background:var(--surface)">Vendido</th>
+              <th style="${TH};background:var(--surface)">Saldo</th>
+              <th style="${TH};background:var(--surface)"></th>
+            </tr></thead>
+            <tbody>${lojasHtml}</tbody>
+          </table>
+        </td>
+      </tr>`;
+  }).join('');
+
+  // Reconstrói thead separado
+  document.getElementById('ea-tabela-coord').insertAdjacentHTML('afterbegin', `
     <thead><tr>
       <th style="${TH};text-align:left">Coordenador</th>
       <th style="${TH}">Enviado</th>
       <th style="${TH}">Vendas</th>
       <th style="${TH}">Saldo</th>
       <th style="${TH}">Média/Mês</th>
-      <th style="${TH}">Cobertura</th>
-    </tr></thead>
-    <tbody>${coords.map(c => {
-      const cor = c.cobertura === 0 ? 'var(--text3)' : c.cobertura < 15 ? 'var(--red)' : c.cobertura <= 30 ? 'var(--gold)' : 'var(--green)';
-      const bg  = c.cobertura === 0 ? 'var(--surface2)' : c.cobertura < 15 ? 'var(--red-bg)' : c.cobertura <= 30 ? 'var(--gold-bg)' : 'var(--green-bg)';
-      return `<tr>
-        <td style="${TD};text-align:left;font-weight:600;color:var(--text)">${c.nome||'—'}</td>
-        <td style="${TD};color:var(--blue);font-weight:600">${c.enviado}</td>
-        <td style="${TD};color:var(--green);font-weight:600">${c.vendido}</td>
-        <td style="${TD};color:${c.saldo<0?'var(--red)':'var(--gold)'};font-weight:700">${c.saldo}</td>
-        <td style="${TD};color:var(--text2)">${c.media}</td>
-        <td style="${TD}"><span style="background:${bg};color:${cor};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace">${c.cobertura} dias</span></td>
-      </tr>`;
-    }).join('')}</tbody>`;
+      <th style="${TH}">Lojas</th>
+    </tr></thead>`);
 
   // ── MARCAS / LOJAS ─────────────────────────────────────────
   const marcas = dados.marcas || [];
@@ -3260,6 +3312,15 @@ function eaToggleMarca(i) {
   if(!body) return;
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
+  if(chev) chev.textContent = open ? '▼' : '▲';
+}
+
+function eaToggleCoord(i) {
+  const row  = document.getElementById('ea-coord-rows-'+i);
+  const chev = document.getElementById('ea-coord-chev-'+i);
+  if(!row) return;
+  const open = row.style.display !== 'none';
+  row.style.display = open ? 'none' : 'table-row';
   if(chev) chev.textContent = open ? '▼' : '▲';
 }
 

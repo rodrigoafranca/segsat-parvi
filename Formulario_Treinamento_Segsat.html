@@ -101,6 +101,31 @@
   .submit-btn:hover{background:var(--green-d);}
   .submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
 
+  /* ── SETOR ── */
+  .setor-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
+  .setor-opt{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 12px;border-radius:10px;
+    border:1px solid var(--border);background:var(--surface2);
+    cursor:pointer;transition:all 0.18s;
+  }
+  .setor-opt:hover{border-color:var(--green);}
+  .setor-opt.selected{border-color:var(--green);background:var(--green-bg);}
+  .setor-opt .setor-icon{
+    width:18px;height:18px;flex-shrink:0;border-radius:50%;
+    border:1.5px solid var(--border2);background:var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.18s;
+  }
+  .setor-opt.selected .setor-icon{background:var(--green);border-color:var(--green);}
+  .setor-opt .setor-icon::after{content:'';display:none;}
+  .setor-opt.selected .setor-icon::after{
+    content:'';display:block;
+    width:6px;height:6px;border-radius:50%;background:#fff;
+  }
+  .setor-opt span{font-size:12px;color:var(--text2);line-height:1.3;flex:1;}
+  .setor-opt.selected span{color:var(--text);font-weight:600;}
+
   /* ── MISC ── */
   .loading{text-align:center;padding:30px;color:var(--text3);font-size:13px;}
   .success{text-align:center;padding:40px 20px;}
@@ -148,6 +173,7 @@ let LOJAS = [];
 let selectedNotas = {};
 let selectedTemas = [];
 let selectedPreparo = '';
+let selectedSetor    = '';
 
 /* SVG do check verde */
 const CHECK_SVG = `<svg width="11" height="8" viewBox="0 0 11 8" fill="none">
@@ -194,6 +220,21 @@ function renderForm() {
         ${lojaOpts}
       </select>
       <input type="hidden" id="loja-uf">
+      <label style="margin-top:14px">Seu setor</label>
+      <div class="setor-group" id="setor-group">
+        <div class="setor-opt" onclick="setSetor('Vendedor de Carros',this)">
+          <div class="setor-icon"></div><span>🚗 Vendedor de Carros</span>
+        </div>
+        <div class="setor-opt" onclick="setSetor('Vendedor de Acessórios',this)">
+          <div class="setor-icon"></div><span>📍 Vendedor de Acessórios</span>
+        </div>
+        <div class="setor-opt" onclick="setSetor('Entrega Técnica',this)">
+          <div class="setor-icon"></div><span>📋 Entrega Técnica</span>
+        </div>
+        <div class="setor-opt" onclick="setSetor('Consultor de Pós Venda',this)">
+          <div class="setor-icon"></div><span>🤝 Consultor de Pós Venda</span>
+        </div>
+      </div>
     </div>
 
     <!-- Passo 2: Notas -->
@@ -262,6 +303,12 @@ function setLoja(sel) {
   document.getElementById('loja-uf').value = opt.dataset.uf || '';
 }
 
+function setSetor(val, el) {
+  selectedSetor = val;
+  document.querySelectorAll('.setor-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
 function setNota(tipo, val, btn) {
   selectedNotas[tipo] = val;
   btn.closest('.nota-row').querySelectorAll('.nota-btn').forEach(b=>b.classList.remove('sel'));
@@ -293,6 +340,7 @@ async function enviar() {
 
   if(!apresentador) { errEl.style.display='block'; errEl.textContent='⚠️ Selecione o apresentador'; return; }
   if(!loja)         { errEl.style.display='block'; errEl.textContent='⚠️ Selecione sua loja'; return; }
+  if(!selectedSetor){ errEl.style.display='block'; errEl.textContent='⚠️ Selecione seu setor'; return; }
   if(Object.keys(selectedNotas).length < 4) { errEl.style.display='block'; errEl.textContent='⚠️ Preencha todas as notas'; return; }
   if(!selectedPreparo) { errEl.style.display='block'; errEl.textContent='⚠️ Responda se se sente preparado'; return; }
   errEl.style.display = 'none';
@@ -317,6 +365,7 @@ async function enviar() {
         nota_aplic:        notas.aplic,
         nota_duracao:      notas.duracao,
         nota_media:        media,
+        setor:             selectedSetor,
         temas:             selectedTemas.join(', '),
         preparo:           selectedPreparo,
         sugestao:          (document.getElementById('sugestao')||{}).value || '',

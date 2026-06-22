@@ -1375,6 +1375,7 @@ function trnRenderizar() {
       <th style="${TH};text-align:left">Data</th>
       <th style="${TH};text-align:left">Apresentador</th>
       <th style="${TH};text-align:left">Loja</th>
+      <th style="${TH};text-align:left">Setor</th>
       <th style="${TH};text-align:center">Nota</th>
       <th style="${TH};text-align:center">Preparado?</th>
       <th style="${TH};text-align:left">Temas</th>
@@ -1388,6 +1389,12 @@ function trnRenderizar() {
         <td style="${TD};color:var(--text3)">${data}</td>
         <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
         <td style="${TD}">${r.loja||'—'}</td>
+        <td style="${TD}">${(()=>{
+          const s=r.setor||'—';
+          if(s==='—') return '<span style="color:var(--text3)">—</span>';
+          const ico=s.includes('Carros')?'🚗':s.includes('cess')?'🔧':s.includes('Entrega')?'📋':'🤝';
+          return `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(0,148,116,0.08);color:var(--green-d);white-space:nowrap">${ico} ${s}</span>`;
+        })()}</td>
         <td style="${TD};text-align:center;font-weight:700;color:${cor}">${nota?nota.toFixed(1):'—'}</td>
         <td style="${TD};text-align:center"><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${sim?'rgba(100,204,50,0.1)':'rgba(226,75,74,0.1)'};color:${sim?'var(--green)':'var(--red)'}">${sim?'✅ Sim':'❌ Não'}</span></td>
         <td style="${TD};font-size:11px;color:var(--text2)">${r.temas_abordados||r.temas||'—'}</td>

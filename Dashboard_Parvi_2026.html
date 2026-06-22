@@ -1665,18 +1665,22 @@ function mergeStores(listaDados) {
     (json.allStores||[]).forEach(s => {
       const key = s.loja;
       if(!storeMap[key]) {
-        storeMap[key] = {...s, segsat:0, fat:0, carros:s.carros};
+        // Inicializa zerando os acumuláveis
+        storeMap[key] = {...s, segsat:0, fat:0, carros:0, comm:0};
       }
-      storeMap[key].segsat += s.segsat;
-      storeMap[key].fat    += s.fat;
-      // carros: pega o maior valor (evita duplicar)
-      storeMap[key].carros = Math.max(storeMap[key].carros, s.carros);
+      storeMap[key].segsat += (s.segsat || 0);
+      storeMap[key].fat    += (s.fat    || 0);
+      storeMap[key].carros += (s.carros || 0); // SOMA — cada mês tem carros diferentes
+      storeMap[key].comm   += (s.comm   || 0); // SOMA comissões do trimestre
     });
   });
   return Object.values(storeMap).map(s => ({
     ...s,
     pct: s.carros > 0 ? s.segsat / s.carros : 0,
-    opp: s.segsat===0&&s.carros>=1?3:s.segsat>0&&s.segsat/s.carros<0.1&&s.carros>=20?2:s.segsat/s.carros>=0.1&&s.segsat/s.carros<0.3?1:0
+    opp: s.segsat===0&&s.carros>=1 ? 3
+       : s.segsat>0&&s.segsat/s.carros<0.1&&s.carros>=20 ? 2
+       : s.segsat/s.carros>=0.1&&s.segsat/s.carros<0.3 ? 1
+       : 0
   }));
 }
 

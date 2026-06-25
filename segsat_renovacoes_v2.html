@@ -339,26 +339,36 @@ function buildFat(rows){
 }
 
 function buildBoasVindas(allRows){
-  // Linha 15 = índice 14 (cabeçalho), linha 16 = índice 15 (consultor), F18=índice 17 col5, F19=índice 18 col5
+  // Busca dinamicamente — o gviz pula linhas vazias, entao indices podem variar
   try{
-    const row16  = allRows[15]; // linha 16 — consultor
-    const row18  = allRows[17]; // linha 18 — meta mensal (valor em col F = índice 5)
-    const row19  = allRows[18]; // linha 19 — % meta mensal (valor em col F = índice 5)
+    // Linha do consultor: primeira linha apos LINHA_FIM com texto na col A
+    let cC = [];
+    for(let i = LINHA_FIM; i < allRows.length; i++){
+      const c = allRows[i] && allRows[i].c;
+      if(c && c[0] && c[0].v && String(c[0].v).trim() !== ''){
+        cC = c; break;
+      }
+    }
+    const nome       = (cC[0]&&cC[0].v) ? String(cC[0].v) : '—';
+    const base       = (cC[1]&&cC[1].v!=null) ? Number(cC[1].v) : 0;
+    const contatados = (cC[2]&&cC[2].v!=null) ? Number(cC[2].v) : 0;
+    const perfRaw    = (cC[3]&&cC[3].v!=null) ? Number(cC[3].v) : null;
+    const perf       = perfRaw!==null ? Math.round(perfRaw*100)+'%' : '—';
+    const perfCor    = perfRaw!==null&&perfRaw>=0.7?'#4ad88a':perfRaw>=0.4?'#f0a020':'#ff6b6b';
 
-    const c16 = row16 ? row16.c : [];
-    const nome      = (c16[0]&&c16[0].v) ? String(c16[0].v) : '—';
-    const base      = (c16[1]&&c16[1].v!=null) ? Number(c16[1].v) : 0;
-    const contatados= (c16[2]&&c16[2].v!=null) ? Number(c16[2].v) : 0;
-    const perfRaw   = (c16[3]&&c16[3].v!=null) ? Number(c16[3].v) : null;
-    const perf      = perfRaw!==null ? Math.round(perfRaw*100)+'%' : '—';
-    const perfCor   = perfRaw!==null&&perfRaw>=0.7?'#4ad88a':perfRaw>=0.4?'#f0a020':'#ff6b6b';
+    // F18 e F19: varre linhas apos LINHA_FIM buscando col F (idx 5) com valor numerico
+    let metaMensalVal = null, pctMetaVal = null;
+    for(let i = LINHA_FIM; i < allRows.length; i++){
+      const c = allRows[i] && allRows[i].c;
+      if(c && c[5] && c[5].v!=null && !isNaN(Number(c[5].v))){
+        if(metaMensalVal===null) metaMensalVal = Number(c[5].v);
+        else if(pctMetaVal===null){ pctMetaVal = Number(c[5].v); break; }
+      }
+    }
 
-    const metaMensalVal = (row18&&row18.c&&row18.c[5]&&row18.c[5].v!=null) ? row18.c[5].v : null;
-    const pctMetaVal    = (row19&&row19.c&&row19.c[5]&&row19.c[5].v!=null) ? row19.c[5].v : null;
-
-    const metaMensal = metaMensalVal!==null ? Number(metaMensalVal).toLocaleString('pt-BR') : '—';
-    const pctMeta    = pctMetaVal!==null ? Math.round(Number(pctMetaVal)*100)+'%' : '—';
-    const pctMetaCor = pctMetaVal!==null&&Number(pctMetaVal)>=0.7?'#4ad88a':Number(pctMetaVal)>=0.4?'#f0a020':'#ff6b6b';
+    const metaMensal = metaMensalVal!==null ? metaMensalVal.toLocaleString('pt-BR') : '—';
+    const pctMeta    = pctMetaVal!==null ? Math.round(pctMetaVal*100)+'%' : '—';
+    const pctMetaCor = pctMetaVal!==null&&pctMetaVal>=0.7?'#4ad88a':pctMetaVal>=0.4?'#f0a020':'#ff6b6b';
 
     return '<div class="bv-table-wrap">'+
       '<table class="bvt"><thead><tr>'+
@@ -382,7 +392,7 @@ function buildBoasVindas(allRows){
       '</div>'+
     '</div>';
   }catch(e){
-    return '<div class="err">Erro ao carregar boas-vindas: '+e.message+'</div>';
+    return '<div class="err">Erro boas-vindas: '+e.message+'</div>';
   }
 }
 

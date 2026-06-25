@@ -121,7 +121,7 @@ table.ct tr:hover td { background:#f5faff; }
 .bv-panel { flex:1; background:#0f2235; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; border:1px solid #1e3a5a; min-height:0; }
 .bv-header { flex-shrink:0; background:#0a1628; padding:8px 14px; color:#fff; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:7px; border-bottom:2px solid #93d0fa; }
 .bv-header i { color:#93d0fa; }
-.bv-body { flex:1; display:grid; grid-template-columns:1fr 1px 2fr 1px 1fr; gap:0 0; align-items:center; padding:0 16px; min-height:0; }
+.bv-body { flex:1; display:flex; align-items:center; padding:0 16px; min-height:0; }
 .bv-divider-v { background:#1e3a5a; align-self:stretch; margin:10px 0; }
 
 /* Tabela boas-vindas */
@@ -339,57 +339,41 @@ function buildFat(rows){
 }
 
 function buildBoasVindas(allRows){
-  // Busca dinamicamente — o gviz pula linhas vazias, entao indices podem variar
+  // Células T14:X15
+  // Linha 14 = índice 13 (cabeçalhos), Linha 15 = índice 14 (dados)
+  // Colunas: T=19, U=20, V=21, W=22, X=23
   try{
-    // Linha do consultor: primeira linha apos LINHA_FIM com texto na col A
-    let cC = [];
-    for(let i = LINHA_FIM; i < allRows.length; i++){
-      const c = allRows[i] && allRows[i].c;
-      if(c && c[0] && c[0].v && String(c[0].v).trim() !== ''){
-        cC = c; break;
-      }
-    }
-    const nome       = (cC[0]&&cC[0].v) ? String(cC[0].v) : '—';
-    const base       = (cC[1]&&cC[1].v!=null) ? Number(cC[1].v) : 0;
-    const contatados = (cC[2]&&cC[2].v!=null) ? Number(cC[2].v) : 0;
-    const perfRaw    = (cC[3]&&cC[3].v!=null) ? Number(cC[3].v) : null;
-    const perf       = perfRaw!==null ? Math.round(perfRaw*100)+'%' : '—';
-    const perfCor    = perfRaw!==null&&perfRaw>=0.7?'#4ad88a':perfRaw>=0.4?'#f0a020':'#ff6b6b';
+    const row14 = allRows[13] ? allRows[13].c : [];
+    const row15 = allRows[14] ? allRows[14].c : [];
 
-    // F18 e F19: varre linhas apos LINHA_FIM buscando col F (idx 5) com valor numerico
-    let metaMensalVal = null, pctMetaVal = null;
-    for(let i = LINHA_FIM; i < allRows.length; i++){
-      const c = allRows[i] && allRows[i].c;
-      if(c && c[5] && c[5].v!=null && !isNaN(Number(c[5].v))){
-        if(metaMensalVal===null) metaMensalVal = Number(c[5].v);
-        else if(pctMetaVal===null){ pctMetaVal = Number(c[5].v); break; }
-      }
-    }
+    // Cabeçalhos da linha 14
+    const cab0 = (row14[19]&&row14[19].v) ? String(row14[19].v) : 'Consultor';
+    const cab1 = (row14[20]&&row14[20].v) ? String(row14[20].v) : 'Base';
+    const cab2 = (row14[21]&&row14[21].v) ? String(row14[21].v) : 'Contatados';
+    const cab3 = (row14[22]&&row14[22].v) ? String(row14[22].v) : 'Performance';
+    const cab4 = (row14[23]&&row14[23].v) ? String(row14[23].v) : 'Obj. Mensal';
 
-    const metaMensal = metaMensalVal!==null ? metaMensalVal.toLocaleString('pt-BR') : '—';
-    const pctMeta    = pctMetaVal!==null ? Math.round(pctMetaVal*100)+'%' : '—';
-    const pctMetaCor = pctMetaVal!==null&&pctMetaVal>=0.7?'#4ad88a':pctMetaVal>=0.4?'#f0a020':'#ff6b6b';
+    // Dados da linha 15
+    const nome       = (row15[19]&&row15[19].v) ? String(row15[19].v) : '—';
+    const base       = (row15[20]&&row15[20].v!=null) ? Number(row15[20].v) : 0;
+    const contatados = (row15[21]&&row15[21].v!=null) ? Number(row15[21].v) : 0;
+    const perfRaw    = (row15[22]&&row15[22].v!=null) ? Number(row15[22].v) : null;
+    const objMensal  = (row15[23]&&row15[23].v!=null) ? Number(row15[23].v) : null;
+
+    const perf    = perfRaw!==null ? Math.round(perfRaw*100)+'%' : '—';
+    const perfCor = perfRaw!==null&&perfRaw>=0.7?'#4ad88a':perfRaw>=0.4?'#f0a020':'#ff6b6b';
+    const objStr  = objMensal!==null ? objMensal.toLocaleString('pt-BR') : '—';
 
     return '<div class="bv-table-wrap">'+
       '<table class="bvt"><thead><tr>'+
-        '<th>Consultor</th><th>Base</th><th>Contatados</th><th>Performance</th>'+
+        '<th>'+cab0+'</th><th>'+cab1+'</th><th>'+cab2+'</th><th>'+cab3+'</th><th>'+cab4+'</th>'+
       '</tr></thead><tbody><tr>'+
         '<td>'+nome+'</td>'+
         '<td>'+base.toLocaleString('pt-BR')+'</td>'+
         '<td>'+contatados.toLocaleString('pt-BR')+'</td>'+
         '<td><b style="color:'+perfCor+';font-size:16px">'+perf+'</b></td>'+
+        '<td style="font-weight:800;color:#93d0fa;font-size:16px">'+objStr+'</td>'+
       '</tr></tbody></table>'+
-    '</div>'+
-    '<div class="bv-divider-v"></div>'+
-    '<div class="bv-metas">'+
-      '<div class="bv-meta-item">'+
-        '<div class="bv-meta-label">Meta Mensal</div>'+
-        '<div class="bv-meta-val">'+metaMensal+'</div>'+
-      '</div>'+
-      '<div class="bv-meta-item">'+
-        '<div class="bv-meta-label">% Meta Mensal</div>'+
-        '<div class="bv-meta-val pct" style="color:'+pctMetaCor+'">'+pctMeta+'</div>'+
-      '</div>'+
     '</div>';
   }catch(e){
     return '<div class="err">Erro boas-vindas: '+e.message+'</div>';

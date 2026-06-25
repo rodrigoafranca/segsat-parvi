@@ -85,7 +85,7 @@ body{background:var(--bg);font-family:'DM Sans',system-ui,sans-serif;color:var(-
 /* TABLE */
 .tbl-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
-thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;}
+thead th{padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;}
 tbody tr:nth-child(even){background:var(--surface3);}tbody tr:hover{background:var(--surface2);}
 td{padding:8px 10px;border-bottom:1px solid var(--border2);vertical-align:middle;}
 td.m{font-size:12px;font-weight:500;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;}
@@ -424,7 +424,7 @@ function render(data){
     return`<div class="card"><div class="card-hd"><div><div class="card-title">📍 Performance por Praça</div><div class="card-sub">Clique na praça para ver as lojas</div></div><span class="card-badge">${pAt.length} praça${pAt.length>1?'s':''} ativas</span></div><div class="praca-list">${rows}</div></div>`;
   })();
 
-  document.getElementById('root').innerHTML=kpis+`<div class="charts-row">${daily}${donut}</div>`+tabela+pracas;
+  document.getElementById('root').innerHTML=kpis+tabela+pracas+`<div class="charts-row">${daily}${donut}</div>`;
 }
 function renderDailyChart(daily, totPlanos, nLojas, isTrim, monthMarkers){
   if(!daily||!daily.length) return `<div class="card"><div class="card-hd"><div><div class="card-title">📈 Evolução Diária</div><div class="card-sub">Vendas por dia do mês</div></div></div><div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">Sem dados diários</div></div>`;

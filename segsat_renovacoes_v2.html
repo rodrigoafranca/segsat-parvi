@@ -108,7 +108,7 @@ table.ct tr:hover td { background:#f5faff; }
 .fat-label { font-size:11px; font-weight:700; color:#93d0fa; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px; }
 .fat-label-falta { font-size:13px; font-weight:800; color:#ff9a9a; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px; }
 .fat-val { font-size:24px; font-weight:900; color:#fff; }
-.fat-val.green { color:#4ad88a; font-size:26px; }
+.fat-val.green { color:#00e676; font-size:26px; }
 .fat-val.red   { color:#ff6b6b; font-size:26px; }
 .fat-pct-col { display:flex; flex-direction:column; justify-content:center; width:100%; }
 .fat-pct-label-text { font-size:11px; font-weight:800; color:#93d0fa; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px; }
@@ -138,7 +138,7 @@ table.bvt tr:last-child td { border-bottom:none; }
 .bv-meta-item { display:flex; flex-direction:column; }
 .bv-meta-label { font-size:10px; font-weight:700; color:#93d0fa; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:3px; }
 .bv-meta-val { font-size:28px; font-weight:900; color:#fff; line-height:1; }
-.bv-meta-val.pct { color:#4ad88a; }
+.bv-meta-val.pct { color:#00e676; }
 
 /* FOOTER */
 .footer { flex-shrink:0; background:#0a1628; border-top:2px solid #93d0fa; text-align:center; padding:5px; color:#93d0fa; font-size:12px; font-weight:500; }
@@ -288,7 +288,7 @@ function buildTable(rows){
       '<td style="font-weight:700;color:#1a2a3a;font-size:14px">'+META_IND+'</td>'+
       '<td><span class="'+(r.acum>=META_IND?'gap-ok':'gap-red')+'">'+(r.acum>=META_IND?'✓':Math.abs(r.falta))+'</span></td>'+
       '<td><b style="color:'+cor+';font-size:14px;font-weight:800">'+pct+'%</b></td>'+
-      '<td style="font-weight:700;color:#4ad88a;font-size:13px">'+fatStr+'</td>'+
+      '<td style="font-weight:700;color:#00e676;font-size:13px">'+fatStr+'</td>'+
       '<td style="font-weight:700;font-size:13px;color:'+fatFaltaCor+'">-'+fatFaltaStr+'</td>'+
       '<td><div class="prog-bar"><div class="prog-fill" style="width:'+Math.min(pct,100)+'%;background:'+cor+'"></div></div></td>'+
       '</tr>';
@@ -366,7 +366,7 @@ function buildBoasVindas(cab, dados){
     }
 
     const perf    = perfRaw !== null ? Math.round(perfRaw * 100) + '%' : '—';
-    const perfCor = perfRaw !== null && perfRaw >= 0.7 ? '#4ad88a' : perfRaw >= 0.4 ? '#f0a020' : '#ff6b6b';
+    const perfCor = perfRaw !== null && perfRaw >= 0.7 ? '#00e676' : perfRaw >= 0.4 ? '#f0a020' : '#ff6b6b';
 
     function col(cabTxt, valTxt, valStyle){
       return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;height:100%;">'+

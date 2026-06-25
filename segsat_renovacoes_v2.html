@@ -352,7 +352,18 @@ function buildBoasVindas(cab, dados){
     const base       = dados[1] != null ? Number(dados[1]).toLocaleString('pt-BR') : '—';
     const contatados = dados[2] != null ? Number(dados[2]).toLocaleString('pt-BR') : '—';
     const perfRaw    = dados[3] != null ? Number(dados[3]) : null;
-    const objMensal  = dados[4] != null ? Number(dados[4]).toLocaleString('pt-BR') : '—';
+    let objMensal = '—';
+    if(dados[4] != null){
+      const rawObj = dados[4];
+      if(typeof rawObj === 'string' && rawObj.includes('%')){
+        objMensal = rawObj;
+      } else {
+        const nObj = Number(rawObj);
+        if(!isNaN(nObj)){
+          objMensal = (nObj > 0 && nObj <= 1) ? Math.round(nObj*100)+'%' : nObj.toLocaleString('pt-BR');
+        }
+      }
+    }
 
     const perf    = perfRaw !== null ? Math.round(perfRaw * 100) + '%' : '—';
     const perfCor = perfRaw !== null && perfRaw >= 0.7 ? '#4ad88a' : perfRaw >= 0.4 ? '#f0a020' : '#ff6b6b';

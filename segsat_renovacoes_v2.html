@@ -415,22 +415,48 @@ async function loadAll(){
     document.getElementById('table-area').innerHTML    =buildTable(rows);
     document.getElementById('top3-body').innerHTML     =buildTop3(rows,fotoMap);
     document.getElementById('fat-body').innerHTML      =buildFat(rows);
-    // Busca T14:X15 via query com range explícito
-    const bvUrl = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&gid='+GID_VENDAS+'&tq='+encodeURIComponent("select T,U,V,W,X limit 2 offset 13");
-    let cab = ['Consultor','Base','Contatados','Performance','Obj. Mensal'];
-    let dados = ['—',0,0,null,null];
+    // Busca Boas-Vindas: varre todas as linhas procurando a linha de cabeçalho
+    // Identifica pela linha que tem texto em col T (idx 19) mas NÃO é nome de consultor de vendas
+    let cab   = ['Consultor','Base','Contatados','Performance','Obj. Mensal'];
+    let dados = [null, null, null, null, null];
     try{
-      const bvRes = await fetch(bvUrl);
-      const bvText = await bvRes.text();
-      const bvJson = JSON.parse(bvText.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-      const bvRows = bvJson.table.rows;
-      if(bvRows[0] && bvRows[0].c){
-        cab = bvRows[0].c.map(function(x){ return (x&&x.v)?String(x.v):'—'; });
+      // Usa a mesma vendasRows já carregada — varre procurando linha com texto em col T(19)
+      let cabRowIdx = -1;
+      for(let i = 0; i < vendasRows.length; i++){
+        const c = vendasRows[i] && vendasRows[i].c;
+        if(c && c[19] && c[19].v != null){
+          cabRowIdx = i;
+          break;
+        }
       }
-      if(bvRows[1] && bvRows[1].c){
-        dados = bvRows[1].c.map(function(x){ return (x&&x.v!=null)?x.v:null; });
+      if(cabRowIdx >= 0 && vendasRows[cabRowIdx]){
+        const cr = vendasRows[cabRowIdx].c;
+        cab = [
+          (cr[19]&&cr[19].v!=null) ? String(cr[19].v) : 'Consultor',
+          (cr[20]&&cr[20].v!=null) ? String(cr[20].v) : 'Base',
+          (cr[21]&&cr[21].v!=null) ? String(cr[21].v) : 'Contatados',
+          (cr[22]&&cr[22].v!=null) ? String(cr[22].v) : 'Performance',
+          (cr[23]&&cr[23].v!=null) ? String(cr[23].v) : 'Obj. Mensal',
+        ];
       }
-    }catch(bvErr){ console.warn('BV fetch:', bvErr.message); }
+      // Linha de dados = próxima linha após o cabeçalho que tenha valor em col T
+      if(cabRowIdx >= 0){
+        for(let i = cabRowIdx + 1; i < vendasRows.length; i++){
+          const c = vendasRows[i] && vendasRows[i].c;
+          if(c && (c[19]||c[20]||c[21]||c[22]||c[23]) &&
+             (c[19]&&c[19].v!=null || c[20]&&c[20].v!=null)){
+            dados = [
+              (c[19]&&c[19].v!=null) ? c[19].v : null,
+              (c[20]&&c[20].v!=null) ? c[20].v : null,
+              (c[21]&&c[21].v!=null) ? c[21].v : null,
+              (c[22]&&c[22].v!=null) ? c[22].v : null,
+              (c[23]&&c[23].v!=null) ? c[23].v : null,
+            ];
+            break;
+          }
+        }
+      }
+    }catch(bvErr){ console.warn('BV:', bvErr.message); }
     document.getElementById('bv-body').innerHTML = buildBoasVindas(cab, dados);
 
   }catch(e){

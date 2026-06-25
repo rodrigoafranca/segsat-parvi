@@ -338,42 +338,60 @@ function buildFat(rows){
     '<div class="fat-pct-col"><div class="fat-pct-label-text">% Meta de faturamento</div><div class="fat-pct-num">'+pct+'%</div><div class="fat-bar-bg"><div class="fat-bar-fill" style="width:'+Math.min(pct,100)+'%"></div></div><div class="fat-msg">Vamos juntos até o final do mês!</div></div>';
 }
 
-function buildBoasVindas(allRows){
-  // Células T14:X15
-  // Linha 14 = índice 13 (cabeçalhos), Linha 15 = índice 14 (dados)
-  // Colunas: T=19, U=20, V=21, W=22, X=23
+function buildBoasVindas(cab, dados){
+  // cab  = array de 5 strings (T14:X14)
+  // dados = array de 5 valores (T15:X15)
   try{
-    const row14 = allRows[13] ? allRows[13].c : [];
-    const row15 = allRows[14] ? allRows[14].c : [];
+    const cabH   = cab[0]   || 'Consultor';
+    const cabB   = cab[1]   || 'Base';
+    const cabC   = cab[2]   || 'Contatados';
+    const cabP   = cab[3]   || 'Performance';
+    const cabO   = cab[4]   || 'Obj. Mensal';
 
-    // Cabeçalhos da linha 14
-    const cab0 = (row14[19]&&row14[19].v) ? String(row14[19].v) : 'Consultor';
-    const cab1 = (row14[20]&&row14[20].v) ? String(row14[20].v) : 'Base';
-    const cab2 = (row14[21]&&row14[21].v) ? String(row14[21].v) : 'Contatados';
-    const cab3 = (row14[22]&&row14[22].v) ? String(row14[22].v) : 'Performance';
-    const cab4 = (row14[23]&&row14[23].v) ? String(row14[23].v) : 'Obj. Mensal';
-
-    // Dados da linha 15
-    const nome       = (row15[19]&&row15[19].v) ? String(row15[19].v) : '—';
-    const base       = (row15[20]&&row15[20].v!=null) ? Number(row15[20].v) : 0;
-    const contatados = (row15[21]&&row15[21].v!=null) ? Number(row15[21].v) : 0;
-    const perfRaw    = (row15[22]&&row15[22].v!=null) ? Number(row15[22].v) : null;
-    const objMensal  = (row15[23]&&row15[23].v!=null) ? Number(row15[23].v) : null;
+    const nome       = dados[0] || '—';
+    const base       = dados[1]!=null ? Number(dados[1]).toLocaleString('pt-BR') : '—';
+    const contatados = dados[2]!=null ? Number(dados[2]).toLocaleString('pt-BR') : '—';
+    const perfRaw    = dados[3]!=null ? Number(dados[3]) : null;
+    const objMensal  = dados[4]!=null ? Number(dados[4]).toLocaleString('pt-BR') : '—';
 
     const perf    = perfRaw!==null ? Math.round(perfRaw*100)+'%' : '—';
     const perfCor = perfRaw!==null&&perfRaw>=0.7?'#4ad88a':perfRaw>=0.4?'#f0a020':'#ff6b6b';
-    const objStr  = objMensal!==null ? objMensal.toLocaleString('pt-BR') : '—';
 
-    return '<div class="bv-table-wrap">'+
-      '<table class="bvt"><thead><tr>'+
-        '<th>'+cab0+'</th><th>'+cab1+'</th><th>'+cab2+'</th><th>'+cab3+'</th><th>'+cab4+'</th>'+
-      '</tr></thead><tbody><tr>'+
-        '<td>'+nome+'</td>'+
-        '<td>'+base.toLocaleString('pt-BR')+'</td>'+
-        '<td>'+contatados.toLocaleString('pt-BR')+'</td>'+
-        '<td><b style="color:'+perfCor+';font-size:16px">'+perf+'</b></td>'+
-        '<td style="font-weight:800;color:#93d0fa;font-size:16px">'+objStr+'</td>'+
-      '</tr></tbody></table>'+
+    return '<div style="display:grid;grid-template-columns:2fr 1px 1fr 1px 1fr 1px 1fr 1px 1.5fr;width:100%;height:100%;align-items:center;gap:0 0;">'+
+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabH+'</div>'+
+        '<div style="font-size:22px;font-weight:900;color:#ffffff;">'+nome+'</div>'+
+      '</div>'+
+
+      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabB+'</div>'+
+        '<div style="font-size:30px;font-weight:900;color:#ffffff;">'+base+'</div>'+
+      '</div>'+
+
+      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabC+'</div>'+
+        '<div style="font-size:30px;font-weight:900;color:#ffffff;">'+contatados+'</div>'+
+      '</div>'+
+
+      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabP+'</div>'+
+        '<div style="font-size:30px;font-weight:900;color:'+perfCor+';">'+perf+'</div>'+
+      '</div>'+
+
+      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;background:rgba(147,208,250,0.07);border-radius:8px;margin:8px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabO+'</div>'+
+        '<div style="font-size:36px;font-weight:900;color:#93d0fa;">'+objMensal+'</div>'+
+      '</div>'+
+
     '</div>';
   }catch(e){
     return '<div class="err">Erro boas-vindas: '+e.message+'</div>';
@@ -414,7 +432,23 @@ async function loadAll(){
     document.getElementById('table-area').innerHTML    =buildTable(rows);
     document.getElementById('top3-body').innerHTML     =buildTop3(rows,fotoMap);
     document.getElementById('fat-body').innerHTML      =buildFat(rows);
-    document.getElementById('bv-body').innerHTML       =buildBoasVindas(vendasRows);
+    // Busca T14:X15 via query com range explícito
+    const bvUrl = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&gid='+GID_VENDAS+'&tq='+encodeURIComponent("select T,U,V,W,X limit 2 offset 13");
+    let cab = ['Consultor','Base','Contatados','Performance','Obj. Mensal'];
+    let dados = ['—',0,0,null,null];
+    try{
+      const bvRes = await fetch(bvUrl);
+      const bvText = await bvRes.text();
+      const bvJson = JSON.parse(bvText.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+      const bvRows = bvJson.table.rows;
+      if(bvRows[0] && bvRows[0].c){
+        cab = bvRows[0].c.map(function(x){ return (x&&x.v)?String(x.v):'—'; });
+      }
+      if(bvRows[1] && bvRows[1].c){
+        dados = bvRows[1].c.map(function(x){ return (x&&x.v!=null)?x.v:null; });
+      }
+    }catch(bvErr){ console.warn('BV fetch:', bvErr.message); }
+    document.getElementById('bv-body').innerHTML = buildBoasVindas(cab, dados);
 
   }catch(e){
     document.getElementById('table-area').innerHTML='<div class="err">Erro ao carregar.<br><small>'+e.message+'</small></div>';

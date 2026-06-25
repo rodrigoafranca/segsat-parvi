@@ -339,59 +339,42 @@ function buildFat(rows){
 }
 
 function buildBoasVindas(cab, dados){
-  // cab  = array de 5 strings (T14:X14)
-  // dados = array de 5 valores (T15:X15)
+  // cab[0..4]  = cabeçalhos  T14:X14
+  // dados[0..4]= valores     T15:X15
   try{
-    const cabH   = cab[0]   || 'Consultor';
-    const cabB   = cab[1]   || 'Base';
-    const cabC   = cab[2]   || 'Contatados';
-    const cabP   = cab[3]   || 'Performance';
-    const cabO   = cab[4]   || 'Obj. Mensal';
+    const cabH = cab[0]  || 'Consultor';
+    const cabB = cab[1]  || 'Base';
+    const cabC = cab[2]  || 'Contatados';
+    const cabP = cab[3]  || 'Performance';
+    const cabO = cab[4]  || 'Obj. Mensal';
 
-    const nome       = dados[0] || '—';
-    const base       = dados[1]!=null ? Number(dados[1]).toLocaleString('pt-BR') : '—';
-    const contatados = dados[2]!=null ? Number(dados[2]).toLocaleString('pt-BR') : '—';
-    const perfRaw    = dados[3]!=null ? Number(dados[3]) : null;
-    const objMensal  = dados[4]!=null ? Number(dados[4]).toLocaleString('pt-BR') : '—';
+    const nome       = dados[0] != null ? String(dados[0]) : '—';
+    const base       = dados[1] != null ? Number(dados[1]).toLocaleString('pt-BR') : '—';
+    const contatados = dados[2] != null ? Number(dados[2]).toLocaleString('pt-BR') : '—';
+    const perfRaw    = dados[3] != null ? Number(dados[3]) : null;
+    const objMensal  = dados[4] != null ? Number(dados[4]).toLocaleString('pt-BR') : '—';
 
-    const perf    = perfRaw!==null ? Math.round(perfRaw*100)+'%' : '—';
-    const perfCor = perfRaw!==null&&perfRaw>=0.7?'#4ad88a':perfRaw>=0.4?'#f0a020':'#ff6b6b';
+    const perf    = perfRaw !== null ? Math.round(perfRaw * 100) + '%' : '—';
+    const perfCor = perfRaw !== null && perfRaw >= 0.7 ? '#4ad88a' : perfRaw >= 0.4 ? '#f0a020' : '#ff6b6b';
 
-    return '<div style="display:grid;grid-template-columns:2fr 1px 1fr 1px 1fr 1px 1fr 1px 1.5fr;width:100%;height:100%;align-items:center;gap:0 0;">'+
+    function col(cabTxt, valTxt, valStyle){
+      return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;height:100%;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">'+cabTxt+'</div>'+
+        '<div style="'+valStyle+'">'+valTxt+'</div>'+
+      '</div>';
+    }
 
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;">'+
-        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabH+'</div>'+
-        '<div style="font-size:22px;font-weight:900;color:#ffffff;">'+nome+'</div>'+
-      '</div>'+
+    const div = '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;width:1px;"></div>';
 
-      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
-
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;">'+
-        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabB+'</div>'+
-        '<div style="font-size:30px;font-weight:900;color:#ffffff;">'+base+'</div>'+
-      '</div>'+
-
-      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
-
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;">'+
-        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabC+'</div>'+
-        '<div style="font-size:30px;font-weight:900;color:#ffffff;">'+contatados+'</div>'+
-      '</div>'+
-
-      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
-
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;">'+
-        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabP+'</div>'+
-        '<div style="font-size:30px;font-weight:900;color:'+perfCor+';">'+perf+'</div>'+
-      '</div>'+
-
-      '<div style="background:#1e3a5a;align-self:stretch;margin:10px 0;"></div>'+
-
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px;background:rgba(147,208,250,0.07);border-radius:8px;margin:8px;">'+
-        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">'+cabO+'</div>'+
+    return '<div style="display:grid;grid-template-columns:2fr auto 1fr auto 1fr auto 1fr auto 1.4fr;width:100%;height:100%;align-items:center;">'+
+      col(cabH,  nome,       'font-size:22px;font-weight:900;color:#ffffff;') + div +
+      col(cabB,  base,       'font-size:30px;font-weight:900;color:#ffffff;') + div +
+      col(cabC,  contatados, 'font-size:30px;font-weight:900;color:#ffffff;') + div +
+      col(cabP,  perf,       'font-size:30px;font-weight:900;color:'+perfCor+';') + div +
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;height:100%;background:rgba(147,208,250,0.07);border-radius:8px;margin:6px 8px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#93d0fa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">'+cabO+'</div>'+
         '<div style="font-size:36px;font-weight:900;color:#93d0fa;">'+objMensal+'</div>'+
       '</div>'+
-
     '</div>';
   }catch(e){
     return '<div class="err">Erro boas-vindas: '+e.message+'</div>';

@@ -2297,49 +2297,55 @@ function renderProjecao(totalSeg, totalFat) {
   // Histórico de meses — adicionar conforme novos meses forem fechados
   // Estrutura: seg total, fat total, e vendas por dia acumuladas no dia X
   // "acumDia20" = quantas vendas tinham até o dia 20 naquele mês
+  // Histórico de meses — dados reais de fechamento
   const HISTORICO = {
-    'MARÇO':    { seg:850, fat:1131351, acumDia10:180, acumDia20:420 },
-    'FEVEREIRO':{ seg:590, fat:780000,  acumDia10:120, acumDia20:290 }
+    'FEVEREIRO':{ seg:590, fat:811254,   acumDia10:86,  acumDia20:200 },
+    'MARÇO':    { seg:850, fat:1192398,  acumDia10:130, acumDia20:320 },
+    'ABRIL':    { seg:888, fat:1407486,  acumDia10:130, acumDia20:350 },
+    'MAIO':     { seg:846, fat:1376756,  acumDia10:122, acumDia20:300 },
   };
 
-  // Determina o melhor mês do ano com base no histórico
-  const mesesConhecidos = Object.entries(HISTORICO);
+  // Percentuais calibrados com dados reais (Fev, Mar, Abr, Mai)
+  // 1° terço (dias 1–10) → média real: 14.7% ≈ 15%
+  // Acumulado dia 20    → média real: 36.6% ≈ 37%
+  // 3° terço (dias 21–fim) → 63% restante (último dia ≈ 30%)
+  const PCT_T1       = 0.15;
+  const PCT_ACUM_20  = 0.37;
+  const PESO_ULTIMO  = 0.30;
+  const PESO_T3_MEIO = 1 - PCT_ACUM_20 - PESO_ULTIMO; // = 0.33
+
+  // Melhor mês (apenas meses com total conhecido)
+  const mesesConhecidos = Object.entries(HISTORICO).filter(([,d]) => d.seg);
   const melhorMes = mesesConhecidos.length>0
     ? mesesConhecidos.sort((a,b)=>b[1].seg-a[1].seg)[0]
     : null;
 
-  // Projeção inteligente por terços:
-  // Terço 1: dias 1–10 → histórico sugere ~21% das vendas
-  // Terço 2: dias 11–20 → histórico sugere ~29% das vendas
-  // Terço 3: dias 21–fim → histórico sugere ~50% das vendas (último dia ≈ 30% do total)
   let projSeg, projFat, metodo;
 
   if(diaAtual<=10) {
-    // No 1° terço: extrapola o terço e adiciona 79% restantes
-    // Ritmo do terço 1 representa ~21% do mês
-    const pctTerco1 = 0.21;
-    projSeg = Math.round(totalSeg / (pctTerco1 * (diaAtual/10)));
-    projFat = Math.round(totalFat / (pctTerco1 * (diaAtual/10)));
-    metodo = `1° terço (dias 1–10) · ${diaAtual} dias`;
+    // 1° terço: dias 1–10 representam ~15% do mês
+    const pctAtual = PCT_T1 * (diaAtual/10);
+    projSeg = Math.round(totalSeg / pctAtual);
+    projFat = Math.round(totalFat / pctAtual);
+    metodo = `1° terço (dias 1–10) · dia ${diaAtual}`;
+
   } else if(diaAtual<=20) {
-    // No 2° terço: acumulado até dia 20 representa ~38% do mês
-    const pctAcumDia20 = 0.38;
+    // 2° terço: interpola de 15% (dia 10) até 37% (dia 20)
     const fracaoDoTerco = (diaAtual-10)/10;
-    const pctAtual = 0.21 + (0.17 * fracaoDoTerco);
+    const pctAtual = PCT_T1 + ((PCT_ACUM_20 - PCT_T1) * fracaoDoTerco);
     projSeg = Math.round(totalSeg / pctAtual);
     projFat = Math.round(totalFat / pctAtual);
     metodo = `2° terço (dias 11–20) · dia ${diaAtual}`;
+
   } else {
-    // No 3° terço: últimos dias têm peso maior (último dia ≈ 30% do mês)
+    // 3° terço: 63% das vendas nos dias 21 ao fim (último dia ≈ 30%)
     const diasTerco3 = diasNoMes - 20;
     const diaNoTerco = diaAtual - 20;
-    // Progressão não-linear: mais vendas nos últimos dias
-    const pesoUltimoDia = 0.30;
-    const pesoRestante = 0.38 - pesoUltimoDia;
-    const fracaoTerco3 = diaNoTerco / diasTerco3;
-    // Simula acúmulo crescente: começa devagar e acelera no fim
-    const pctAcum = 0.38 + (pesoRestante * Math.pow(fracaoTerco3, 0.7)) + (pesoUltimoDia * (diaAtual===diasNoMes?1:0));
-    const pctAtual = Math.min(0.98, Math.max(0.38, pctAcum));
+    const fracaoT3   = diaNoTerco / diasTerco3;
+    const pctAcum = PCT_ACUM_20
+      + (PESO_T3_MEIO * Math.pow(fracaoT3, 0.7))
+      + (PESO_ULTIMO  * (diaAtual === diasNoMes ? 1 : 0));
+    const pctAtual = Math.min(0.98, Math.max(PCT_ACUM_20, pctAcum));
     projSeg = Math.round(totalSeg / pctAtual);
     projFat = Math.round(totalFat / pctAtual);
     metodo = `3° terço (dias 21–${diasNoMes}) · dia ${diaAtual}`;
@@ -2358,9 +2364,12 @@ function renderProjecao(totalSeg, totalFat) {
     if(diaAtual<=10 && dadosMelhor.acumDia10) {
       acumMelhorNestesDias = Math.round(dadosMelhor.acumDia10 * (diaAtual/10));
     } else if(diaAtual<=20 && dadosMelhor.acumDia20) {
-      acumMelhorNestesDias = dadosMelhor.acumDia20;
+      // Interpola entre dia 10 e dia 20
+      acumMelhorNestesDias = Math.round(dadosMelhor.acumDia10 + (dadosMelhor.acumDia20 - dadosMelhor.acumDia10) * ((diaAtual-10)/10));
     } else if(dadosMelhor.seg) {
-      acumMelhorNestesDias = Math.round(dadosMelhor.seg * 0.70); // ~70% até dia 20+
+      // 3° terço: estima proporcionalmente com os percentuais calibrados
+      const pctDiaAtual = PCT_ACUM_20 + (PESO_T3_MEIO * Math.pow((diaAtual-20)/(diasNoMes-20), 0.7));
+      acumMelhorNestesDias = Math.round(dadosMelhor.seg * pctDiaAtual);
     }
 
     if(acumMelhorNestesDias) {

@@ -2297,22 +2297,44 @@ function renderProjecao(totalSeg, totalFat) {
   // Histórico de meses — adicionar conforme novos meses forem fechados
   // Estrutura: seg total, fat total, e vendas por dia acumuladas no dia X
   // "acumDia20" = quantas vendas tinham até o dia 20 naquele mês
-  // Histórico de meses — dados reais de fechamento
+  // Histórico de meses — dados reais extraídos da planilha Vendas_parvi.xlsx
+  // Checkpoints exatos: acumDiaX = vendas acumuladas até o dia X
   const HISTORICO = {
-    'FEVEREIRO':{ seg:590, fat:811254,   acumDia10:86,  acumDia20:200 },
-    'MARÇO':    { seg:850, fat:1192398,  acumDia10:130, acumDia20:320 },
-    'ABRIL':    { seg:888, fat:1407486,  acumDia10:130, acumDia20:350 },
-    'MAIO':     { seg:846, fat:1376756,  acumDia10:122, acumDia20:300 },
+    'JANEIRO':  { seg:723,  fat:995301,   acumDia10:null, acumDia20:null },
+    'FEVEREIRO':{ seg:590,  fat:811254,   acumDia10:90,   acumDia15:159, acumDia20:218, acumDia25:329 },
+    'MARÇO':    { seg:850,  fat:1192398,  acumDia10:97,   acumDia15:172, acumDia20:340, acumDia25:476 },
+    'ABRIL':    { seg:888,  fat:1407486,  acumDia10:151,  acumDia15:233, acumDia20:340, acumDia25:449 },
+    'MAIO':     { seg:846,  fat:1376756,  acumDia10:107,  acumDia15:239, acumDia20:352, acumDia25:477 },
   };
 
-  // Percentuais calibrados com dados reais (Fev, Mar, Abr, Mai)
-  // 1° terço (dias 1–10) → média real: 14.7% ≈ 15%
-  // Acumulado dia 20    → média real: 36.6% ≈ 37%
-  // 3° terço (dias 21–fim) → 63% restante (último dia ≈ 30%)
-  const PCT_T1       = 0.15;
-  const PCT_ACUM_20  = 0.37;
+  // Busca o acumulado exato de um mês num dado dia
+  // Usa valor exato se disponível, interpola só quando necessário
+  function getAcumNoDia(dados, dia, totalDias) {
+    // Monta todos os checkpoints disponíveis: {dia: valor}
+    const pts = { 0: 0, [totalDias]: dados.seg };
+    Object.keys(dados).forEach(k => {
+      const m = k.match(/^acumDia(\d+)$/);
+      if (m && dados[k] != null) pts[parseInt(m[1])] = dados[k];
+    });
+    // Valor exato
+    if (pts[dia] !== undefined) return pts[dia];
+    // Interpola linearmente entre os dois checkpoints mais próximos
+    const days = Object.keys(pts).map(Number).sort((a,b) => a-b);
+    const before = days.filter(d => d <= dia).pop();
+    const after  = days.find(d => d > dia);
+    if (before === undefined || after === undefined) return null;
+    const t = (dia - before) / (after - before);
+    return Math.round(pts[before] + t * (pts[after] - pts[before]));
+  }
+
+  // Percentuais calibrados com dados reais da planilha (Fev, Mar, Abr, Mai)
+  // 1° terço (dias 1–10) → média real: 14.1% ≈ 14%
+  // Acumulado dia 20    → média real: 39.2% ≈ 39%
+  // 3° terço (dias 21–fim) → 61% restante (último dia ≈ 30%)
+  const PCT_T1       = 0.14;
+  const PCT_ACUM_20  = 0.39;
   const PESO_ULTIMO  = 0.30;
-  const PESO_T3_MEIO = 1 - PCT_ACUM_20 - PESO_ULTIMO; // = 0.33
+  const PESO_T3_MEIO = 1 - PCT_ACUM_20 - PESO_ULTIMO; // = 0.31
 
   // Melhor mês (apenas meses com total conhecido)
   const mesesConhecidos = Object.entries(HISTORICO).filter(([,d]) => d.seg);
@@ -2360,23 +2382,13 @@ function renderProjecao(totalSeg, totalFat) {
   let vsRef = null;
   if(melhorMes) {
     const [nomeMelhor, dadosMelhor] = melhorMes;
-    let acumMelhorNestesDias = null;
-    if(diaAtual<=10 && dadosMelhor.acumDia10) {
-      acumMelhorNestesDias = Math.round(dadosMelhor.acumDia10 * (diaAtual/10));
-    } else if(diaAtual<=20 && dadosMelhor.acumDia20) {
-      // Interpola entre dia 10 e dia 20
-      acumMelhorNestesDias = Math.round(dadosMelhor.acumDia10 + (dadosMelhor.acumDia20 - dadosMelhor.acumDia10) * ((diaAtual-10)/10));
-    } else if(dadosMelhor.seg) {
-      // 3° terço: estima proporcionalmente com os percentuais calibrados
-      const pctDiaAtual = PCT_ACUM_20 + (PESO_T3_MEIO * Math.pow((diaAtual-20)/(diasNoMes-20), 0.7));
-      acumMelhorNestesDias = Math.round(dadosMelhor.seg * pctDiaAtual);
-    }
-
+    // Usa valor exato do histórico; interpola linearmente entre checkpoints
+    const acumMelhorNestesDias = getAcumNoDia(dadosMelhor, diaAtual, diasNoMes);
     if(acumMelhorNestesDias) {
-      const diff = totalSeg - acumMelhorNestesDias;
+      const diff    = totalSeg - acumMelhorNestesDias;
       const diffPct = ((diff/acumMelhorNestesDias)*100).toFixed(1);
-      const cor = diff>=0 ? 'var(--green)' : 'var(--red)';
-      const sinal = diff>=0 ? '+' : '';
+      const cor     = diff>=0 ? 'var(--green)' : 'var(--red)';
+      const sinal   = diff>=0 ? '+' : '';
       vsRef = {nome:nomeMelhor, acum:acumMelhorNestesDias, diff, diffPct, cor, sinal, total:dadosMelhor.seg};
     }
   }
@@ -2404,7 +2416,7 @@ function renderProjecao(totalSeg, totalFat) {
       <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-val" style="color:var(--green)">${fBRL(projFat)}</div><div class="kpi-lbl">Projeção Fat.</div><div class="kpi-change warn">${fBRL(Math.round(totalFat/diaAtual))}/dia</div><div class="kpi-accent g"></div></div>
       ${vsRef?`
       <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:${vsRef.cor}">${vsRef.sinal}${vsRef.diff}</div><div class="kpi-lbl">vs ${vsRef.nome} dia ${diaAtual}</div><div class="kpi-change ${vsRef.diff>=0?'up':'down'}">${vsRef.nome} tinha ${vsRef.acum} aqui</div><div class="kpi-accent ${vsRef.diff>=0?'g':'r'}"></div></div>
-      <div class="kpi"><div class="kpi-ico">🏆</div><div class="kpi-val" style="color:var(--green)">${melhorMes[1].seg}</div><div class="kpi-lbl">Melhor mês (${melhorMes[0]})</div><div class="kpi-change ${projSeg>=melhorMes[1].seg?'up':'down'}">${projSeg>=melhorMes[1].seg?'Projeção bate!':'Faltam '+(melhorMes[1].seg-projSeg)}</div><div class="kpi-accent g"></div></div>
+      <div class="kpi"><div class="kpi-ico">🏆</div><div class="kpi-val" style="color:var(--green)">${melhorMes[1].seg}</div><div class="kpi-lbl">Melhor mês (${melhorMes[0]})</div><div class="kpi-change ${projSeg>=melhorMes[1].seg?'up':'down'}">${projSeg>=melhorMes[1].seg?'Projeção bate!':'Faltam '+(melhorMes[1].seg-totalSeg)}</div><div class="kpi-accent g"></div></div>
       `:`
       <div class="kpi"><div class="kpi-ico">📅</div><div class="kpi-val" style="color:var(--green)">${faltaSeg}</div><div class="kpi-lbl">Faltam (Segsat)</div><div class="kpi-change up">${diasRestantes} dias</div><div class="kpi-accent g"></div></div>
       <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:var(--text2)">—</div><div class="kpi-lbl">Sem referência</div><div class="kpi-accent b"></div></div>

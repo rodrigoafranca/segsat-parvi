@@ -1258,7 +1258,7 @@ function renderComparativo() {
         <span style="font-size:14px">${f.ico}</span>
         <span style="flex:1;font-size:13px;font-weight:700;color:var(--text)">${m.marca}</span>
         <span style="font-size:10px;color:var(--text3)">${m.nLojas} loja${m.nLojas!==1?'s':''}</span>
-        <span style="font-size:11px;color:var(--text3)">méd. 3M até esse dia: <strong style="color:var(--text2)">${m.media.toFixed(1)}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">méd. 3M até esse dia: <strong style="color:var(--text2)">${Math.round(m.media)}</strong></span>
         <span style="font-size:11px;color:var(--text3)">vendido até hoje: <strong style="color:var(--text2)">${m.tend}</strong></span>
         <span style="font-size:12px;font-weight:700;color:${f.cor};background:${f.bg};padding:3px 10px;border-radius:99px;min-width:120px;text-align:center">${sinal}${m.pct.toFixed(0)}% (${sinal}${m.diff})</span>
       </div>`;
@@ -1289,7 +1289,7 @@ function renderComparativo() {
         <tr>
           <td style="${TD};text-align:left;font-weight:600;color:var(--text)">${l.loja}</td>
           <td style="${TD};text-align:left;color:var(--text3)">${l.marca}</td>
-          <td style="${TD};color:var(--text2)">${l.media.toFixed(1)}</td>
+          <td style="${TD};color:var(--text2)">${Math.round(l.media)}</td>
           <td style="${TD};color:var(--text2);font-weight:600">${l.tend}</td>
           <td style="${TD};font-weight:700;color:${f.cor}">${sinal}${l.pct.toFixed(0)}% (${sinal}${l.diff})</td>
           <td style="${TD};text-align:left"><span style="font-size:10px;font-weight:700;color:${f.cor};background:${f.bg};padding:2px 9px;border-radius:99px">${f.ico} ${f.label}</span></td>

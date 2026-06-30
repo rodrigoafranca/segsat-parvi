@@ -7,27 +7,27 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:       #0d0f14;
-  --surface:  #161920;
-  --surface2: #1e2230;
-  --border:   #2a2f3e;
-  --border2:  #343a4d;
-  --text:     #e8eaf0;
-  --text2:    #8b92a8;
-  --text3:    #555d75;
-  --green:    #00d084;
-  --green-d:  #00875a;
-  --green-bg: rgba(0,208,132,0.1);
-  --orange:   #ff7c3d;
-  --orange-bg:rgba(255,124,61,0.1);
-  --red:      #ff4d6a;
-  --red-bg:   rgba(255,77,106,0.1);
-  --blue:     #4d8aff;
-  --blue-bg:  rgba(77,138,255,0.1);
-  --gold:     #f5a623;
-  --gold-bg:  rgba(245,166,35,0.1);
-  --purple:   #a78bfa;
-  --accent:   #4d8aff;
+  --bg:       #f0f5f4;
+  --surface:  #ffffff;
+  --surface2: #eaf3f1;
+  --border:   #c8e0db;
+  --border2:  #a8cfc8;
+  --text:     #0a1f1c;
+  --text2:    #2a5a52;
+  --text3:    #6a9990;
+  --green:    #009474;
+  --green-d:  #006e56;
+  --green-bg: rgba(0,148,116,0.10);
+  --orange:   #c05000;
+  --orange-bg:rgba(192,80,0,0.09);
+  --red:      #b02020;
+  --red-bg:   rgba(176,32,32,0.09);
+  --blue:     #009474;
+  --blue-bg:  rgba(0,148,116,0.10);
+  --gold:     #9a6200;
+  --gold-bg:  rgba(154,98,0,0.09);
+  --purple:   #5c3a8a;
+  --accent:   #009474;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
@@ -43,10 +43,10 @@ nav{
   display:flex;flex-direction:column;
   position:sticky;top:0;height:100vh;overflow-y:auto;
 }
-.nav-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+.nav-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);background:var(--green);}
 .nav-logo-mark{font-size:22px;margin-bottom:6px;}
-.nav-logo h1{color:var(--text);font-size:15px;font-weight:700;letter-spacing:-0.3px;}
-.nav-logo span{color:var(--text3);font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.5px;}
+.nav-logo h1{color:#ffffff;font-size:15px;font-weight:700;letter-spacing:-0.3px;}
+.nav-logo span{color:rgba(255,255,255,0.7);font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.5px;}
 .nav-section{padding:18px 18px 6px;color:var(--text3);font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'DM Mono',monospace;}
 .nav-item{
   display:flex;align-items:center;gap:9px;
@@ -475,9 +475,8 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 <nav>
   <div style="height:3px;background:linear-gradient(90deg,#4d8aff,#4d8aff88)"></div>
   <div class="nav-logo">
-    <div class="nav-logo-mark">🔵</div>
-    <h1>Segsat · MA / PA</h1>
-    <span id="nav-mes-ano">2026</span>
+    <img src="data:image/jpeg;base64,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" alt="Grupo Parvi" style="width:120px;display:block;margin-bottom:8px;background:#fff;border-radius:7px;padding:6px 10px;">
+    <span id="nav-mes-ano" style="color:rgba(255,255,255,0.75);font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.5px;">2026</span>
     <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-family:'DM Mono',monospace;font-weight:700;background:#4d8aff22;color:#4d8aff;margin-top:4px;letter-spacing:0.5px">PRAÇA MA / PA</span>
   </div>
   <div class="nav-section">Visão Geral</div>
@@ -489,6 +488,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('marcas',this)"><span class="ni">🏷️</span> Por Marca</button>
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
   <button class="nav-item" id="nav-comissoes" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
+  <button class="nav-item" id="nav-estoque-at" onclick="navTo('estoque-at',this);carregarEstoqueAtualizadoPraca()"><span class="ni">📡</span> Estoque Atualizado</button>
   <div class="nav-section">Praças</div>
   <button class="nav-item" id="nav-pe"   onclick="navTo('pracas',this);setEstado('PE')"><span class="ni">📍</span> Pernambuco</button>
   <button class="nav-item" id="nav-am"   onclick="navTo('pracas',this);setEstado('AM')"><span class="ni">📍</span> AM / RR</button>
@@ -723,6 +723,45 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
       <button class="state-tab" onclick="setEstado('MA')">MA / PA</button>
     </div>
     <div id="praca-content"></div>
+  </div>
+
+  <!-- PAGE: ESTOQUE ATUALIZADO (filtrado pela praça) -->
+  <div class="page" id="page-estoque-at">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">📡 Estoque Atualizado · Rastreadores</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Dados em tempo real da planilha Estoque Parvi · filtrado pela praça</div>
+      </div>
+      <button id="btn-ea-atualizar" onclick="carregarEstoqueAtualizadoPraca()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s">
+        <span id="ea-refresh-icon">🔄</span> Atualizar Dados
+      </button>
+    </div>
+    <div id="ea-loading" style="display:none;text-align:center;padding:60px 20px">
+      <div style="font-size:32px;margin-bottom:12px">⏳</div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:6px">Carregando dados da planilha Estoque Parvi...</div>
+      <div style="font-size:11px;color:var(--text3)">Isso pode levar alguns segundos</div>
+    </div>
+    <div id="ea-erro" style="display:none;padding:20px;background:var(--red-bg);border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px;margin-bottom:16px"></div>
+    <div id="ea-conteudo" style="display:none">
+      <div class="kpi-row" id="ea-kpis"></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hd">
+          <div><div class="card-title">👤 Mapeamento por Coordenador</div><div class="card-sub">Enviado · Vendas · Saldo — clique para ver as lojas</div></div>
+          <div class="card-tag blue" id="ea-coord-tag">—</div>
+        </div>
+        <div class="tbl-wrap"><table id="ea-tabela-coord"></table></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div><div class="card-title">🏢 Mapeamento por Marca e Loja</div><div class="card-sub">Clique na marca para expandir as lojas</div></div>
+          <div style="display:flex;gap:6px">
+            <button onclick="eaExpandirTudo(true)"  style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Expandir tudo</button>
+            <button onclick="eaExpandirTudo(false)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Recolher tudo</button>
+          </div>
+        </div>
+        <div id="ea-marcas"></div>
+      </div>
+    </div>
   </div>
 
 </div><!-- /main -->
@@ -2575,6 +2614,294 @@ const _origNavToEst = navTo;
 navTo = function(page, btn) {
   _origNavToEst(page, btn);
   if(page==='estoque') setTimeout(renderEstoque, 100);
+};
+
+// ═══════════════════════════════════════════════
+// ESTOQUE ATUALIZADO — filtrado pela praça (_PRACA_UFS já definido acima)
+// ═══════════════════════════════════════════════
+async function carregarEstoqueAtualizadoPraca() {
+  if(document.getElementById('ea-loading').style.display === 'block') return;
+  document.getElementById('ea-loading').style.display  = 'block';
+  document.getElementById('ea-conteudo').style.display = 'none';
+  document.getElementById('ea-erro').style.display     = 'none';
+  const btn = document.getElementById('ea-refresh-icon');
+  if(btn) btn.textContent = '⏳';
+  try {
+    const mesLabel = document.getElementById('mes-btn-label');
+    const mes = (mesLabel ? mesLabel.textContent.trim() : null) || MES_SELECIONADO || MESES[new Date().getMonth()];
+    const ano = ANO || new Date().getFullYear();
+    const ufsParam = _PRACA_UFS.join(',');
+
+    // Busca inventário (Estoque Parvi) + saldo acumulado já filtrado por UF no backend
+    const [resParvi, resAcum] = await Promise.all([
+      fetch(`${APPS_SCRIPT_URL}?action=estoque-parvi&mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`),
+      fetch(`${APPS_SCRIPT_URL}?action=estoque-acumulado&mes=${encodeURIComponent(mes)}&ano=${ano}&ufs=${encodeURIComponent(ufsParam)}&t=${Date.now()}`)
+    ]);
+    const parvi = await resParvi.json();
+    const acum  = await resAcum.json();
+    if(parvi.erro) throw new Error(parvi.erro);
+
+    // Vendas: usa ALL_STORES já carregado (mesmo dado dos chips), senão busca direto
+    let allStoresSrc = (typeof ALL_STORES !== 'undefined' ? ALL_STORES : []);
+    if(!allStoresSrc.length) {
+      const resVendas = await fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ano}&t=${Date.now()}`);
+      const dadosVendas = await resVendas.json();
+      allStoresSrc = (dadosVendas && dadosVendas.allStores) || [];
+    }
+    const allStoresPraca = allStoresSrc.filter(s => _PRACA_UFS.includes(s.uf));
+    const totalVendido   = allStoresPraca.reduce((a,s)=>a+(s.segsat||0),0);
+
+    const vendasPorLoja = {};
+    allStoresPraca.forEach(s => { if(s.loja) vendasPorLoja[s.loja.toUpperCase()] = s.segsat || 0; });
+
+    // Inventário já filtrado por UF no backend; filtra de novo no client por segurança
+    const inventario = (parvi.lojas || []).filter(item => _PRACA_UFS.includes(item.uf));
+    let totalEnviado = 0, estoqueAtual = 0, sugestaoEnvio = 0;
+    const coordenadores = {}, marcas = {};
+    inventario.forEach(item => {
+      const vendido     = vendasPorLoja[item.loja] || 0;
+      item.vendido      = vendido;
+      item.estoqueAtual = Math.max(0, item.enviado - vendido);
+      item.saldo        = item.enviado - vendido;
+      item.sugestao     = Math.max(0, vendido - item.estoqueAtual);
+      totalEnviado  += item.enviado;
+      estoqueAtual  += item.estoqueAtual;
+      sugestaoEnvio += item.sugestao;
+
+      const ck = item.primeiroCoordenador || 'NA';
+      if(!coordenadores[ck]) coordenadores[ck] = { nome: item.coordenador, enviado:0, vendido:0, saldo:0, media:0, cobertura:0, contLojas:0, lojas:[] };
+      coordenadores[ck].enviado += item.enviado;
+      coordenadores[ck].vendido += vendido;
+      coordenadores[ck].saldo   += item.saldo;
+      coordenadores[ck].contLojas++;
+      coordenadores[ck].lojas.push({ loja:item.loja, marca:item.marca, enviado:item.enviado, vendido:vendido, estoque:item.estoqueAtual, saldo:item.saldo });
+
+      const mk = item.marca || 'OUTRAS';
+      if(!marcas[mk]) marcas[mk] = { marca: mk, enviado:0, vendido:0, estoqueAtual:0, lojas:[] };
+      marcas[mk].enviado      += item.enviado;
+      marcas[mk].vendido      += vendido;
+      marcas[mk].estoqueAtual += item.estoqueAtual;
+      marcas[mk].lojas.push(item);
+    });
+
+    const dados = {
+      kpis: {
+        totalEnviado, totalVendido,
+        estoqueAtual:  acum.saldoAtual !== undefined ? acum.saldoAtual : estoqueAtual,
+        sugestaoEnvio,
+        historico:     acum.historico    || [],
+        ultimosMeses:  acum.ultimosMeses || []
+      },
+      coordenadores: Object.values(coordenadores),
+      marcas: Object.values(marcas).sort((a,b) => a.marca.localeCompare(b.marca))
+    };
+    renderEstoqueAtualizado(dados);
+    document.getElementById('ea-loading').style.display  = 'none';
+    document.getElementById('ea-conteudo').style.display = 'block';
+  } catch(err) {
+    document.getElementById('ea-loading').style.display = 'none';
+    document.getElementById('ea-erro').style.display    = 'block';
+    document.getElementById('ea-erro').textContent      = '❌ Erro ao carregar: ' + err.message;
+  } finally {
+    if(btn) btn.textContent = '🔄';
+  }
+}
+
+function renderEstoqueAtualizado(dados) {
+  // ── KPIs ──────────────────────────────────────────────────
+  const k = dados.kpis || {};
+  const historico    = k.historico    || [];
+  const ultimosMeses = k.ultimosMeses || [];
+  const saldoCor      = k.estoqueAtual >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const mediaVendas2 = ultimosMeses.length > 0
+    ? Math.round(ultimosMeses.reduce((s,h) => s + h.vendido, 0) / ultimosMeses.length)
+    : 0;
+  const projecao    = mediaVendas2 - (k.estoqueAtual || 0);
+  const projecaoCor = projecao > 0 ? 'var(--orange)' : 'var(--green)';
+  const projecaoTxt = projecao > 0
+    ? `Enviar ~${projecao} unid.`
+    : `Excesso de ${Math.abs(projecao)} unid.`;
+  const mediaDetalhe = ultimosMeses.map(h => `${h.mes.substring(0,3)}: ${h.vendido}`).join(' · ');
+  const histHtml = historico.map(h =>
+    `<span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">${h.mes.substring(0,3)}: <b style="color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo}</b></span>`
+  ).join(' · ');
+
+  document.getElementById('ea-kpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-ico">📤</div>
+      <div class="kpi-val" style="color:var(--blue)">${k.totalEnviado||0}</div>
+      <div class="kpi-lbl">Total Enviado · ${(document.getElementById('mes-btn-label')||{}).textContent||''}</div>
+      <div class="kpi-accent b"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico">💰</div>
+      <div class="kpi-val" style="color:var(--green)">${k.totalVendido||0}</div>
+      <div class="kpi-lbl">Total Vendido · ${(document.getElementById('mes-btn-label')||{}).textContent||''}</div>
+      <div class="kpi-accent g"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico">📦</div>
+      <div class="kpi-val" style="color:${saldoCor}">${k.estoqueAtual!==undefined?k.estoqueAtual:0}</div>
+      <div class="kpi-lbl">Estoque Atual · Saldo Acumulado</div>
+      ${histHtml?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${histHtml}</div>`:''}
+      <div class="kpi-accent ${k.estoqueAtual>=0?'g':'r'}"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico">🔮</div>
+      <div class="kpi-val" style="color:${projecaoCor}">${projecao}</div>
+      <div class="kpi-lbl">Projeção Próx. Mês</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:4px">${mediaDetalhe ? `Média ${mediaVendas2} (${mediaDetalhe})` : `Média ${mediaVendas2} vendas/mês`} − saldo ${k.estoqueAtual||0}</div>
+      <div style="font-size:10px;font-weight:600;color:${projecaoCor};margin-top:4px">${projecaoTxt}</div>
+      <div class="kpi-accent ${projecao>0?'o':'g'}"></div>
+    </div>`;
+
+  // ── TABELA COORDENADORES (ACCORDION) ──────────────────────
+  const TH = 'font-size:9px;font-family:DM Mono,monospace;letter-spacing:0.8px;color:var(--text3);text-transform:uppercase;padding:8px 10px;background:var(--surface2);text-align:right';
+  const TD = 'padding:9px 10px;border-bottom:0.5px solid var(--border);font-size:13px;text-align:right';
+  const coords = dados.coordenadores || [];
+
+  const tagEl = document.getElementById('ea-coord-tag');
+  if(tagEl) tagEl.textContent = coords.length + (coords.length===1 ? ' coordenador' : ' coordenadores');
+
+  const CORES_COORD = { 'CLAYTON':'#009474','LOZANIA':'#7C3AED','JAIRO':'#0284C7','PAULO':'#c05000','LAILA':'#DB2777' };
+
+  document.getElementById('ea-tabela-coord').innerHTML = coords.map((c, ci) => {
+    const primeiro = (c.nome||'').split(' ')[0].toUpperCase();
+    const cor      = CORES_COORD[primeiro] || 'var(--green)';
+    const lojas    = (c.lojas||[]).sort((a,b) => b.enviado - a.enviado);
+    const lojasHtml = lojas.map(l => `
+      <tr style="background:var(--surface)">
+        <td style="${TD};text-align:left;padding-left:32px;font-size:11px;color:var(--text2)">${l.loja}</td>
+        <td style="${TD};font-size:11px;color:var(--text3)">${l.marca}</td>
+        <td style="${TD};color:var(--blue);font-size:11px">${l.enviado}</td>
+        <td style="${TD};color:var(--green);font-size:11px">${l.vendido}</td>
+        <td style="${TD};color:${l.saldo<0?'var(--red)':'var(--gold)'};font-weight:700;font-size:11px">${l.saldo}</td>
+        <td style="${TD}"></td>
+      </tr>`).join('');
+
+    return `
+      <tr onclick="eaToggleCoord(${ci})" style="cursor:pointer;user-select:none;background:var(--surface2)">
+        <td style="${TD};text-align:left;font-weight:700;color:var(--text)">
+          <span style="display:inline-flex;align-items:center;gap:8px">
+            <span style="width:9px;height:9px;border-radius:50%;background:${cor};display:inline-block;flex-shrink:0"></span>
+            ${c.nome||'—'}
+          </span>
+        </td>
+        <td style="${TD};color:var(--blue);font-weight:600">${c.enviado}</td>
+        <td style="${TD};color:var(--green);font-weight:600">${c.vendido}</td>
+        <td style="${TD};color:${c.saldo<0?'var(--red)':'var(--gold)'};font-weight:700">${c.saldo}</td>
+        <td style="${TD};color:var(--text2)">${c.media||0}</td>
+        <td style="${TD}">
+          <span style="display:inline-flex;align-items:center;gap:6px">
+            <span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">${lojas.length} loja${lojas.length!==1?'s':''}</span>
+            <span id="ea-coord-chev-${ci}" style="font-size:10px;color:var(--text3)">▼</span>
+          </span>
+        </td>
+      </tr>
+      <tr id="ea-coord-rows-${ci}" style="display:none">
+        <td colspan="6" style="padding:0">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="${TH};text-align:left;padding-left:32px;background:var(--surface)">Loja</th>
+              <th style="${TH};background:var(--surface)">Marca</th>
+              <th style="${TH};background:var(--surface)">Enviado</th>
+              <th style="${TH};background:var(--surface)">Vendido</th>
+              <th style="${TH};background:var(--surface)">Saldo</th>
+              <th style="${TH};background:var(--surface)"></th>
+            </tr></thead>
+            <tbody>${lojasHtml}</tbody>
+          </table>
+        </td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('ea-tabela-coord').insertAdjacentHTML('afterbegin', `
+    <thead><tr>
+      <th style="${TH};text-align:left">Coordenador</th>
+      <th style="${TH}">Enviado</th>
+      <th style="${TH}">Vendas</th>
+      <th style="${TH}">Saldo</th>
+      <th style="${TH}">Média/Mês</th>
+      <th style="${TH}">Lojas</th>
+    </tr></thead>`);
+
+  // ── MARCAS / LOJAS ─────────────────────────────────────────
+  const marcas = dados.marcas || [];
+  const CORES_MARCA = {
+    'AMERICA':'#1565C0','AUDI':'#424242','AUTOPARVI':'#1976D2','BREMEN':'#E65100',
+    'BYD':'#2E7D32','FIORI':'#6A1B9A','JEEP':'#558B2F','LAND ROVER':'#004D40',
+    'LEXUS':'#37474F','MARDISA':'#AD1457','PATEO':'#00838F','RAM':'#B71C1C','TOYOLEX':'#F57F17'
+  };
+  document.getElementById('ea-marcas').innerHTML = marcas.map((m, mi) => {
+    const cor   = CORES_MARCA[m.marca] || '#009474';
+    const lojas = (m.lojas || []).sort((a,b) => b.enviado - a.enviado);
+    return `
+      <div style="margin-bottom:6px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <div onclick="eaToggleMarca(${mi})" style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);cursor:pointer;user-select:none">
+          <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0"></div>
+          <div style="flex:1;font-size:13px;font-weight:700;color:var(--text)">${m.marca}</div>
+          <div style="display:flex;gap:16px;font-size:11px;color:var(--text3)">
+            <span>Enviado: <strong style="color:var(--blue)">${m.enviado}</strong></span>
+            <span>Vendido: <strong style="color:var(--green)">${m.vendido}</strong></span>
+            <span>Estoque: <strong style="color:var(--gold)">${m.estoqueAtual}</strong></span>
+            <span style="color:var(--text3)">${lojas.length} loja${lojas.length!==1?'s':''}</span>
+          </div>
+          <span id="ea-chev-${mi}" style="font-size:10px;color:var(--text3);margin-left:8px">▼</span>
+        </div>
+        <div id="ea-body-${mi}" style="display:none">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="border-bottom:1px solid var(--border)">
+              <th style="padding:7px 14px;text-align:left;font-size:9px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;background:var(--surface)">Loja</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--blue);text-transform:uppercase;background:var(--surface)">Enviado</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;background:var(--surface)">Vendido</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-family:'DM Mono',monospace;color:var(--gold);text-transform:uppercase;background:var(--surface)">Estoque</th>
+            </tr></thead>
+            <tbody>${lojas.map(l => `
+              <tr style="border-bottom:0.5px solid var(--border)">
+                <td style="padding:8px 14px;color:var(--text2);font-size:12px">↳ ${l.loja}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--blue);font-weight:600">${l.enviado}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--green);font-weight:600">${l.vendido}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--gold);font-weight:700">${l.estoqueAtual}</td>
+              </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function eaToggleMarca(i) {
+  const body = document.getElementById('ea-body-'+i);
+  const chev = document.getElementById('ea-chev-'+i);
+  if(!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if(chev) chev.textContent = open ? '▼' : '▲';
+}
+
+function eaToggleCoord(i) {
+  const row  = document.getElementById('ea-coord-rows-'+i);
+  const chev = document.getElementById('ea-coord-chev-'+i);
+  if(!row) return;
+  const open = row.style.display !== 'none';
+  row.style.display = open ? 'none' : 'table-row';
+  if(chev) chev.textContent = open ? '▼' : '▲';
+}
+
+function eaExpandirTudo(expand) {
+  const marcas = document.getElementById('ea-marcas');
+  if(!marcas) return;
+  marcas.querySelectorAll('[id^="ea-body-"]').forEach(b => b.style.display = expand ? 'block' : 'none');
+  marcas.querySelectorAll('[id^="ea-chev-"]').forEach(c => c.textContent   = expand ? '▲' : '▼');
+}
+
+// Título correto ao navegar para Estoque Atualizado
+const _origNavToEA = navTo;
+navTo = function(page, btn) {
+  _origNavToEA(page, btn);
+  if(page === 'estoque-at') {
+    document.getElementById('page-title').textContent = 'Estoque Atualizado · Rastreadores · ' + getPeriodoLabel();
+  }
 };
 </script>
 </body>

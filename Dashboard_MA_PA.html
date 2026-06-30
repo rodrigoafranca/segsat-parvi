@@ -442,11 +442,22 @@ tr:hover td{background:var(--surface2);}
 </div>
 <script>
 var SENHA_CORRETA = 'Laila123';
+var NOME_COORDENADOR_ACESSO = 'Laila';
+var NOME_PRACA_ACESSO = 'MA / PA';
+
+// Registra o acesso silenciosamente — não bloqueia nem trava se a rede falhar
+function registrarAcessoSilencioso() {
+  try {
+    fetch(APPS_SCRIPT_URL + '?action=registrar-acesso&coordenador=' + encodeURIComponent(NOME_COORDENADOR_ACESSO) + '&praca=' + encodeURIComponent(NOME_PRACA_ACESSO) + '&t=' + Date.now()).catch(function(){});
+  } catch(e) {}
+}
+
 function checkLogin() {
   var pwd = document.getElementById('login-input').value.trim();
   if(pwd === SENHA_CORRETA) {
     document.getElementById('login-screen').style.display = 'none';
     sessionStorage.setItem('parvi_auth', '1');
+    registrarAcessoSilencioso();
   } else {
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('login-input').value = '';
@@ -457,6 +468,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('login-screen');
     if(el) el.style.display = 'none';
+    registrarAcessoSilencioso();
   });
 }
 </script>

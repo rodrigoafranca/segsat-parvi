@@ -483,6 +483,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <div class="nav-section">Análise</div>
   <button class="nav-item" onclick="navTo('estados',this)"><span class="ni">🗺️</span> Por Estado</button>
   <button class="nav-item" onclick="navTo('lojas',this)"><span class="ni">🏪</span> Ranking Lojas</button>
+  <button class="nav-item" onclick="navTo('comparativo',this)"><span class="ni">📊</span> Comparativo de Lojas</button>
   <button class="nav-item" onclick="navTo('marcas',this)"><span class="ni">🏷️</span> Por Marca</button>
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
   <button class="nav-item" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
@@ -650,6 +651,31 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
         <button class="ranking-tab" onclick="setRankingTab('conv',this)">🎯 Conversão</button>
       </div>
       <div class="tbl-wrap"><table id="lojas-table"></table></div>
+    </div>
+  </div>
+
+  <!-- PAGE: COMPARATIVO DE LOJAS -->
+  <div class="page" id="page-comparativo">
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--text2)">Compara o ritmo do mês atual (projetado linearmente até hoje) contra a média de vendas dos últimos 3 meses. Ajuda a identificar quedas e crescimentos antes do mês fechar.</div>
+    </div>
+    <div class="kpi-row" id="comp-kpis"></div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd">
+        <div><div class="card-title">🏷️ Por Marca</div><div class="card-sub">Agregado — soma das lojas de cada marca, ordenado da maior queda para o maior crescimento</div></div>
+      </div>
+      <div id="comp-marcas"></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="card-title">🏪 Por Loja</div><div class="card-sub" id="comp-lojas-sub">Ordenado por volume (planos)</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="comp-search" placeholder="🔍 Filtrar loja..." oninput="renderComparativo()" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:180px">
+          <button class="ranking-tab active" id="comp-sort-vol" onclick="setCompSort('vol')">📦 Volume</button>
+          <button class="ranking-tab" id="comp-sort-pct" onclick="setCompSort('pct')">📊 %</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table id="comp-table"></table></div>
     </div>
   </div>
 
@@ -1159,6 +1185,118 @@ function filtrarEstoque(){
   _renderEstoqueTable(_estoqueDataAtual.filter(e=>(!s||e.loja.toLowerCase().includes(s)||e.uf.toLowerCase().includes(s))&&(!st||e.status===st)));
 }
 
+// ── COMPARATIVO DE LOJAS — ritmo do mês vs média 3 meses ─────
+let _compSort = 'vol'; // 'vol' = diferença em volume | 'pct' = percentual
+
+function _compFaixa(pct) {
+  if(pct <= -30) return { cor:'var(--red)',  bg:'var(--red-bg)',  ico:'🔴', label:'Queda crítica' };
+  if(pct <= -15) return { cor:'var(--orange)',bg:'var(--orange-bg)',ico:'🟠', label:'Atenção' };
+  if(pct <   15) return { cor:'var(--gold)', bg:'var(--gold-bg)', ico:'🟡', label:'Estável' };
+  return            { cor:'var(--green)',bg:'var(--green-bg)',ico:'🟢', label:'Crescendo' };
+}
+
+function _compCalcLojas() {
+  return (ESTOQUE||[])
+    .filter(e => e.mediaVendas > 0 || e.tendenciaMesAtual > 0)
+    .map(e => {
+      const media = e.mediaVendas || 0;
+      const tend  = e.tendenciaMesAtual || 0;
+      const diff  = Math.round(tend - media);
+      const pct   = media > 0 ? ((tend - media) / media) * 100 : (tend > 0 ? 100 : 0);
+      return { loja: e.loja, uf: e.uf, marca: e.marca, media, tend, diff, pct, vendAtual: e.vendMesAtual||0 };
+    });
+}
+
+function setCompSort(tipo) {
+  _compSort = tipo;
+  document.getElementById('comp-sort-vol').classList.toggle('active', tipo==='vol');
+  document.getElementById('comp-sort-pct').classList.toggle('active', tipo==='pct');
+  document.getElementById('comp-lojas-sub').textContent = tipo==='vol' ? 'Ordenado por volume (planos)' : 'Ordenado por variação percentual';
+  renderComparativo();
+}
+
+function renderComparativo() {
+  const lojas = _compCalcLojas();
+  if(!lojas.length) {
+    document.getElementById('comp-kpis').innerHTML = '<div style="padding:20px;color:var(--text3)">Sem dados suficientes para comparar — selecione um mês com histórico.</div>';
+    document.getElementById('comp-marcas').innerHTML = '';
+    document.getElementById('comp-table').innerHTML  = '';
+    return;
+  }
+
+  // ── KPIs por faixa ──────────────────────────────────────────
+  const nCritico = lojas.filter(l=>l.pct<=-30).length;
+  const nAtencao = lojas.filter(l=>l.pct>-30 && l.pct<=-15).length;
+  const nEstavel = lojas.filter(l=>l.pct>-15 && l.pct<15).length;
+  const nCresce  = lojas.filter(l=>l.pct>=15).length;
+  document.getElementById('comp-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-ico">🔴</div><div class="kpi-val" style="color:var(--red)">${nCritico}</div><div class="kpi-lbl">Queda crítica (≤-30%)</div><div class="kpi-accent r"></div></div>
+    <div class="kpi"><div class="kpi-ico">🟠</div><div class="kpi-val" style="color:var(--orange)">${nAtencao}</div><div class="kpi-lbl">Atenção (-30% a -15%)</div><div class="kpi-accent o"></div></div>
+    <div class="kpi"><div class="kpi-ico">🟡</div><div class="kpi-val" style="color:var(--gold)">${nEstavel}</div><div class="kpi-lbl">Estável (-15% a +15%)</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">🟢</div><div class="kpi-val" style="color:var(--green)">${nCresce}</div><div class="kpi-lbl">Crescendo (≥+15%)</div><div class="kpi-accent g"></div></div>`;
+
+  // ── Agregado por Marca ────────────────────────────────────────
+  const porMarca = {};
+  lojas.forEach(l => {
+    const mk = l.marca || 'OUTRAS';
+    if(!porMarca[mk]) porMarca[mk] = { marca: mk, media: 0, tend: 0, nLojas: 0 };
+    porMarca[mk].media += l.media;
+    porMarca[mk].tend  += l.tend;
+    porMarca[mk].nLojas++;
+  });
+  const marcasArr = Object.values(porMarca).map(m => {
+    const diff = Math.round(m.tend - m.media);
+    const pct  = m.media > 0 ? ((m.tend - m.media) / m.media) * 100 : (m.tend > 0 ? 100 : 0);
+    return { ...m, diff, pct };
+  }).sort((a,b) => a.diff - b.diff); // pior primeiro
+
+  document.getElementById('comp-marcas').innerHTML = marcasArr.map(m => {
+    const f = _compFaixa(m.pct);
+    const sinal = m.diff >= 0 ? '+' : '';
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:5px">
+        <span style="font-size:14px">${f.ico}</span>
+        <span style="flex:1;font-size:13px;font-weight:700;color:var(--text)">${m.marca}</span>
+        <span style="font-size:10px;color:var(--text3)">${m.nLojas} loja${m.nLojas!==1?'s':''}</span>
+        <span style="font-size:11px;color:var(--text3)">méd. 3M: <strong style="color:var(--text2)">${m.media.toFixed(1)}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">tendência: <strong style="color:var(--text2)">${m.tend}</strong></span>
+        <span style="font-size:12px;font-weight:700;color:${f.cor};background:${f.bg};padding:3px 10px;border-radius:99px;min-width:120px;text-align:center">${sinal}${m.pct.toFixed(0)}% (${sinal}${m.diff})</span>
+      </div>`;
+  }).join('');
+
+  // ── Tabela por Loja ───────────────────────────────────────────
+  const search = (document.getElementById('comp-search')||{value:''}).value.toLowerCase();
+  let filtradas = lojas.filter(l => !search || l.loja.toLowerCase().includes(search) || (l.marca||'').toLowerCase().includes(search));
+
+  filtradas = filtradas.sort((a,b) => _compSort==='vol' ? (a.diff - b.diff) : (a.pct - b.pct));
+
+  const TH = 'font-size:9px;font-family:DM Mono,monospace;letter-spacing:0.8px;color:var(--text3);text-transform:uppercase;padding:8px 10px;background:var(--surface2);text-align:right';
+  const TD = 'padding:8px 10px;border-bottom:0.5px solid var(--border);font-size:12px;text-align:right';
+
+  document.getElementById('comp-table').innerHTML = `
+    <thead><tr>
+      <th style="${TH};text-align:left">Loja</th>
+      <th style="${TH};text-align:left">Marca</th>
+      <th style="${TH}">Méd. 3M</th>
+      <th style="${TH}">Tendência</th>
+      <th style="${TH}">Variação</th>
+      <th style="${TH};text-align:left">Status</th>
+    </tr></thead>
+    <tbody>${filtradas.map(l => {
+      const f = _compFaixa(l.pct);
+      const sinal = l.diff >= 0 ? '+' : '';
+      return `
+        <tr>
+          <td style="${TD};text-align:left;font-weight:600;color:var(--text)">${l.loja}</td>
+          <td style="${TD};text-align:left;color:var(--text3)">${l.marca}</td>
+          <td style="${TD};color:var(--text2)">${l.media.toFixed(1)}</td>
+          <td style="${TD};color:var(--text2);font-weight:600">${l.tend}</td>
+          <td style="${TD};font-weight:700;color:${f.cor}">${sinal}${l.pct.toFixed(0)}% (${sinal}${l.diff})</td>
+          <td style="${TD};text-align:left"><span style="font-size:10px;font-weight:700;color:${f.cor};background:${f.bg};padding:2px 9px;border-radius:99px">${f.ico} ${f.label}</span></td>
+        </tr>`;
+    }).join('')}</tbody>`;
+}
+
 
 // ── TREINAMENTOS POR LOJA ────────────────────────────────────
 let _trnLojaStatus = 'todas';
@@ -1323,7 +1461,12 @@ function trnRenderizar() {
   const total = dados.length;
   const medias = dados.map(r=>parseFloat(r.nota_media||r.nota_m_dia||0)).filter(v=>v>0);
   const notaMedia = medias.length ? (medias.reduce((a,b)=>a+b,0)/medias.length).toFixed(1) : '—';
-  const preparados  = dados.filter(r=>String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('sim')).length;
+  const preparados  = dados.filter(r=>{
+    const prep = String(r.se_sente_preparado||r.preparo||'').toLowerCase();
+    const sug  = String(r.sugestao||r.sugest_o||'').toLowerCase();
+    const sugEhPrep = sug.includes('preparado')||sug.includes('prática')||sug.includes('treinamento');
+    return prep.includes('sim') || (sugEhPrep && sug.includes('sim'));
+  }).length;
   const maisPratica = dados.filter(r=>String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('pr'+'tica') || String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('pratica') || String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('prática')).length;
   const maisTreino  = dados.filter(r=>String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('treinamento')).length;
   const pctPrep     = total ? Math.round((preparados/total)*100) : 0;
@@ -1383,8 +1526,18 @@ function trnRenderizar() {
     </tr></thead><tbody>${dados.map(r=>{
       const nota=parseFloat(r.nota_media||r.nota_m_dia||0);
       const cor=nota>=8?'var(--green)':nota>=6?'var(--gold)':'var(--red)';
-      const sim=String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('sim');
       const data=r.timestamp?new Date(r.timestamp).toLocaleDateString('pt-BR'):(r.data||'');
+
+      // Campo "preparado": verifica campo oficial E detecta se está na sugestão
+      const preparadoRaw = String(r.se_sente_preparado||r.preparo||'').toLowerCase();
+      const sugestaoRaw  = String(r.sugestao||r.sugest_o||'');
+      const sugestaoEmPrep = sugestaoRaw.toLowerCase().includes('preparado') || sugestaoRaw.toLowerCase().includes('prática') || sugestaoRaw.toLowerCase().includes('treinamento');
+      const sim = preparadoRaw.includes('sim') || (sugestaoEmPrep && sugestaoRaw.toLowerCase().includes('sim'));
+
+      // Sugestão: limpa se for número (nota no lugar errado) ou se foi usada como preparo
+      const sugestaoEhNumero = !isNaN(parseFloat(sugestaoRaw)) && sugestaoRaw.trim() !== '';
+      const sugestaoFinal = sugestaoEhNumero || sugestaoEmPrep ? '—' : (sugestaoRaw || '—');
+
       return `<tr>
         <td style="${TD};color:var(--text3)">${data}</td>
         <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
@@ -1398,7 +1551,7 @@ function trnRenderizar() {
         <td style="${TD};text-align:center;font-weight:700;color:${cor}">${nota?nota.toFixed(1):'—'}</td>
         <td style="${TD};text-align:center"><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${sim?'rgba(100,204,50,0.1)':'rgba(226,75,74,0.1)'};color:${sim?'var(--green)':'var(--red)'}">${sim?'✅ Sim':'❌ Não'}</span></td>
         <td style="${TD};font-size:11px;color:var(--text2)">${r.temas_abordados||r.temas||'—'}</td>
-        <td style="${TD};font-size:11px;color:var(--text3)">${r.sugestao||r.sugest_o||'—'}</td>
+        <td style="${TD};font-size:11px;color:var(--text3)">${sugestaoFinal}</td>
       </tr>`;
     }).join('')}</tbody>`;
   }
@@ -1867,11 +2020,12 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',comparativo:'Comparativo de Lojas · 3 Meses',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
   if(page==='estoque') renderEstoque();
   if(page==='estoque-at') carregarEstoqueAtualizado();
   if(page==='treinamentos') trnCarregarDados();
+  if(page==='comparativo') renderComparativo();
 }
 
 // ============================================================

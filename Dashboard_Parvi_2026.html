@@ -657,7 +657,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <!-- PAGE: COMPARATIVO DE LOJAS -->
   <div class="page" id="page-comparativo">
     <div style="margin-bottom:14px">
-      <div style="font-size:12px;color:var(--text2)">Compara o ritmo do mês atual (projetado linearmente até hoje) contra a média de vendas dos últimos 3 meses. Ajuda a identificar quedas e crescimentos antes do mês fechar.</div>
+      <div style="font-size:12px;color:var(--text2)">Compara o vendido até hoje neste mês contra o vendido até o mesmo dia em cada um dos 3 meses anteriores. Ajuda a identificar quedas e crescimentos antes do mês fechar, sem comparar fases diferentes do mês.</div>
     </div>
     <div class="kpi-row" id="comp-kpis"></div>
     <div class="card" style="margin-bottom:12px">
@@ -1258,8 +1258,8 @@ function renderComparativo() {
         <span style="font-size:14px">${f.ico}</span>
         <span style="flex:1;font-size:13px;font-weight:700;color:var(--text)">${m.marca}</span>
         <span style="font-size:10px;color:var(--text3)">${m.nLojas} loja${m.nLojas!==1?'s':''}</span>
-        <span style="font-size:11px;color:var(--text3)">méd. 3M: <strong style="color:var(--text2)">${m.media.toFixed(1)}</strong></span>
-        <span style="font-size:11px;color:var(--text3)">tendência: <strong style="color:var(--text2)">${m.tend}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">méd. 3M até esse dia: <strong style="color:var(--text2)">${m.media.toFixed(1)}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">vendido até hoje: <strong style="color:var(--text2)">${m.tend}</strong></span>
         <span style="font-size:12px;font-weight:700;color:${f.cor};background:${f.bg};padding:3px 10px;border-radius:99px;min-width:120px;text-align:center">${sinal}${m.pct.toFixed(0)}% (${sinal}${m.diff})</span>
       </div>`;
   }).join('');
@@ -1277,8 +1277,8 @@ function renderComparativo() {
     <thead><tr>
       <th style="${TH};text-align:left">Loja</th>
       <th style="${TH};text-align:left">Marca</th>
-      <th style="${TH}">Méd. 3M</th>
-      <th style="${TH}">Tendência</th>
+      <th style="${TH}">Méd. 3M (até esse dia)</th>
+      <th style="${TH}">Vendido (até hoje)</th>
       <th style="${TH}">Variação</th>
       <th style="${TH};text-align:left">Status</th>
     </tr></thead>

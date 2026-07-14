@@ -759,7 +759,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 
   <!-- PAGE: ESTOQUE ATUALIZADO -->
   <div class="page" id="page-estoque-at">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text)">📡 Estoque Atualizado · Rastreadores</div>
         <div style="font-size:11px;color:var(--text3);margin-top:3px">Dados em tempo real da planilha Estoque Parvi</div>
@@ -768,31 +768,80 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
         <span id="ea-refresh-icon">🔄</span> Atualizar Dados
       </button>
     </div>
+
+    <!-- ABAS -->
+    <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button id="ea-tab-geral"  onclick="eaSetTab('geral')"  class="ea-tab ea-tab-active" style="padding:8px 16px;border:none;border-bottom:2px solid var(--green);background:none;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">🗺️ Visão Geral</button>
+      <button id="ea-tab-praca"  onclick="eaSetTab('praca')"  class="ea-tab"               style="padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">👤 Por Praça</button>
+      <button id="ea-tab-marca"  onclick="eaSetTab('marca')"  class="ea-tab"               style="padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🏷️ Por Marca</button>
+      <button id="ea-tab-loja"   onclick="eaSetTab('loja')"   class="ea-tab"               style="padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🏪 Por Loja</button>
+    </div>
+
     <div id="ea-loading" style="display:none;text-align:center;padding:60px 20px">
       <div style="font-size:32px;margin-bottom:12px">⏳</div>
       <div style="font-size:14px;color:var(--text2);margin-bottom:6px">Carregando dados da planilha Estoque Parvi...</div>
       <div style="font-size:11px;color:var(--text3)">Isso pode levar alguns segundos</div>
     </div>
     <div id="ea-erro" style="display:none;padding:20px;background:var(--red-bg);border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px;margin-bottom:16px"></div>
+
     <div id="ea-conteudo" style="display:none">
-      <div class="kpi-row" id="ea-kpis"></div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="card-hd">
-          <div><div class="card-title">👤 Mapeamento por Coordenador</div><div class="card-sub">Enviado · Vendas · Saldo · Média/mês · Cobertura de dias</div></div>
-          <div class="card-tag blue">4 coordenadores</div>
-        </div>
-        <div class="tbl-wrap"><table id="ea-tabela-coord"></table></div>
-      </div>
-      <div class="card">
-        <div class="card-hd">
-          <div><div class="card-title">🏢 Mapeamento por Marca e Loja</div><div class="card-sub">Clique na marca para expandir as lojas</div></div>
-          <div style="display:flex;gap:6px">
-            <button onclick="eaExpandirTudo(true)"  style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Expandir tudo</button>
-            <button onclick="eaExpandirTudo(false)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Recolher tudo</button>
+
+      <!-- ABA GERAL -->
+      <div id="ea-panel-geral">
+        <div class="kpi-row" id="ea-kpis"></div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-hd">
+            <div><div class="card-title">👤 Mapeamento por Coordenador</div><div class="card-sub">Enviado · Vendas · Saldo · clique para ver as lojas</div></div>
+            <div class="card-tag blue" id="ea-coord-tag">—</div>
           </div>
+          <div class="tbl-wrap"><table id="ea-tabela-coord"></table></div>
         </div>
-        <div id="ea-marcas"></div>
+        <div class="card">
+          <div class="card-hd">
+            <div><div class="card-title">🏢 Mapeamento por Marca e Loja</div><div class="card-sub">Clique na marca para expandir as lojas</div></div>
+            <div style="display:flex;gap:6px">
+              <button onclick="eaExpandirTudo(true)"  style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Expandir tudo</button>
+              <button onclick="eaExpandirTudo(false)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">Recolher tudo</button>
+            </div>
+          </div>
+          <div id="ea-marcas"></div>
+        </div>
       </div>
+
+      <!-- ABA PRAÇA -->
+      <div id="ea-panel-praca" style="display:none">
+        <div class="card"><div class="tbl-wrap"><table id="ea-tbl-praca"></table></div></div>
+      </div>
+
+      <!-- ABA MARCA -->
+      <div id="ea-panel-marca" style="display:none">
+        <div class="card"><div class="tbl-wrap"><table id="ea-tbl-marca"></table></div></div>
+      </div>
+
+      <!-- ABA LOJA -->
+      <div id="ea-panel-loja" style="display:none">
+        <div class="card">
+          <div class="card-hd" style="margin-bottom:10px">
+            <div><div class="card-title">🏪 Por Loja</div><div class="card-sub" id="ea-loja-sub">Todas as lojas</div></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="ea-loja-filtro-praca" onchange="renderEaLoja()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+                <option value="">Todas as praças</option>
+                <option value="PE">Pernambuco</option>
+                <option value="AM">AM / RR</option>
+                <option value="BA">BA / SE</option>
+                <option value="PB">PB / RN</option>
+                <option value="MA">MA / PA</option>
+              </select>
+              <select id="ea-loja-filtro-marca" onchange="renderEaLoja()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+                <option value="">Todas as marcas</option>
+              </select>
+              <input id="ea-loja-search" placeholder="🔍 Buscar loja..." oninput="renderEaLoja()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:160px">
+            </div>
+          </div>
+          <div class="tbl-wrap"><table id="ea-tbl-loja"></table></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -3336,28 +3385,29 @@ async function carregarEstoqueAtualizado() {
 
     // 3. Combina inventário + vendas
     const inventario = parvi.lojas || [];
+    _eaLojas = inventario; // cache para as abas Por Praça / Marca / Loja
     let totalEnviado = 0, estoqueAtual = 0, sugestaoEnvio = 0;
     const coordenadores = {}, marcas = {};
     inventario.forEach(item => {
       const vendido     = vendasPorLoja[item.loja] || 0;
       item.vendido      = vendido;
-      item.estoqueAtual = Math.max(0, item.enviado - vendido);
-      item.saldo        = item.enviado - vendido;
+      item.estoqueAtual = Math.max(0, item.disponivel - vendido);
+      item.saldo        = item.disponivel - vendido;
       item.sugestao     = Math.max(0, vendido - item.estoqueAtual);
-      totalEnviado  += item.enviado;
-      estoqueAtual  += item.estoqueAtual;
+      totalEnviado  += item.enviadoMes || 0;
+      estoqueAtual  += item.disponivel || 0;
       sugestaoEnvio += item.sugestao;
 
       const ck = item.primeiroCoordenador || 'NA';
       if(!coordenadores[ck]) coordenadores[ck] = { nome: item.coordenador, enviado:0, vendido:0, saldo:0, media:0, cobertura:0, contLojas:0, lojas:[] };
-      coordenadores[ck].enviado += item.enviado;
+      coordenadores[ck].enviado += item.enviadoMes || 0;
       coordenadores[ck].vendido += vendido;
       coordenadores[ck].saldo   += item.saldo;
       coordenadores[ck].contLojas++;
       coordenadores[ck].lojas.push({
         loja:      item.loja,
         marca:     item.marca,
-        enviado:   item.enviado,
+        enviado:   item.enviadoMes || 0,
         vendido:   vendido,
         estoque:   item.estoqueAtual,
         saldo:     item.saldo
@@ -3365,9 +3415,9 @@ async function carregarEstoqueAtualizado() {
 
       const mk = item.marca || 'OUTRAS';
       if(!marcas[mk]) marcas[mk] = { marca: mk, enviado:0, vendido:0, estoqueAtual:0, lojas:[] };
-      marcas[mk].enviado      += item.enviado;
+      marcas[mk].enviado      += item.enviadoMes || 0;
       marcas[mk].vendido      += vendido;
-      marcas[mk].estoqueAtual += item.estoqueAtual;
+      marcas[mk].estoqueAtual += item.disponivel || 0;
       marcas[mk].lojas.push(item);
     });
     const dados = {
@@ -3383,9 +3433,10 @@ async function carregarEstoqueAtualizado() {
       marcas: Object.values(marcas).sort((a,b) => a.marca.localeCompare(b.marca))
     };
     renderEstoqueAtualizado(dados);
+    // Re-renderiza a aba ativa se não for Geral
+    if(_eaTabAtiva !== 'geral') eaSetTab(_eaTabAtiva);
     document.getElementById('ea-loading').style.display  = 'none';
     document.getElementById('ea-conteudo').style.display = 'block';
-    _eaCarregado = true;
   } catch(err) {
     document.getElementById('ea-loading').style.display = 'none';
     document.getElementById('ea-erro').style.display    = 'block';
@@ -3592,6 +3643,161 @@ function eaExpandirTudo(expand) {
   const chevs  = marcas.querySelectorAll('[id^="ea-chev-"]');
   bodies.forEach(b => b.style.display = expand ? 'block' : 'none');
   chevs.forEach(c  => c.textContent   = expand ? '▲' : '▼');
+}
+
+// ── CONTROLE DE ABAS DO ESTOQUE ATUALIZADO ───────────────────
+let _eaTabAtiva = 'geral';
+let _eaLojas = []; // cache de todas as lojas do Estoque Parvi
+
+function eaSetTab(tab) {
+  _eaTabAtiva = tab;
+  ['geral','praca','marca','loja'].forEach(t => {
+    const btn   = document.getElementById('ea-tab-' + t);
+    const panel = document.getElementById('ea-panel-' + t);
+    const ativo = t === tab;
+    if(btn)   { btn.style.color        = ativo ? 'var(--green)' : 'var(--text2)'; btn.style.borderBottom = ativo ? '2px solid var(--green)' : '2px solid transparent'; }
+    if(panel) panel.style.display      = ativo ? 'block' : 'none';
+  });
+  if(tab === 'praca')  renderEaPraca();
+  if(tab === 'marca')  renderEaMarca();
+  if(tab === 'loja')   renderEaLoja();
+}
+
+// ── TABELA HELPER ─────────────────────────────────────────────
+function _eaTH(label, align) {
+  return `<th style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.8px;color:var(--text3);text-transform:uppercase;padding:8px 10px;background:var(--surface2);text-align:${align||'right'}">${label}</th>`;
+}
+function _eaTD(val, cor, align, bold) {
+  const c = cor ? `color:${cor};` : '';
+  const b = bold ? 'font-weight:700;' : '';
+  return `<td style="padding:8px 10px;border-bottom:.5px solid var(--border);font-size:12px;text-align:${align||'right'};${c}${b}">${val}</td>`;
+}
+
+// ── ABA POR PRAÇA ─────────────────────────────────────────────
+const _PRACA_UFS = {
+  'PE': ['PE'],
+  'AM': ['AM','RR'],
+  'BA': ['BA','SE'],
+  'PB': ['PB','RN'],
+  'MA': ['MA','PA']
+};
+const _PRACA_LABELS = {
+  'PE': '🔴 Pernambuco — Clayton',
+  'AM': '🟣 AM / RR — Lozania',
+  'BA': '🔵 BA / SE — Jairo',
+  'PB': '🟠 PB / RN — Paulo',
+  'MA': '🟡 MA / PA — Laila'
+};
+
+function renderEaPraca() {
+  const tbl = document.getElementById('ea-tbl-praca');
+  if(!tbl || !_eaLojas.length) return;
+  const praças = Object.keys(_PRACA_UFS);
+  const rows = praças.map(pk => {
+    const ufs   = _PRACA_UFS[pk];
+    const lojas = _eaLojas.filter(l => ufs.includes(l.uf));
+    return {
+      label:      _PRACA_LABELS[pk],
+      enviado:    lojas.reduce((a,l)=>a+(l.enviadoMes||0),0),
+      disponivel: lojas.reduce((a,l)=>a+(l.disponivel||0),0),
+      utilizado:  lojas.reduce((a,l)=>a+(l.utilizado||0),0),
+      remanejado: lojas.reduce((a,l)=>a+(l.remanejado||0),0),
+      nLojas:     lojas.length
+    };
+  });
+  tbl.innerHTML = `<thead><tr>
+    ${_eaTH('Praça / Coordenador','left')}
+    ${_eaTH('Lojas')}
+    ${_eaTH('Enviado no mês')}
+    ${_eaTH('Disponível')}
+    ${_eaTH('Utilizado')}
+    ${_eaTH('Remanejado')}
+  </tr></thead><tbody>${rows.map(r=>`<tr>
+    ${_eaTD(r.label,'var(--text)','left',true)}
+    ${_eaTD(r.nLojas,'var(--text3)')}
+    ${_eaTD(r.enviado,'var(--blue)')}
+    ${_eaTD(r.disponivel,'var(--green)',null,true)}
+    ${_eaTD(r.utilizado,'var(--text3)')}
+    ${_eaTD(r.remanejado,'var(--gold)')}
+  </tr>`).join('')}</tbody>`;
+}
+
+// ── ABA POR MARCA ─────────────────────────────────────────────
+function renderEaMarca() {
+  const tbl = document.getElementById('ea-tbl-marca');
+  if(!tbl || !_eaLojas.length) return;
+  const marcaMap = {};
+  _eaLojas.forEach(l => {
+    const mk = l.marca || 'OUTRAS';
+    if(!marcaMap[mk]) marcaMap[mk] = {marca:mk, enviado:0, disponivel:0, utilizado:0, remanejado:0, nLojas:0};
+    marcaMap[mk].enviado    += l.enviadoMes  || 0;
+    marcaMap[mk].disponivel += l.disponivel  || 0;
+    marcaMap[mk].utilizado  += l.utilizado   || 0;
+    marcaMap[mk].remanejado += l.remanejado  || 0;
+    marcaMap[mk].nLojas++;
+  });
+  const rows = Object.values(marcaMap).sort((a,b)=>b.disponivel-a.disponivel);
+  tbl.innerHTML = `<thead><tr>
+    ${_eaTH('Marca','left')}
+    ${_eaTH('Lojas')}
+    ${_eaTH('Enviado no mês')}
+    ${_eaTH('Disponível')}
+    ${_eaTH('Utilizado')}
+    ${_eaTH('Remanejado')}
+  </tr></thead><tbody>${rows.map(r=>`<tr>
+    ${_eaTD(r.marca,'var(--text)','left',true)}
+    ${_eaTD(r.nLojas,'var(--text3)')}
+    ${_eaTD(r.enviado,'var(--blue)')}
+    ${_eaTD(r.disponivel,'var(--green)',null,true)}
+    ${_eaTD(r.utilizado,'var(--text3)')}
+    ${_eaTD(r.remanejado,'var(--gold)')}
+  </tr>`).join('')}</tbody>`;
+}
+
+// ── ABA POR LOJA ──────────────────────────────────────────────
+function renderEaLoja() {
+  const tbl       = document.getElementById('ea-tbl-loja');
+  const subEl     = document.getElementById('ea-loja-sub');
+  const filtroUF  = (document.getElementById('ea-loja-filtro-praca')||{value:''}).value;
+  const filtroMk  = (document.getElementById('ea-loja-filtro-marca')||{value:''}).value;
+  const search    = ((document.getElementById('ea-loja-search')||{value:''}).value||'').toLowerCase();
+  if(!tbl || !_eaLojas.length) return;
+
+  // Popula select de marca na primeira vez
+  const selMarca = document.getElementById('ea-loja-filtro-marca');
+  if(selMarca && selMarca.options.length === 1) {
+    const marcas = [...new Set(_eaLojas.map(l=>l.marca||'OUTRAS'))].sort();
+    marcas.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; selMarca.appendChild(o); });
+  }
+
+  let lojas = _eaLojas;
+  if(filtroUF) {
+    const ufs = _PRACA_UFS[filtroUF] || [filtroUF];
+    lojas = lojas.filter(l => ufs.includes(l.uf));
+  }
+  if(filtroMk)  lojas = lojas.filter(l => (l.marca||'') === filtroMk);
+  if(search)    lojas = lojas.filter(l => l.loja.toLowerCase().includes(search));
+  lojas = [...lojas].sort((a,b)=>b.disponivel-a.disponivel);
+
+  if(subEl) subEl.textContent = lojas.length + ' loja' + (lojas.length!==1?'s':'') + ' encontradas';
+
+  tbl.innerHTML = `<thead><tr>
+    ${_eaTH('Loja','left')}
+    ${_eaTH('UF','left')}
+    ${_eaTH('Marca','left')}
+    ${_eaTH('Enviado no mês')}
+    ${_eaTH('Disponível')}
+    ${_eaTH('Utilizado')}
+    ${_eaTH('Remanejado')}
+  </tr></thead><tbody>${lojas.map(l=>`<tr>
+    ${_eaTD(l.loja,'var(--text)','left',true)}
+    ${_eaTD(l.uf,'var(--text3)','left')}
+    ${_eaTD(l.marca||'—','var(--text3)','left')}
+    ${_eaTD(l.enviadoMes||0,'var(--blue)')}
+    ${_eaTD(l.disponivel||0,'var(--green)',null,true)}
+    ${_eaTD(l.utilizado||0,'var(--text3)')}
+    ${_eaTD(l.remanejado||0,'var(--gold)')}
+  </tr>`).join('')}</tbody>`;
 }
 
 // ── FALLBACK ESTÁTICO ──

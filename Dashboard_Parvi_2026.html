@@ -3954,6 +3954,9 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
   const statusColor = b.faltamMarca === 0 ? 'var(--green)' : (b.faltamMarca <= Math.max(1, b.segNecessarioMarca * 0.1) ? 'var(--gold)' : 'var(--red)');
   const statusLabel = b.faltamMarca === 0 ? '✅ Meta batida' : `⚠️ Faltam ${b.faltamMarca}`;
   const id = 'mt-acc-' + b.marca.replace(/\s+/g, '_');
+  const convTriMarca = b.mCarrosMeta > 0 ? b.mSegRealizado / b.mCarrosMeta : 0;
+  const MES_SEP = 'border-left:1.5px solid var(--border2)';
+  const TRI_SEP = 'border-left:2px solid var(--gold)';
   return `
   <div class="card" style="margin-bottom:10px">
     <div class="card-hd" style="cursor:pointer;margin-bottom:0" onclick="mtToggleAcc('${id}')">
@@ -3968,18 +3971,25 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
     </div>
     <div id="${id}" style="display:none;margin-top:12px">
       <div class="tbl-wrap"><table>
-        <thead><tr>
-          <th style="text-align:left">Loja</th>
-          ${meses.map((m, i) => `<th colspan="2" style="text-align:center">${m.slice(0, 3)}${i === meses.length - 1 ? ' (editável)' : ''}</th>`).join('')}
-          <th style="text-align:center">Carros Tri.</th><th style="text-align:center">Segsat Tri.</th><th style="text-align:center">Necessário</th><th style="text-align:center">Faltam</th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th rowspan="2" style="text-align:left;vertical-align:bottom">Loja</th>
+            ${meses.map((m, i) => `<th colspan="3" style="text-align:center;${i > 0 ? MES_SEP : ''}">${m.slice(0, 3)}${i === meses.length - 1 ? ' (editável)' : ''}</th>`).join('')}
+            <th colspan="5" style="text-align:center;${TRI_SEP};color:var(--gold)">Trimestre</th>
+          </tr>
+          <tr>
+            ${meses.map((m, i) => `<th style="font-size:9px;${i > 0 ? MES_SEP : ''}">Segsat</th><th style="font-size:9px">Carros</th><th style="font-size:9px">Conv%</th>`).join('')}
+            <th style="font-size:9px;${TRI_SEP}">Carros</th><th style="font-size:9px">Segsat</th><th style="font-size:9px">Conv%</th><th style="font-size:9px">Necessário</th><th style="font-size:9px">Faltam</th>
+          </tr>
+        </thead>
         <tbody>
-          ${b.lojaRows.map(r => mtRenderLojaRow(r, meses, ultimoMes)).join('')}
+          ${b.lojaRows.map(r => mtRenderLojaRow(r, meses, ultimoMes, b.metaPct)).join('')}
           <tr style="font-weight:700;background:rgba(245,166,35,0.06);border-top:2px solid var(--gold)">
             <td class="td-main" style="color:var(--gold)">TOTAL ${b.marca}</td>
-            ${meses.map(() => `<td colspan="2" style="text-align:center;color:var(--text3)">—</td>`).join('')}
-            <td style="text-align:center">${b.mCarrosMeta}</td>
+            ${meses.map((m, i) => `<td colspan="3" style="text-align:center;color:var(--text3);${i > 0 ? MES_SEP : ''}">—</td>`).join('')}
+            <td style="text-align:center;${TRI_SEP}">${b.mCarrosMeta}</td>
             <td style="text-align:center;color:var(--green)">${b.mSegRealizado}</td>
+            <td style="text-align:center;color:${convTriMarca >= b.metaPct ? 'var(--green)' : 'var(--red)'}">${fPct(convTriMarca)}</td>
             <td style="text-align:center;color:var(--blue)">${b.segNecessarioMarca}</td>
             <td style="text-align:center;color:${b.faltamMarca === 0 ? 'var(--green)' : 'var(--red)'}">${b.faltamMarca}</td>
           </tr>
@@ -3989,24 +3999,31 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
   </div>`;
 }
 
-function mtRenderLojaRow(r, meses, ultimoMes) {
+function mtRenderLojaRow(r, meses, ultimoMes, metaPct) {
   const lastIdx = meses.length - 1;
   const lojaEsc = r.loja.replace(/'/g, "\\'");
+  const MES_SEP = 'border-left:1.5px solid var(--border2)';
+  const TRI_SEP = 'border-left:2px solid var(--gold)';
+  const convTriLoja = r.carrosTriProjetado > 0 ? r.segRealizado / r.carrosTriProjetado : 0;
   const cols = r.dm.map((x, i) => {
+    const convMes = x.carros > 0 ? x.segsat / x.carros : 0;
+    const sep = i > 0 ? MES_SEP : '';
     if (i === lastIdx) {
       const val = r.metaCarrosInput !== null ? r.metaCarrosInput : '';
-      return `<td class="td-mono" style="font-size:11px">${x.segsat}</td>` +
+      return `<td class="td-mono" style="font-size:11px;${sep}">${x.segsat}</td>` +
         `<td style="font-size:11px"><input type="number" min="0" value="${val}" placeholder="${x.carros}" ` +
         `oninput="mtOnMetaCarrosInput('${lojaEsc}','${ultimoMes}',this.value)" ` +
-        `style="width:60px;padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;text-align:center"></td>`;
+        `style="width:60px;padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;text-align:center"></td>` +
+        `<td class="td-mono" style="font-size:11px;color:var(--text3)">${x.carros > 0 ? fPct(convMes) : '—'}</td>`;
     }
-    return `<td class="td-mono" style="font-size:11px">${x.segsat}</td><td class="td-mono" style="font-size:11px">${x.carros}</td>`;
+    return `<td class="td-mono" style="font-size:11px;${sep}">${x.segsat}</td><td class="td-mono" style="font-size:11px">${x.carros}</td><td class="td-mono" style="font-size:11px;color:var(--text3)">${x.carros > 0 ? fPct(convMes) : '—'}</td>`;
   }).join('');
   return `<tr>
     <td class="td-main" style="font-size:12px;white-space:nowrap">${r.loja}</td>
     ${cols}
-    <td class="td-mono" style="text-align:center;font-size:11px">${r.carrosTriProjetado}</td>
+    <td class="td-mono" style="text-align:center;font-size:11px;${TRI_SEP}">${r.carrosTriProjetado}</td>
     <td style="text-align:center;color:var(--green);font-size:11px">${r.segRealizado}</td>
+    <td style="text-align:center;font-size:11px;color:${convTriLoja >= metaPct ? 'var(--green)' : 'var(--text2)'}">${r.carrosTriProjetado > 0 ? fPct(convTriLoja) : '—'}</td>
     <td style="text-align:center;color:var(--blue);font-size:11px">${r.segNecessario}</td>
     <td style="text-align:center;color:${r.faltam === 0 ? 'var(--green)' : 'var(--red)'};font-weight:700;font-size:11px">${r.faltam}</td>
   </tr>`;

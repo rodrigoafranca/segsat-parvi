@@ -3987,25 +3987,24 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
       <div class="tbl-wrap"><table>
         <thead>
           <tr>
-            <th rowspan="2" style="text-align:left;vertical-align:bottom">Loja</th>
+            <th rowspan="2" style="text-align:left;vertical-align:bottom;border-right:2px solid var(--border2)">Loja</th>
             ${meses.map((m, i) => `<th colspan="3" style="text-align:center;${i > 0 ? MES_SEP : ''}">${m.slice(0, 3)}${i === meses.length - 1 ? ' (editável)' : ''}</th>`).join('')}
-            <th colspan="5" style="text-align:center;${TRI_SEP};color:var(--gold)">Trimestre</th>
+            <th colspan="4" style="text-align:center;${TRI_SEP};color:var(--gold)">Trimestre</th>
           </tr>
           <tr>
             ${meses.map((m, i) => `<th style="font-size:9px;text-align:center;${i > 0 ? MES_SEP : ''}">Segsat</th><th style="font-size:9px;text-align:center">Carros</th><th style="font-size:9px;text-align:center">Conv%</th>`).join('')}
-            <th style="font-size:9px;text-align:center;${TRI_SEP}">Carros</th><th style="font-size:9px;text-align:center">Segsat</th><th style="font-size:9px;text-align:center">Conv%</th><th style="font-size:9px;text-align:center">Necessário</th><th style="font-size:9px;text-align:center">Faltam</th>
+            <th style="font-size:9px;text-align:center;${TRI_SEP}">Carros</th><th style="font-size:9px;text-align:center">Segsat</th><th style="font-size:9px;text-align:center">Conv%</th><th style="font-size:9px;text-align:center">Faltam</th>
           </tr>
         </thead>
         <tbody>
           ${b.lojaRows.map(r => mtRenderLojaRow(r, meses, ultimoMes, b.metaPct, b.marca)).join('')}
           <tr style="font-weight:700;background:rgba(245,166,35,0.06);border-top:2px solid var(--gold)">
-            <td class="td-main" style="color:var(--gold)">TOTAL ${b.marca}</td>
+            <td class="td-main" style="color:var(--gold);border-right:2px solid var(--border2)">TOTAL ${b.marca}</td>
             ${b.mesTotals.map((mt, i) => `<td class="td-mono" style="text-align:center;${i > 0 ? MES_SEP : ''}">${mt.segsat}</td><td class="td-mono" style="text-align:center">${mt.carros}</td><td style="text-align:center;font-weight:700;color:${mt.carros > 0 ? mtConvColor(mt.conv, b.marca) : 'var(--text3)'}">${mt.carros > 0 ? fPct(mt.conv) : '—'}</td>`).join('')}
             <td style="text-align:center;${TRI_SEP}">${b.mCarrosMeta}</td>
             <td style="text-align:center;color:var(--green)">${b.mSegRealizado}</td>
             <td style="text-align:center;font-weight:700;color:${mtConvColor(convTriMarca, b.marca)}">${fPct(convTriMarca)}</td>
-            <td style="text-align:center;color:var(--blue)">${b.segNecessarioMarca}</td>
-            <td style="text-align:center;color:${b.faltamMarca === 0 ? 'var(--green)' : 'var(--red)'}">${b.faltamMarca}</td>
+            <td style="text-align:center;font-weight:700;color:${b.faltamMarca === 0 ? 'var(--green)' : 'var(--red)'}">${b.faltamMarca}</td>
           </tr>
         </tbody>
       </table></div>
@@ -4034,12 +4033,11 @@ function mtRenderLojaRow(r, meses, ultimoMes, metaPct, marca) {
     return `<td class="td-mono" style="font-size:11px;text-align:center;${sep}">${x.segsat}</td><td class="td-mono" style="font-size:11px;text-align:center">${x.carros}</td>` + convCell;
   }).join('');
   return `<tr>
-    <td class="td-main" style="font-size:12px;white-space:nowrap">${r.loja}</td>
+    <td class="td-main" style="font-size:12px;white-space:nowrap;border-right:2px solid var(--border2)">${r.loja}</td>
     ${cols}
     <td class="td-mono" style="text-align:center;font-size:11px;${TRI_SEP}">${r.carrosTriProjetado}</td>
     <td style="text-align:center;color:var(--green);font-size:11px">${r.segRealizado}</td>
     <td style="text-align:center;font-size:11px;font-weight:700;color:${r.carrosTriProjetado > 0 ? mtConvColor(convTriLoja, marca) : 'var(--text3)'}">${r.carrosTriProjetado > 0 ? fPct(convTriLoja) : '—'}</td>
-    <td style="text-align:center;color:var(--blue);font-size:11px">${r.segNecessario}</td>
     <td style="text-align:center;color:${r.faltam === 0 ? 'var(--green)' : 'var(--red)'};font-weight:700;font-size:11px">${r.faltam}</td>
   </tr>`;
 }

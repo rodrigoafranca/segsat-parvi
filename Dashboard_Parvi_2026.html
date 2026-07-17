@@ -3936,6 +3936,13 @@ function mtRender() {
       return { loja, dm, segRealizado, carrosUltimoReal, metaCarrosInput, carrosTriProjetado, segNecessario, faltam };
     });
 
+    // Ordena por melhor performance — conversão do trimestre, maior para menor
+    lojaRows.sort((a, b) => {
+      const ca = a.carrosTriProjetado > 0 ? a.segRealizado / a.carrosTriProjetado : -1;
+      const cb = b.carrosTriProjetado > 0 ? b.segRealizado / b.carrosTriProjetado : -1;
+      return cb - ca;
+    });
+
     const segNecessarioMarca = Math.round(mCarrosMeta * metaPct);
     const faltamMarca = Math.max(0, segNecessarioMarca - mSegRealizado);
     totalNecessario += segNecessarioMarca;
@@ -3972,7 +3979,7 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
   const MES_SEP = 'border-left:1.5px solid var(--border2)';
   const TRI_SEP = 'border-left:2px solid var(--gold)';
   return `
-  <div class="card" style="margin-bottom:10px">
+  <div class="card" style="margin-bottom:10px" id="${id}-card">
     <div class="card-hd" style="cursor:pointer;margin-bottom:0" onclick="mtToggleAcc('${id}')">
       <div>
         <div class="card-title">${b.marca} <span style="font-size:11px;color:var(--text3);font-weight:400">· meta ${fPct(b.metaPct)} de conversão</span></div>
@@ -3980,6 +3987,7 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-weight:700;color:${statusColor};font-size:13px">${statusLabel}</span>
+        <button id="${id}-btn-copiar" onclick="event.stopPropagation();mtCopiarTabela('${b.marca}')" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><span>📋</span> Copiar Imagem</button>
         <span id="${id}-chev" style="font-size:11px;color:var(--text3)">▼</span>
       </div>
     </div>
@@ -4049,6 +4057,61 @@ function mtToggleAcc(id) {
   const open = el.style.display !== 'none';
   el.style.display = open ? 'none' : 'block';
   if (chev) chev.textContent = open ? '▼' : '▲';
+}
+
+// ── COPIAR CARD DA MARCA COMO IMAGEM (Meta Trimestral) ──
+function mtCopiarTabela(marca) {
+  const id = 'mt-acc-' + marca.replace(/\s+/g, '_');
+  const card = document.getElementById(id + '-card');
+  const acc = document.getElementById(id);
+  const btn = document.getElementById(id + '-btn-copiar');
+  const chev = document.getElementById(id + '-chev');
+  if (!card || !acc) return;
+
+  const eraAberto = acc.style.display !== 'none';
+  if (!eraAberto) { acc.style.display = 'block'; if (chev) chev.textContent = '▲'; }
+  if (btn) { btn.style.visibility = 'hidden'; }
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      html2canvas(card, {
+        backgroundColor: '#ffffff',
+        scale: 3,
+        useCORS: true,
+        logging: false,
+      }).then(canvas => {
+        if (btn) btn.style.visibility = '';
+        if (!eraAberto) { acc.style.display = 'none'; if (chev) chev.textContent = '▼'; }
+
+        canvas.toBlob(blob => {
+          try {
+            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+              .then(() => {
+                if (btn) {
+                  btn.innerHTML = '<span>✅</span> Copiado!';
+                  btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)';
+                  setTimeout(() => { btn.innerHTML = '<span>📋</span> Copiar Imagem'; btn.style.borderColor = ''; btn.style.color = ''; }, 2500);
+                }
+              }).catch(() => {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = 'MetaTrimestral_' + marca + '_' + MT_TRI + '.png'; a.click();
+                if (btn) { btn.innerHTML = '<span>📷</span> Baixado!'; setTimeout(() => { btn.innerHTML = '<span>📋</span> Copiar Imagem'; }, 2500); }
+              });
+          } catch (e) {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'MetaTrimestral_' + marca + '_' + MT_TRI + '.png'; a.click();
+            if (btn) { btn.innerHTML = '<span>📷</span> Baixado!'; setTimeout(() => { btn.innerHTML = '<span>📋</span> Copiar Imagem'; }, 2500); }
+          }
+        }, 'image/png');
+      }).catch(err => {
+        if (btn) { btn.style.visibility = ''; btn.innerHTML = '<span>📋</span> Copiar Imagem'; }
+        if (!eraAberto) { acc.style.display = 'none'; if (chev) chev.textContent = '▼'; }
+        alert('Erro ao gerar imagem: ' + err);
+      });
+    });
+  });
 }
 
 let _mtDebounce;

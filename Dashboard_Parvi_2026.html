@@ -3839,6 +3839,8 @@ function mtConvColor(conv, marca) {
 let MT_TRI = TRI_SELECIONADO;       // trimestre selecionado nesta página
 let MT_DADOS_MESES = null;          // [{mes, stores}] — 1 entrada por mês do trimestre, SEM merge
 let MT_CARREGANDO = false;
+let MT_ACC_OPEN = {};   // guarda quais cards de marca estão abertos entre re-renders
+let MT_LAST_FOCUS = null; // id do input em edição, pra devolver o foco depois do re-render
 
 // ── Persistência da "Meta de Carros" do último mês (por loja) — localStorage ──
 function mtChaveMetaCarros(loja, mes) {
@@ -3981,6 +3983,7 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
   const convTriMarca = b.mCarrosMeta > 0 ? b.mSegRealizado / b.mCarrosMeta : 0;
   const MES_SEP = 'border-left:1.5px solid var(--border2)';
   const TRI_SEP = 'border-left:2px solid var(--gold)';
+  const aberto = !!MT_ACC_OPEN[id]; // mantém aberto/fechado entre re-renders (ex: ao digitar a meta de carros)
   return `
   <div class="card" style="margin-bottom:10px" id="${id}-card">
     <div class="card-hd" style="cursor:pointer;margin-bottom:0" onclick="mtToggleAcc('${id}')">
@@ -3991,10 +3994,10 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-weight:700;color:${statusColor};font-size:13px">${statusLabel}</span>
         <button id="${id}-btn-copiar" onclick="event.stopPropagation();mtCopiarTabela('${b.marca}')" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><span>📋</span> Copiar Imagem</button>
-        <span id="${id}-chev" style="font-size:11px;color:var(--text3)">▼</span>
+        <span id="${id}-chev" style="font-size:11px;color:var(--text3)">${aberto ? '▲' : '▼'}</span>
       </div>
     </div>
-    <div id="${id}" style="display:none;margin-top:12px">
+    <div id="${id}" style="display:${aberto ? 'block' : 'none'};margin-top:12px">
       <div class="tbl-wrap"><table>
         <thead>
           <tr>
@@ -4035,9 +4038,10 @@ function mtRenderLojaRow(r, meses, ultimoMes, metaPct, marca) {
     const convCell = `<td style="font-size:11px;text-align:center;font-weight:700;color:${x.carros > 0 ? mtConvColor(convMes, marca) : 'var(--text3)'}">${x.carros > 0 ? fPct(convMes) : '—'}</td>`;
     if (i === lastIdx) {
       const val = r.metaCarrosInput !== null ? r.metaCarrosInput : '';
+      const inpId = 'mt-inp-' + r.loja.replace(/[^a-zA-Z0-9]/g, '_');
       return `<td class="td-mono" style="font-size:11px;text-align:center;${sep}">${x.segsat}</td>` +
-        `<td style="font-size:11px;text-align:center"><input type="number" min="0" value="${val}" placeholder="${x.carros}" ` +
-        `oninput="mtOnMetaCarrosInput('${lojaEsc}','${ultimoMes}',this.value)" ` +
+        `<td style="font-size:11px;text-align:center"><input type="number" min="0" value="${val}" placeholder="${x.carros}" id="${inpId}" ` +
+        `oninput="mtOnMetaCarrosInput('${lojaEsc}','${ultimoMes}',this.value,'${inpId}')" ` +
         `style="width:60px;padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;text-align:center"></td>` +
         convCell;
     }
@@ -4060,6 +4064,7 @@ function mtToggleAcc(id) {
   const open = el.style.display !== 'none';
   el.style.display = open ? 'none' : 'block';
   if (chev) chev.textContent = open ? '▼' : '▲';
+  MT_ACC_OPEN[id] = !open;
 }
 
 // ── COPIAR CARD DA MARCA COMO IMAGEM (Meta Trimestral) ──
@@ -4118,10 +4123,25 @@ function mtCopiarTabela(marca) {
 }
 
 let _mtDebounce;
-function mtOnMetaCarrosInput(loja, mes, valor) {
+function mtOnMetaCarrosInput(loja, mes, valor, inpId) {
   mtSetMetaCarros(loja, mes, valor);
   clearTimeout(_mtDebounce);
-  _mtDebounce = setTimeout(() => mtRender(), 350);
+  MT_LAST_FOCUS = { id: inpId, caret: null };
+  const el = document.getElementById(inpId);
+  if (el && el.selectionStart != null) MT_LAST_FOCUS.caret = el.selectionStart;
+  const scrollY = window.scrollY;
+  _mtDebounce = setTimeout(() => {
+    mtRender();
+    // devolve o foco e o cursor pro mesmo campo, sem perder a rolagem da página
+    if (MT_LAST_FOCUS) {
+      const novo = document.getElementById(MT_LAST_FOCUS.id);
+      if (novo) {
+        novo.focus();
+        if (MT_LAST_FOCUS.caret != null) { try { novo.setSelectionRange(MT_LAST_FOCUS.caret, MT_LAST_FOCUS.caret); } catch (e) {} }
+      }
+    }
+    window.scrollTo(0, scrollY);
+  }, 350);
 }
 
 // ── FALLBACK ESTÁTICO ──

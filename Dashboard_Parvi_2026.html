@@ -3912,7 +3912,7 @@ function mtRender() {
     });
   }
 
-  let totalNecessario = 0, totalRealizado = 0, totalCarrosTri = 0;
+  let totalNecessario = 0, totalRealizado = 0, totalCarrosTri = 0, totalFaltam = 0;
 
   const marcaBlocks = MT_MARCAS.map(marca => {
     const lojasDaMarca = [...lojasSet.entries()].filter(([, m]) => m === marca).map(([loja]) => loja).sort();
@@ -3943,11 +3943,14 @@ function mtRender() {
       return cb - ca;
     });
 
-    const segNecessarioMarca = Math.round(mCarrosMeta * metaPct);
-    const faltamMarca = Math.max(0, segNecessarioMarca - mSegRealizado);
+    // Cada loja responde pela própria cota: a marca soma o necessário e o faltam já calculados por loja
+    // (loja que já bateu a meta não "empresta" sobra para cobrir o déficit de outra)
+    const segNecessarioMarca = lojaRows.reduce((a, r) => a + r.segNecessario, 0);
+    const faltamMarca = lojaRows.reduce((a, r) => a + r.faltam, 0);
     totalNecessario += segNecessarioMarca;
     totalRealizado += mSegRealizado;
     totalCarrosTri += mCarrosMeta;
+    totalFaltam += faltamMarca;
 
     const mesTotals = meses.map((m, i) => {
       const segsat = lojaRows.reduce((a, r) => a + r.dm[i].segsat, 0);
@@ -3958,7 +3961,7 @@ function mtRender() {
     return { marca, metaPct, lojaRows, mesTotals, mSegRealizado, mCarrosMeta, segNecessarioMarca, faltamMarca };
   });
 
-  const faltamTotal = Math.max(0, totalNecessario - totalRealizado);
+  const faltamTotal = totalFaltam;
   document.getElementById('mt-kpis').innerHTML = `
     <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="font-size:16px">${MT_TRI}</div><div class="kpi-lbl">${meses.map(m => m.slice(0, 3)).join(' / ')}</div><div class="kpi-accent b"></div></div>
     <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--green)">${totalRealizado}</div><div class="kpi-lbl">Segsat Realizado</div><div class="kpi-accent g"></div></div>
@@ -4001,7 +4004,7 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
           </tr>
           <tr>
             ${meses.map((m, i) => `<th style="font-size:9px;text-align:center;${i > 0 ? MES_SEP : ''}">Segsat</th><th style="font-size:9px;text-align:center">Carros</th><th style="font-size:9px;text-align:center">Conv%</th>`).join('')}
-            <th style="font-size:9px;text-align:center;${TRI_SEP}">Carros</th><th style="font-size:9px;text-align:center">Segsat</th><th style="font-size:9px;text-align:center">Conv%</th><th style="font-size:9px;text-align:center">Faltam</th>
+            <th style="font-size:9px;text-align:center;${TRI_SEP}">Segsat</th><th style="font-size:9px;text-align:center">Carros</th><th style="font-size:9px;text-align:center">Conv%</th><th style="font-size:9px;text-align:center">Faltam</th>
           </tr>
         </thead>
         <tbody>
@@ -4009,8 +4012,8 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
           <tr style="font-weight:700;background:rgba(245,166,35,0.06);border-top:2px solid var(--gold)">
             <td class="td-main" style="color:var(--gold);border-right:2px solid var(--border2)">TOTAL ${b.marca}</td>
             ${b.mesTotals.map((mt, i) => `<td class="td-mono" style="text-align:center;${i > 0 ? MES_SEP : ''}">${mt.segsat}</td><td class="td-mono" style="text-align:center">${mt.carros}</td><td style="text-align:center;font-weight:700;color:${mt.carros > 0 ? mtConvColor(mt.conv, b.marca) : 'var(--text3)'}">${mt.carros > 0 ? fPct(mt.conv) : '—'}</td>`).join('')}
-            <td style="text-align:center;${TRI_SEP}">${b.mCarrosMeta}</td>
-            <td style="text-align:center;color:var(--green)">${b.mSegRealizado}</td>
+            <td style="text-align:center;color:var(--green);${TRI_SEP}">${b.mSegRealizado}</td>
+            <td style="text-align:center">${b.mCarrosMeta}</td>
             <td style="text-align:center;font-weight:700;color:${mtConvColor(convTriMarca, b.marca)}">${fPct(convTriMarca)}</td>
             <td style="text-align:center;font-weight:700;color:${b.faltamMarca === 0 ? 'var(--green)' : 'var(--red)'}">${b.faltamMarca}</td>
           </tr>
@@ -4043,8 +4046,8 @@ function mtRenderLojaRow(r, meses, ultimoMes, metaPct, marca) {
   return `<tr>
     <td class="td-main" style="font-size:12px;white-space:nowrap;border-right:2px solid var(--border2)">${r.loja}</td>
     ${cols}
-    <td class="td-mono" style="text-align:center;font-size:11px;${TRI_SEP}">${r.carrosTriProjetado}</td>
-    <td style="text-align:center;color:var(--green);font-size:11px">${r.segRealizado}</td>
+    <td style="text-align:center;color:var(--green);font-size:11px;${TRI_SEP}">${r.segRealizado}</td>
+    <td class="td-mono" style="text-align:center;font-size:11px">${r.carrosTriProjetado}</td>
     <td style="text-align:center;font-size:11px;font-weight:700;color:${r.carrosTriProjetado > 0 ? mtConvColor(convTriLoja, marca) : 'var(--text3)'}">${r.carrosTriProjetado > 0 ? fPct(convTriLoja) : '—'}</td>
     <td style="text-align:center;color:${r.faltam === 0 ? 'var(--green)' : 'var(--red)'};font-weight:700;font-size:11px">${r.faltam}</td>
   </tr>`;

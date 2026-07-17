@@ -3840,21 +3840,6 @@ let MT_TRI = TRI_SELECIONADO;       // trimestre selecionado nesta página
 let MT_DADOS_MESES = null;          // [{mes, stores}] — 1 entrada por mês do trimestre, SEM merge
 let MT_CARREGANDO = false;
 let MT_ACC_OPEN = {};   // guarda quais cards de marca estão abertos entre re-renders
-let MT_LAST_FOCUS = null; // id do input em edição, pra devolver o foco depois do re-render
-
-// ── Persistência da "Meta de Carros" do último mês (por loja) — localStorage ──
-function mtChaveMetaCarros(loja, mes) {
-  return 'mt_metaCarros_' + ANO + '_' + mes + '_' + loja;
-}
-function mtGetMetaCarros(loja, mes) {
-  const raw = localStorage.getItem(mtChaveMetaCarros(loja, mes));
-  return (raw !== null && raw !== '' && !isNaN(Number(raw))) ? Number(raw) : null;
-}
-function mtSetMetaCarros(loja, mes, valor) {
-  const key = mtChaveMetaCarros(loja, mes);
-  if (valor === '' || valor === null || isNaN(Number(valor))) localStorage.removeItem(key);
-  else localStorage.setItem(key, String(Math.max(0, Math.round(Number(valor)))));
-}
 
 function mtInitSelector() {
   const sel = document.getElementById('mt-tri-select');
@@ -3924,18 +3909,14 @@ function mtRender() {
     const lojaRows = lojasDaMarca.map(loja => {
       const dm = dadosLoja(loja);
       const segRealizado = dm.reduce((a, x) => a + x.segsat, 0);
-      const carrosUltimoReal = dm[lastIdx].carros;
-      const metaCarrosInput = mtGetMetaCarros(loja, ultimoMes);
-      const carrosUltimoUsado = metaCarrosInput !== null ? metaCarrosInput : carrosUltimoReal;
-      const carrosAntes = dm.slice(0, lastIdx).reduce((a, x) => a + x.carros, 0);
-      const carrosTriProjetado = carrosAntes + carrosUltimoUsado;
+      const carrosTriProjetado = dm.reduce((a, x) => a + x.carros, 0); // agora sempre real, vindo da planilha (inclusive o último mês)
       const segNecessario = Math.round(carrosTriProjetado * metaPct);
       const faltam = Math.max(0, segNecessario - segRealizado);
 
       mSegRealizado += segRealizado;
       mCarrosMeta += carrosTriProjetado;
 
-      return { loja, dm, segRealizado, carrosUltimoReal, metaCarrosInput, carrosTriProjetado, segNecessario, faltam };
+      return { loja, dm, segRealizado, carrosTriProjetado, segNecessario, faltam };
     });
 
     // Ordena por melhor performance — conversão do trimestre, maior para menor
@@ -3971,7 +3952,7 @@ function mtRender() {
     <div class="kpi"><div class="kpi-ico">${faltamTotal === 0 ? '✅' : '⚠️'}</div><div class="kpi-val" style="color:${faltamTotal === 0 ? 'var(--green)' : 'var(--red)'}">${faltamTotal}</div><div class="kpi-lbl">Faltam (Segsat)</div><div class="kpi-accent ${faltamTotal === 0 ? 'g' : 'r'}"></div></div>`;
 
   document.getElementById('mt-info').textContent =
-    `A "Meta de Carros" de ${ultimoMes.charAt(0)+ultimoMes.slice(1).toLowerCase()} é editável por loja (soma automática na marca). Enquanto não for digitada, uso o total de carros já vendido nesse mês. Salvo apenas neste navegador.`;
+    `Dados de Segsat e Carros de todos os meses do trimestre vêm direto da planilha de vendas, iguais aos demais menus do dashboard.`;
 
   document.getElementById('mt-content').innerHTML = marcaBlocks.map(b => mtRenderMarcaCard(b, meses, ultimoMes)).join('');
 }
@@ -4002,7 +3983,7 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
         <thead>
           <tr>
             <th rowspan="2" style="text-align:left;vertical-align:bottom;border-right:2px solid var(--border2)">Loja</th>
-            ${meses.map((m, i) => `<th colspan="3" style="text-align:center;${i > 0 ? MES_SEP : ''}">${m.slice(0, 3)}${i === meses.length - 1 ? ' (editável)' : ''}</th>`).join('')}
+            ${meses.map((m, i) => `<th colspan="3" style="text-align:center;${i > 0 ? MES_SEP : ''}">${m.slice(0, 3)}</th>`).join('')}
             <th colspan="4" style="text-align:center;${TRI_SEP};color:var(--gold)">Trimestre</th>
           </tr>
           <tr>
@@ -4014,7 +3995,7 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
           ${b.lojaRows.map(r => mtRenderLojaRow(r, meses, ultimoMes, b.metaPct, b.marca)).join('')}
           <tr style="font-weight:700;background:rgba(245,166,35,0.06);border-top:2px solid var(--gold)">
             <td class="td-main" style="color:var(--gold);border-right:2px solid var(--border2)">TOTAL ${b.marca}</td>
-            ${b.mesTotals.map((mt, i) => `<td class="td-mono" style="text-align:center;${i > 0 ? MES_SEP : ''}">${mt.segsat}</td><td class="td-mono" style="text-align:center">${mt.carros}</td><td style="text-align:center;font-weight:700;color:${mt.carros > 0 ? mtConvColor(mt.conv, b.marca) : 'var(--text3)'}">${mt.carros > 0 ? fPct(mt.conv) : '—'}</td>`).join('')}
+            ${b.mesTotals.map((mt, i) => `<td style="text-align:center;color:var(--green);${i > 0 ? MES_SEP : ''}">${mt.segsat}</td><td style="text-align:center">${mt.carros}</td><td style="text-align:center;font-weight:700;color:${mt.carros > 0 ? mtConvColor(mt.conv, b.marca) : 'var(--text3)'}">${mt.carros > 0 ? fPct(mt.conv) : '—'}</td>`).join('')}
             <td style="text-align:center;color:var(--green);${TRI_SEP}">${b.mSegRealizado}</td>
             <td style="text-align:center">${b.mCarrosMeta}</td>
             <td style="text-align:center;font-weight:700;color:${mtConvColor(convTriMarca, b.marca)}">${fPct(convTriMarca)}</td>
@@ -4027,8 +4008,6 @@ function mtRenderMarcaCard(b, meses, ultimoMes) {
 }
 
 function mtRenderLojaRow(r, meses, ultimoMes, metaPct, marca) {
-  const lastIdx = meses.length - 1;
-  const lojaEsc = r.loja.replace(/'/g, "\\'");
   const MES_SEP = 'border-left:1.5px solid var(--border2)';
   const TRI_SEP = 'border-left:2px solid var(--gold)';
   const convTriLoja = r.carrosTriProjetado > 0 ? r.segRealizado / r.carrosTriProjetado : 0;
@@ -4036,15 +4015,6 @@ function mtRenderLojaRow(r, meses, ultimoMes, metaPct, marca) {
     const convMes = x.carros > 0 ? x.segsat / x.carros : 0;
     const sep = i > 0 ? MES_SEP : '';
     const convCell = `<td style="font-size:11px;text-align:center;font-weight:700;color:${x.carros > 0 ? mtConvColor(convMes, marca) : 'var(--text3)'}">${x.carros > 0 ? fPct(convMes) : '—'}</td>`;
-    if (i === lastIdx) {
-      const val = r.metaCarrosInput !== null ? r.metaCarrosInput : '';
-      const inpId = 'mt-inp-' + r.loja.replace(/[^a-zA-Z0-9]/g, '_');
-      return `<td class="td-mono" style="font-size:11px;text-align:center;${sep}">${x.segsat}</td>` +
-        `<td style="font-size:11px;text-align:center"><input type="number" min="0" value="${val}" placeholder="${x.carros}" id="${inpId}" ` +
-        `oninput="mtOnMetaCarrosInput('${lojaEsc}','${ultimoMes}',this.value,'${inpId}')" ` +
-        `style="width:60px;padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;text-align:center"></td>` +
-        convCell;
-    }
     return `<td class="td-mono" style="font-size:11px;text-align:center;${sep}">${x.segsat}</td><td class="td-mono" style="font-size:11px;text-align:center">${x.carros}</td>` + convCell;
   }).join('');
   return `<tr>
@@ -4120,28 +4090,6 @@ function mtCopiarTabela(marca) {
       });
     });
   });
-}
-
-let _mtDebounce;
-function mtOnMetaCarrosInput(loja, mes, valor, inpId) {
-  mtSetMetaCarros(loja, mes, valor);
-  clearTimeout(_mtDebounce);
-  MT_LAST_FOCUS = { id: inpId, caret: null };
-  const el = document.getElementById(inpId);
-  if (el && el.selectionStart != null) MT_LAST_FOCUS.caret = el.selectionStart;
-  const scrollY = window.scrollY;
-  _mtDebounce = setTimeout(() => {
-    mtRender();
-    // devolve o foco e o cursor pro mesmo campo, sem perder a rolagem da página
-    if (MT_LAST_FOCUS) {
-      const novo = document.getElementById(MT_LAST_FOCUS.id);
-      if (novo) {
-        novo.focus();
-        if (MT_LAST_FOCUS.caret != null) { try { novo.setSelectionRange(MT_LAST_FOCUS.caret, MT_LAST_FOCUS.caret); } catch (e) {} }
-      }
-    }
-    window.scrollTo(0, scrollY);
-  }, 350);
 }
 
 // ── FALLBACK ESTÁTICO ──

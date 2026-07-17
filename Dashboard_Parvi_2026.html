@@ -486,6 +486,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('comparativo',this)"><span class="ni">📊</span> Comparativo de Lojas</button>
   <button class="nav-item" onclick="navTo('marcas',this)"><span class="ni">🏷️</span> Por Marca</button>
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
+  <button class="nav-item" onclick="navTo('meta-trimestral',this)"><span class="ni">🎯</span> Meta Trimestral</button>
   <button class="nav-item" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
   <button class="nav-item" onclick="navTo('estoque',this)"><span class="ni">📦</span> Estoque</button>
   <button class="nav-item" onclick="navTo('estoque-at',this);carregarEstoqueAtualizado()"><span class="ni">📡</span> Estoque Atualizado</button>
@@ -704,6 +705,23 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
       <div class="marca-selector" id="marca-selector"></div>
     </div>
     <div id="marca-detalhe-content"></div>
+  </div>
+
+  <!-- PAGE: META TRIMESTRAL -->
+  <div class="page" id="page-meta-trimestral">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd">
+        <div><div class="card-title">🎯 Meta Trimestral · Marcas de Volume</div>
+        <div class="card-sub">Meta de conversão (Segsat/Carros) da campanha do trimestre — quanto falta por marca e por loja</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="mt-tri-select" onchange="mtCarregar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none"></select>
+          <button onclick="mtCarregar(true)" id="mt-btn-refresh" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔄 Atualizar</button>
+        </div>
+      </div>
+      <div id="mt-info" style="font-size:11px;color:var(--text3);padding:0 2px"></div>
+    </div>
+    <div class="kpi-row" id="mt-kpis"></div>
+    <div id="mt-content"></div>
   </div>
 
   <!-- PAGE: ESTOQUE -->
@@ -2144,12 +2162,13 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',comparativo:'Comparativo de Lojas · 3 Meses',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',comparativo:'Comparativo de Lojas · 3 Meses',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca','meta-trimestral':'Meta Trimestral · Marcas de Volume',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
   if(page==='estoque') renderEstoque();
   if(page==='estoque-at') carregarEstoqueAtualizado();
   if(page==='treinamentos') trnCarregarDados();
   if(page==='comparativo') renderComparativo();
+  if(page==='meta-trimestral') mtCarregar();
 }
 
 // ============================================================
@@ -3798,6 +3817,215 @@ function renderEaLoja() {
     ${_eaTD(l.utilizado||0,'var(--text3)')}
     ${_eaTD(l.remanejado||0,'var(--gold)')}
   </tr>`).join('')}</tbody>`;
+}
+
+// ============================================================
+// META TRIMESTRAL — Marcas de Volume (campanha do trimestre)
+// ============================================================
+// Meta de conversão (Segsat / Carros) exigida no trimestre, por marca de volume
+const META_TRIMESTRAL_PCT = {
+  TOYOLEX: 0.30, PATEO: 0.30, FIORI: 0.30, JEEP: 0.35, RAM: 0.35, BYD: 0.30, AUTOPARVI: 0.30
+};
+const MT_MARCAS = Object.keys(META_TRIMESTRAL_PCT);
+
+let MT_TRI = TRI_SELECIONADO;       // trimestre selecionado nesta página
+let MT_DADOS_MESES = null;          // [{mes, stores}] — 1 entrada por mês do trimestre, SEM merge
+let MT_CARREGANDO = false;
+
+// ── Persistência da "Meta de Carros" do último mês (por loja) — localStorage ──
+function mtChaveMetaCarros(loja, mes) {
+  return 'mt_metaCarros_' + ANO + '_' + mes + '_' + loja;
+}
+function mtGetMetaCarros(loja, mes) {
+  const raw = localStorage.getItem(mtChaveMetaCarros(loja, mes));
+  return (raw !== null && raw !== '' && !isNaN(Number(raw))) ? Number(raw) : null;
+}
+function mtSetMetaCarros(loja, mes, valor) {
+  const key = mtChaveMetaCarros(loja, mes);
+  if (valor === '' || valor === null || isNaN(Number(valor))) localStorage.removeItem(key);
+  else localStorage.setItem(key, String(Math.max(0, Math.round(Number(valor)))));
+}
+
+function mtInitSelector() {
+  const sel = document.getElementById('mt-tri-select');
+  if (!sel || sel.options.length) return;
+  sel.innerHTML = Object.keys(TRIMESTRES).map(t =>
+    `<option value="${t}" ${t === MT_TRI ? 'selected' : ''}>${t} · ${TRIMESTRES[t].map(m => m.slice(0, 3)).join('/')}</option>`
+  ).join('');
+}
+
+async function mtCarregar(forcar) {
+  if (MT_CARREGANDO) return;
+  MT_CARREGANDO = true;
+  const btn = document.getElementById('mt-btn-refresh');
+  if (btn) { btn.disabled = true; }
+  mtInitSelector();
+  const sel = document.getElementById('mt-tri-select');
+  MT_TRI = sel ? sel.value : MT_TRI;
+  const meses = TRIMESTRES[MT_TRI];
+  document.getElementById('mt-content').innerHTML =
+    `<div style="padding:40px;text-align:center;color:var(--text3)">⏳ Carregando ${MT_TRI} (${meses.join(', ')})...</div>`;
+  try {
+    const fetches = meses.map(mes =>
+      fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}${forcar ? '&t=' + Date.now() : ''}`)
+        .then(r => r.json()).catch(() => null)
+    );
+    const jsons = await Promise.all(fetches);
+    MT_DADOS_MESES = meses.map((mes, i) => ({
+      mes,
+      stores: enrichStores((jsons[i] && !jsons[i].error) ? (jsons[i].allStores || []) : [])
+    }));
+    mtRender();
+  } catch (err) {
+    document.getElementById('mt-content').innerHTML =
+      `<div style="padding:40px;text-align:center;color:var(--red)">⚠️ Erro ao carregar dados: ${err.message}</div>`;
+  } finally {
+    MT_CARREGANDO = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+function mtRender() {
+  if (!MT_DADOS_MESES) return;
+  const meses = MT_DADOS_MESES.map(d => d.mes);
+  const lastIdx = meses.length - 1;
+  const ultimoMes = meses[lastIdx];
+
+  // Universo de lojas das marcas de volume, olhando os 3 meses do trimestre
+  const lojasSet = new Map(); // loja -> marca
+  MT_DADOS_MESES.forEach(d => d.stores.forEach(s => {
+    if (MT_MARCAS.includes(s.marca)) lojasSet.set(s.loja, s.marca);
+  }));
+
+  function dadosLoja(loja) {
+    return MT_DADOS_MESES.map(d => {
+      const s = d.stores.find(x => x.loja === loja);
+      return { segsat: s ? (s.segsat || 0) : 0, carros: s ? (s.carros || 0) : 0 };
+    });
+  }
+
+  let totalNecessario = 0, totalRealizado = 0, totalCarrosTri = 0;
+
+  const marcaBlocks = MT_MARCAS.map(marca => {
+    const lojasDaMarca = [...lojasSet.entries()].filter(([, m]) => m === marca).map(([loja]) => loja).sort();
+    const metaPct = META_TRIMESTRAL_PCT[marca];
+
+    let mSegRealizado = 0, mCarrosMeta = 0;
+    const lojaRows = lojasDaMarca.map(loja => {
+      const dm = dadosLoja(loja);
+      const segRealizado = dm.reduce((a, x) => a + x.segsat, 0);
+      const carrosUltimoReal = dm[lastIdx].carros;
+      const metaCarrosInput = mtGetMetaCarros(loja, ultimoMes);
+      const carrosUltimoUsado = metaCarrosInput !== null ? metaCarrosInput : carrosUltimoReal;
+      const carrosAntes = dm.slice(0, lastIdx).reduce((a, x) => a + x.carros, 0);
+      const carrosTriProjetado = carrosAntes + carrosUltimoUsado;
+      const segNecessario = Math.round(carrosTriProjetado * metaPct);
+      const faltam = Math.max(0, segNecessario - segRealizado);
+
+      mSegRealizado += segRealizado;
+      mCarrosMeta += carrosTriProjetado;
+
+      return { loja, dm, segRealizado, carrosUltimoReal, metaCarrosInput, carrosTriProjetado, segNecessario, faltam };
+    });
+
+    const segNecessarioMarca = Math.round(mCarrosMeta * metaPct);
+    const faltamMarca = Math.max(0, segNecessarioMarca - mSegRealizado);
+    totalNecessario += segNecessarioMarca;
+    totalRealizado += mSegRealizado;
+    totalCarrosTri += mCarrosMeta;
+
+    return { marca, metaPct, lojaRows, mSegRealizado, mCarrosMeta, segNecessarioMarca, faltamMarca };
+  });
+
+  const faltamTotal = Math.max(0, totalNecessario - totalRealizado);
+  document.getElementById('mt-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="font-size:16px">${MT_TRI}</div><div class="kpi-lbl">${meses.map(m => m.slice(0, 3)).join(' / ')}</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">📦</div><div class="kpi-val" style="color:var(--green)">${totalRealizado}</div><div class="kpi-lbl">Segsat Realizado</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">📐</div><div class="kpi-val" style="color:var(--blue)">${totalNecessario}</div><div class="kpi-lbl">Segsat Necessário (meta)</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">${faltamTotal === 0 ? '✅' : '⚠️'}</div><div class="kpi-val" style="color:${faltamTotal === 0 ? 'var(--green)' : 'var(--red)'}">${faltamTotal}</div><div class="kpi-lbl">Faltam (Segsat)</div><div class="kpi-accent ${faltamTotal === 0 ? 'g' : 'r'}"></div></div>`;
+
+  document.getElementById('mt-info').textContent =
+    `A "Meta de Carros" de ${ultimoMes.charAt(0)+ultimoMes.slice(1).toLowerCase()} é editável por loja (soma automática na marca). Enquanto não for digitada, uso o total de carros já vendido nesse mês. Salvo apenas neste navegador.`;
+
+  document.getElementById('mt-content').innerHTML = marcaBlocks.map(b => mtRenderMarcaCard(b, meses, ultimoMes)).join('');
+}
+
+function mtRenderMarcaCard(b, meses, ultimoMes) {
+  const statusColor = b.faltamMarca === 0 ? 'var(--green)' : (b.faltamMarca <= Math.max(1, b.segNecessarioMarca * 0.1) ? 'var(--gold)' : 'var(--red)');
+  const statusLabel = b.faltamMarca === 0 ? '✅ Meta batida' : `⚠️ Faltam ${b.faltamMarca}`;
+  const id = 'mt-acc-' + b.marca.replace(/\s+/g, '_');
+  return `
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-hd" style="cursor:pointer;margin-bottom:0" onclick="mtToggleAcc('${id}')">
+      <div>
+        <div class="card-title">${b.marca} <span style="font-size:11px;color:var(--text3);font-weight:400">· meta ${fPct(b.metaPct)} de conversão</span></div>
+        <div class="card-sub">${b.mSegRealizado} Segsat de ${b.mCarrosMeta} carros (tri.) · necessário ${b.segNecessarioMarca}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-weight:700;color:${statusColor};font-size:13px">${statusLabel}</span>
+        <span id="${id}-chev" style="font-size:11px;color:var(--text3)">▼</span>
+      </div>
+    </div>
+    <div id="${id}" style="display:none;margin-top:12px">
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th style="text-align:left">Loja</th>
+          ${meses.map((m, i) => `<th colspan="2" style="text-align:center">${m.slice(0, 3)}${i === meses.length - 1 ? ' (editável)' : ''}</th>`).join('')}
+          <th style="text-align:center">Carros Tri.</th><th style="text-align:center">Segsat Tri.</th><th style="text-align:center">Necessário</th><th style="text-align:center">Faltam</th>
+        </tr></thead>
+        <tbody>
+          ${b.lojaRows.map(r => mtRenderLojaRow(r, meses, ultimoMes)).join('')}
+          <tr style="font-weight:700;background:rgba(245,166,35,0.06);border-top:2px solid var(--gold)">
+            <td class="td-main" style="color:var(--gold)">TOTAL ${b.marca}</td>
+            ${meses.map(() => `<td colspan="2" style="text-align:center;color:var(--text3)">—</td>`).join('')}
+            <td style="text-align:center">${b.mCarrosMeta}</td>
+            <td style="text-align:center;color:var(--green)">${b.mSegRealizado}</td>
+            <td style="text-align:center;color:var(--blue)">${b.segNecessarioMarca}</td>
+            <td style="text-align:center;color:${b.faltamMarca === 0 ? 'var(--green)' : 'var(--red)'}">${b.faltamMarca}</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function mtRenderLojaRow(r, meses, ultimoMes) {
+  const lastIdx = meses.length - 1;
+  const lojaEsc = r.loja.replace(/'/g, "\\'");
+  const cols = r.dm.map((x, i) => {
+    if (i === lastIdx) {
+      const val = r.metaCarrosInput !== null ? r.metaCarrosInput : '';
+      return `<td class="td-mono" style="font-size:11px">${x.segsat}</td>` +
+        `<td style="font-size:11px"><input type="number" min="0" value="${val}" placeholder="${x.carros}" ` +
+        `oninput="mtOnMetaCarrosInput('${lojaEsc}','${ultimoMes}',this.value)" ` +
+        `style="width:60px;padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;text-align:center"></td>`;
+    }
+    return `<td class="td-mono" style="font-size:11px">${x.segsat}</td><td class="td-mono" style="font-size:11px">${x.carros}</td>`;
+  }).join('');
+  return `<tr>
+    <td class="td-main" style="font-size:12px;white-space:nowrap">${r.loja}</td>
+    ${cols}
+    <td class="td-mono" style="text-align:center;font-size:11px">${r.carrosTriProjetado}</td>
+    <td style="text-align:center;color:var(--green);font-size:11px">${r.segRealizado}</td>
+    <td style="text-align:center;color:var(--blue);font-size:11px">${r.segNecessario}</td>
+    <td style="text-align:center;color:${r.faltam === 0 ? 'var(--green)' : 'var(--red)'};font-weight:700;font-size:11px">${r.faltam}</td>
+  </tr>`;
+}
+
+function mtToggleAcc(id) {
+  const el = document.getElementById(id);
+  const chev = document.getElementById(id + '-chev');
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (chev) chev.textContent = open ? '▼' : '▲';
+}
+
+let _mtDebounce;
+function mtOnMetaCarrosInput(loja, mes, valor) {
+  mtSetMetaCarros(loja, mes, valor);
+  clearTimeout(_mtDebounce);
+  _mtDebounce = setTimeout(() => mtRender(), 350);
 }
 
 // ── FALLBACK ESTÁTICO ──

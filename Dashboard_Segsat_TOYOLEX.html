@@ -296,9 +296,14 @@ function setModo(m){
 
 window.onload=function(){
   bloquearMesesFuturos();
+  registrarAcessoMarca();
   carregarDiretores();
   carregar();
 };
+
+function registrarAcessoMarca(){
+  fetch(GAS+'?action=registrar-acesso-marca&marca='+encodeURIComponent(MARCA)+'&t='+Date.now()).catch(function(){});
+}
 
 async function carregarDiretores(){
   try{

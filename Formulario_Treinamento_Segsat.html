@@ -111,15 +111,44 @@ const CHECK_SVG = `<svg width="11" height="8" viewBox="0 0 11 8" fill="none">
   <polyline points="1,4 4,7 10,1" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
-async function init() {
+let lojasErro = false;
+
+async function fetchLojasOnce(timeoutMs) {
+  const [mes, ano] = MES_ANO.split('_');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res  = await fetch(`${APPS_SCRIPT_URL}?action=lojas&mes=MAIO&ano=2026`);
+    // cache:'no-store' + parâmetro "t" únicos evitam que celulares (principalmente
+    // em rede móvel/4G) sirvam uma resposta antiga em cache com a lista vazia.
+    const res = await fetch(
+      `${APPS_SCRIPT_URL}?action=lojas&mes=${encodeURIComponent(mes)}&ano=${encodeURIComponent(ano)}&t=${Date.now()}`,
+      { signal: controller.signal, cache: 'no-store' }
+    );
     const json = await res.json();
-    LOJAS = (json.lojas || []).filter(l => l.loja);
+    return (json.lojas || []).filter(l => l.loja);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function init() {
+  lojasErro = false;
+  try {
+    LOJAS = await fetchLojasOnce(9000);
+    if (LOJAS.length === 0) {
+      // Pode ter sido uma falha passageira de rede — tenta mais uma vez antes de desistir.
+      LOJAS = await fetchLojasOnce(9000);
+    }
   } catch(e) {
     LOJAS = [];
   }
+  if (LOJAS.length === 0) lojasErro = true;
   renderForm();
+}
+
+function retryLojas() {
+  document.getElementById('form-content').innerHTML = '<div class="loading">⏳ Carregando formulário...</div>';
+  init();
 }
 
 function renderForm() {
@@ -134,6 +163,10 @@ function renderForm() {
         `<optgroup label="${marca}">${lojas.map(l=>`<option value="${l.loja}" data-uf="${l.uf}">${l.loja}</option>`).join('')}</optgroup>`
       ).join('')
     : '<option value="">Nenhuma loja encontrada</option>';
+  const lojaAviso = lojasErro
+    ? `<p style="font-size:11px;color:var(--red);margin-top:6px">⚠️ Não foi possível carregar a lista de lojas (conexão instável).
+        <a href="javascript:retryLojas()" style="color:var(--green-d);font-weight:700;text-decoration:underline">Tentar novamente</a></p>`
+    : '';
 
   document.getElementById('form-content').innerHTML = `
     <!-- Passo 1: Identificação -->
@@ -150,6 +183,7 @@ function renderForm() {
         <option value="">Selecione sua loja</option>
         ${lojaOpts}
       </select>
+      ${lojaAviso}
       <input type="hidden" id="loja-uf">
     </div>
 

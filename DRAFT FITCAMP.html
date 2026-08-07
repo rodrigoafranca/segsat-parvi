@@ -1,0 +1,3334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitcamp Master — Dashboard do Draft</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6; /* ARMADOR */
+    --series-2:       #eb6834; /* ALA */
+    --series-3:       #1baf7a; /* PIVO */
+    --good:           #0ca30c;
+    --good-bg:        #e8f7e8;
+    --taken-bg:       #f1f0ed;
+    --accent-bg:      #eaf1fb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #d95926;
+      --series-3:       #199e70;
+      --good:           #0ca30c;
+      --good-bg:        #123312;
+      --taken-bg:       #232322;
+      --accent-bg:      #16233a;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
+    --good:           #0ca30c;
+    --good-bg:        #123312;
+    --taken-bg:       #232322;
+    --accent-bg:      #16233a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family: system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--page); color:var(--text-primary);
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 20px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+  .header-title{display:flex;align-items:center;gap:14px;}
+  .team-logo{width:52px;height:52px;border-radius:50%;flex:none;object-fit:cover;box-shadow:0 0 0 2px var(--border);}
+  h1{font-size:22px;margin:0;font-weight:700;}
+  .sub{color:var(--text-secondary);font-size:13px;margin:4px 0 22px;}
+  .theme-toggle{
+    border:1px solid var(--border);background:var(--surface-1);color:var(--text-secondary);
+    border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;
+  }
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .kpi{
+    background:var(--surface-1);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;
+  }
+  .kpi .val{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .kpi .lbl{font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .panel{
+    background:var(--surface-1);border:1px solid var(--border);border-radius:12px;
+    padding:16px 16px 6px;margin-bottom:20px;
+  }
+  .panel h2{font-size:14px;margin:0 0 12px;font-weight:700;color:var(--text-primary);}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .controls input[type=text]{
+    flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;
+    background:var(--page);color:var(--text-primary);font-size:13px;
+  }
+  select, input[type=number]{
+    padding:8px 10px;border:1px solid var(--border);border-radius:8px;
+    background:var(--page);color:var(--text-primary);font-size:13px;
+  }
+  input[type=number]{width:70px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--text-muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--grid);
+    cursor:pointer;white-space:nowrap;
+  }
+  thead th.num, tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  thead th:hover{color:var(--text-primary);}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--grid);white-space:nowrap;}
+  tbody tr:hover{background:var(--page);}
+  tbody tr.taken{opacity:.55;}
+  tbody tr.next-pick{background:var(--accent-bg);}
+  .badge{
+    display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;
+    color:#fff;
+  }
+  .badge.armador{background:var(--series-1);}
+  .badge.ala{background:var(--series-2);}
+  .badge.pivo{background:var(--series-3);}
+  .badge.sem-posicao{background:var(--text-muted);}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex:none;}
+  .dot.taken{background:var(--text-muted);}
+  .pill{background:var(--taken-bg);color:var(--text-secondary);border-radius:6px;padding:2px 7px;font-size:11px;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;font-size:12px;color:var(--text-secondary);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .note{font-size:12px;color:var(--text-muted);padding:10px 2px 4px;}
+  .info{font-size:12px;color:var(--text-secondary);padding:10px 12px;margin:0 0 14px;background:var(--accent-bg);border-radius:8px;border:1px solid var(--border);}
+  .warn{font-size:12px;color:var(--text-secondary);padding:10px 12px;margin:0 0 14px;background:var(--taken-bg);border-radius:8px;border:1px solid var(--border);}
+  .empty-msg{padding:24px;text-align:center;color:var(--text-muted);font-size:13px;}
+  footer{color:var(--text-muted);font-size:11px;margin-top:24px;}
+  .iconbtn{
+    border:1px solid var(--border);background:var(--page);color:var(--text-secondary);
+    border-radius:6px;padding:3px 7px;font-size:12px;cursor:pointer;
+  }
+  .iconbtn:hover{color:var(--text-primary);}
+  .iconbtn:disabled{opacity:.4;cursor:not-allowed;}
+  .conn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .conn-row input[type=text]{flex:1;min-width:260px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--page);color:var(--text-primary);font-size:13px;}
+  .conn-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
+  .conn-status .dot{background:var(--text-muted);}
+  .conn-status.live .dot{background:var(--good);}
+  .conn-status.err .dot{background:#d9432c;}
+  .btn-primary{
+    border:1px solid var(--series-1);background:var(--series-1);color:#fff;
+    border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:600;
+  }
+  .btn-primary:hover{opacity:.9;}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  .draft-scroll{max-height:420px;overflow-y:auto;border:1px solid var(--grid);border-radius:8px;}
+  .msg-error{font-size:12px;color:#d9432c;margin-top:8px;}
+  .msg-ok{font-size:12px;color:var(--good);margin-top:8px;}
+
+  /* -------- layout com menu lateral -------- */
+  .app-layout{display:flex;gap:20px;align-items:flex-start;}
+  .sidebar{width:210px;flex:none;position:sticky;top:20px;}
+  .sidebar nav{display:flex;flex-direction:column;gap:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;
+    border:1px solid transparent;color:var(--text-secondary);font-size:13px;font-weight:600;
+    padding:10px 12px;border-radius:8px;cursor:pointer;font-family:inherit;
+  }
+  .nav-item:hover{background:var(--surface-1);color:var(--text-primary);border-color:var(--border);}
+  .nav-item.active{background:var(--accent-bg);color:var(--text-primary);border-color:var(--border);}
+  .main{flex:1;min-width:0;}
+  .view{display:none;}
+  .view.active{display:block;}
+  @media (max-width: 860px){
+    .app-layout{flex-direction:column;}
+    .sidebar{width:100%;position:static;}
+    .sidebar nav{flex-direction:row;flex-wrap:wrap;}
+    .nav-item{flex:1;justify-content:center;}
+  }
+
+  /* -------- sugestão de atletas -------- */
+  .pos-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .pos-tab{
+    border:1px solid var(--border);background:var(--page);color:var(--text-secondary);
+    border-radius:20px;padding:7px 18px;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit;
+  }
+  .pos-tab.active[data-pos="ARMADOR"]{background:var(--series-1);border-color:var(--series-1);color:#fff;}
+  .pos-tab.active[data-pos="ALA"]{background:var(--series-2);border-color:var(--series-2);color:#fff;}
+  .pos-tab.active[data-pos="PIVO"]{background:var(--series-3);border-color:var(--series-3);color:#fff;}
+  .suggest-list{display:flex;flex-direction:column;gap:8px;}
+  .suggest-card{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 14px;border:1px solid var(--grid);border-radius:8px;background:var(--page);flex-wrap:wrap;
+  }
+  .suggest-left{display:flex;align-items:center;gap:12px;min-width:0;}
+  .suggest-rank{font-size:13px;color:var(--text-muted);width:22px;flex:none;font-weight:700;}
+  .suggest-name{font-weight:700;font-size:13px;white-space:nowrap;}
+  .suggest-sub{font-size:11px;color:var(--text-muted);white-space:nowrap;}
+  .suggest-stats{display:flex;gap:16px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap;}
+  .suggest-stats b{font-variant-numeric:tabular-nums;color:var(--text-primary);}
+  .suggest-stats .hl b{color:var(--series-1);}
+
+  /* -------- times / força das franquias -------- */
+  .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:4px;margin-bottom:14px;}
+  .team-card{border:1px solid var(--grid);border-radius:10px;padding:14px;background:var(--page);}
+  .team-card h3{margin:0 0 2px;font-size:14px;}
+  .team-card .count{font-size:11px;color:var(--text-muted);margin-bottom:10px;}
+  .team-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:11px;color:var(--text-muted);}
+  .team-stats div b{display:block;font-size:17px;font-variant-numeric:tabular-nums;color:var(--text-primary);font-weight:700;}
+
+  /* -------- bloqueios (proteção pré-draft) -------- */
+  .block-panel{margin-top:18px;padding-top:14px;border-top:1px solid var(--grid);}
+  .block-panel h3{font-size:13px;margin:0 0 10px;font-weight:700;}
+  .block-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .block-chip{font-size:11px;padding:4px 10px;border-radius:20px;background:var(--taken-bg);color:var(--text-secondary);border:1px solid var(--border);}
+  .block-chip.full{background:rgba(217,67,44,.15);color:#d9432c;border-color:rgba(217,67,44,.3);}
+  .block-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+  .block-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--grid);border-radius:6px;font-size:12px;background:var(--page);flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="header-title">
+      <img class="team-logo" src="data:image/jpeg;base64,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" alt="Leões">
+      <div>
+        <h1>🏀 Fitcamp Master — 3ª Edição</h1>
+        <div class="sub">Dashboard de scouting para o Draft · dados extraídos das súmulas dos jogos</div>
+      </div>
+    </div>
+    <button class="theme-toggle" id="themeToggle">Modo escuro</button>
+  </header>
+
+  <div class="panel">
+    <h2>Conexão com a planilha do Google</h2>
+    <div class="conn-row">
+      <span class="conn-status" id="connStatus"><span class="dot"></span><span id="connLabel">Modo offline (dados fixos)</span></span>
+    </div>
+    <div class="note" style="padding-top:0;">
+      Este dashboard lê e grava direto nas abas <strong>Atletas</strong> e <strong>Ordem_Draft</strong> da sua
+      planilha do Google — editar Posição/Idade ou confirmar uma escolha do draft aqui atualiza a planilha na
+      hora. Se o status acima não ficar verde, avise o Claude para verificar a conexão.
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="val" id="kpiJogos">–</div><div class="lbl">Jogos analisados</div></div>
+    <div class="kpi"><div class="val" id="kpiAtletas">–</div><div class="lbl">Atletas cadastrados</div></div>
+    <div class="kpi"><div class="val" id="kpiDisponiveis">–</div><div class="lbl">Disponíveis para o draft</div></div>
+    <div class="kpi"><div class="val" id="kpiEscolhidos">–</div><div class="lbl">Já escolhidos</div></div>
+  </div>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <nav id="sideNav">
+        <button class="nav-item active" data-view="draft">🏆&nbsp; Draft ao vivo</button>
+        <button class="nav-item" data-view="ranking">📋&nbsp; Ranking de Atletas</button>
+        <button class="nav-item" data-view="suggest">💡&nbsp; Sugestão de Atleta</button>
+        <button class="nav-item" data-view="teams">🛡️&nbsp; Times</button>
+      </nav>
+    </aside>
+
+    <div class="main">
+
+      <section class="view active" id="view-draft">
+        <div class="panel" id="draftPanel">
+          <h2>Draft ao vivo — Ordem_Draft</h2>
+          <div class="info">
+            ℹ️ Ao confirmar uma escolha aqui, a planilha já grava tudo automaticamente: a <strong>franquia 2027</strong>
+            do atleta (coluna "Franquia 2027 (Draft)" no Ranking), o <strong>pick geral</strong> em que ele foi
+            escolhido e ele fica <strong>indisponível</strong> nas próximas rodadas — sem precisar editar nada na mão.
+            O time atual (2026) dele continua intacto, são coisas separadas. Se houver troca de ordem entre
+            franquias, edite direto na aba <strong>Franquias</strong> da planilha (colunas "Pick Geral" / "Franquia
+            da Vez") — o dashboard já reflete a mudança na próxima atualização.
+          </div>
+          <div class="controls" id="draftControls" style="display:none;">
+            <select id="nextPickAthlete"></select>
+            <button class="btn-primary" id="btnConfirmPick">Confirmar escolha</button>
+            <button class="iconbtn" id="btnUndoPick">Desfazer último pick</button>
+          </div>
+          <div id="draftMsg"></div>
+          <div class="draft-scroll">
+            <table id="draftTable">
+              <thead>
+                <tr>
+                  <th class="num">Pick</th>
+                  <th class="num">Rodada</th>
+                  <th>Franquia da vez</th>
+                  <th>Atleta escolhido</th>
+                </tr>
+              </thead>
+              <tbody id="draftBody"></tbody>
+            </table>
+          </div>
+          <div class="note" id="draftNote">Conecte a URL do Web App acima para ver e registrar as escolhas do draft aqui.</div>
+
+          <div class="block-panel">
+            <h3>🔒 Bloqueios (proteção pré-draft) — até 2 atletas por franquia</h3>
+            <div class="note" style="padding-top:0;">
+              Bloquear reserva o atleta pra franquia usando automaticamente o primeiro pick livre dela na ordem
+              atual (fora da sequência normal do draft ao vivo). O atleta já fica indisponível e conta na força da
+              franquia no menu Times imediatamente.
+            </div>
+            <div class="block-chips" id="blockChips"></div>
+            <div class="controls" id="blockControls" style="display:none;">
+              <select id="blockFranchise"></select>
+              <select id="blockAthlete"></select>
+              <button class="btn-primary" id="btnBlockAthlete">Bloquear atleta</button>
+            </div>
+            <div id="blockMsg"></div>
+            <div class="block-list" id="blockList"></div>
+            <div class="note" id="blockNote">Conecte a URL do Web App acima para bloquear atletas aqui.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-ranking">
+        <div class="panel">
+          <h2>Ranking de Atletas</h2>
+          <div class="legend">
+            <span><i style="background:var(--series-1)"></i>Armador</span>
+            <span><i style="background:var(--series-2)"></i>Ala</span>
+            <span><i style="background:var(--series-3)"></i>Pivô</span>
+            <span><i style="background:var(--text-muted)"></i>Posição não cadastrada ainda</span>
+          </div>
+          <div class="controls">
+            <input type="text" id="searchBox" placeholder="Buscar atleta ou time…">
+            <select id="posFilter">
+              <option value="">Todas as posições</option>
+              <option value="ARMADOR">Armador</option>
+              <option value="ALA">Ala</option>
+              <option value="PIVO">Pivô</option>
+            </select>
+            <select id="statusFilter">
+              <option value="">Todos os status</option>
+              <option value="Disponivel">Disponíveis</option>
+              <option value="Escolhido">Já escolhidos</option>
+            </select>
+            <select id="sortBy">
+              <option value="ppg">Ordenar por Pontos (PPG)</option>
+              <option value="rpg">Ordenar por Rebotes (RPG)</option>
+              <option value="apg">Ordenar por Assistências (APG)</option>
+              <option value="efpg">Ordenar por Eficiência</option>
+              <option value="idade">Ordenar por Idade</option>
+              <option value="jogador">Ordenar por Nome</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto;">
+          <table id="playersTable">
+            <thead>
+              <tr>
+                <th data-key="jogador">Atleta</th>
+                <th data-key="time">Time atual (2026)</th>
+                <th data-key="posicao">Posição</th>
+                <th class="num" data-key="idade">Idade</th>
+                <th class="num" data-key="jogos">Jogos</th>
+                <th class="num" data-key="ppg">PPG</th>
+                <th class="num" data-key="rpg">RPG</th>
+                <th class="num" data-key="apg">APG</th>
+                <th class="num" data-key="fgpct">FG%</th>
+                <th class="num" data-key="p3pct">3P%</th>
+                <th class="num" data-key="efpg">EFF</th>
+                <th data-key="status">Franquia 2027 (Draft)</th>
+                <th>Editar</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+          </div>
+          <div class="empty-msg" id="emptyMsg" style="display:none;">Nenhum atleta encontrado com esses filtros.</div>
+          <div class="note">
+            PPG/RPG/APG/EFF refletem a média por jogo (jogadores com mais de um jogo têm a média de todas as súmulas
+            já lançadas). "Time atual (2026)" é o time real da temporada 2026 (não muda); "Franquia 2027 (Draft)"
+            mostra a franquia que escolheu o atleta — fica "Disponível" até ele ser escolhido ou bloqueado (🔒 indica
+            que foi um bloqueio pré-draft, não uma escolha normal). Com a conexão ao Web App ligada, clique no lápis
+            da linha para editar Posição/Idade e salvar direto na planilha.
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-suggest">
+        <div class="panel">
+          <h2>Sugestão de Atletas Disponíveis</h2>
+          <div class="pos-tabs" id="posTabs">
+            <button class="pos-tab active" data-pos="ARMADOR">Armador</button>
+            <button class="pos-tab" data-pos="ALA">Ala</button>
+            <button class="pos-tab" data-pos="PIVO">Pivô</button>
+          </div>
+          <div class="controls">
+            <select id="suggestSort">
+              <option value="ppg">Ordenar por Pontos (PPG)</option>
+              <option value="apg">Ordenar por Assistências (APG)</option>
+              <option value="rpg">Ordenar por Rebotes (RPG)</option>
+              <option value="efpg">Ordenar por Eficiência (EFF)</option>
+            </select>
+          </div>
+          <div class="suggest-list" id="suggestList"></div>
+          <div class="empty-msg" id="suggestEmpty" style="display:none;">Nenhum atleta disponível nessa posição no momento.</div>
+          <div class="note">
+            Mostra só atletas ainda <strong>disponíveis</strong> (não escolhidos no draft), filtrados por posição e
+            ordenados do maior para o menor na estatística escolhida. Atletas sem posição cadastrada não aparecem
+            aqui — edite a posição deles no Ranking de Atletas.
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-teams">
+        <div class="panel">
+          <h2>Força das Franquias — Draft 2027</h2>
+          <div class="note" style="padding-top:0;">
+            Médias do elenco (por atleta já escolhido) de cada franquia — PPG/RPG/APG/EFF — atualizadas a cada pick
+            confirmado no Draft ao vivo. Serve pra acompanhar o equilíbrio de força entre as franquias durante o draft.
+          </div>
+          <div id="teamsMsg"></div>
+          <div class="teams-grid" id="teamsGrid"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>
+    Gerado a partir de 45 jogos completos · quando desconectado, mostra o snapshot enviado pelo Claude — conecte a URL do Web App para ver e editar os dados ao vivo.
+  </footer>
+</div>
+
+<script>
+const STATIC_PLAYERS = [
+  {
+    "numero": 10,
+    "jogador": "A. Igor Ramos da Silva",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 28.7,
+    "ppg": 8.6,
+    "rpg": 11.1,
+    "apg": 2,
+    "tpg": 0.9,
+    "trpg": 0.6,
+    "rbpg": 2.3,
+    "efpg": 15.6,
+    "fgpct": 32.9,
+    "p3pct": 0,
+    "ftpct": 60.8,
+    "pts_total": 77,
+    "reb_total": 100,
+    "ast_total": 18,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 9,
+    "jogador": "A. César Nóbrega Ramos Bon",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 22.5,
+    "ppg": 3.6,
+    "rpg": 6.8,
+    "apg": 0.4,
+    "tpg": 0.2,
+    "trpg": 0,
+    "rbpg": 1.4,
+    "efpg": 4.7,
+    "fgpct": 28.8,
+    "p3pct": 0,
+    "ftpct": 20.0,
+    "pts_total": 32,
+    "reb_total": 61,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 6,
+    "jogador": "B. Oliveira Menezes",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 27.6,
+    "ppg": 7.6,
+    "rpg": 4.8,
+    "apg": 3.4,
+    "tpg": 0.3,
+    "trpg": 0.2,
+    "rbpg": 1.4,
+    "efpg": 6.3,
+    "fgpct": 25.7,
+    "p3pct": 17.1,
+    "ftpct": 58.8,
+    "pts_total": 68,
+    "reb_total": 43,
+    "ast_total": 31,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "B. Viana Castro Carvalho Cor",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 29.2,
+    "ppg": 10.8,
+    "rpg": 2.8,
+    "apg": 2.8,
+    "tpg": 0.4,
+    "trpg": 0.5,
+    "rbpg": 1.6,
+    "efpg": 6.9,
+    "fgpct": 33.7,
+    "p3pct": 30.9,
+    "ftpct": 41.7,
+    "pts_total": 86,
+    "reb_total": 22,
+    "ast_total": 22,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 26,
+    "jogador": "C. do Nascimento Costa",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 24.8,
+    "ppg": 5.1,
+    "rpg": 2.4,
+    "apg": 1.2,
+    "tpg": 0,
+    "trpg": 0.3,
+    "rbpg": 1.2,
+    "efpg": 1.3,
+    "fgpct": 27.4,
+    "p3pct": 0,
+    "ftpct": 66.7,
+    "pts_total": 46,
+    "reb_total": 22,
+    "ast_total": 11,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 14,
+    "jogador": "E. Apolinario",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 16.3,
+    "ppg": 2,
+    "rpg": 1,
+    "apg": 0.6,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 1.1,
+    "efpg": 2.6,
+    "fgpct": 30.8,
+    "p3pct": 16.7,
+    "ftpct": 71.4,
+    "pts_total": 14,
+    "reb_total": 7,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 39,
+    "jogador": "F. Fortaleza",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 25.9,
+    "ppg": 5.1,
+    "rpg": 7.6,
+    "apg": 1.3,
+    "tpg": 1,
+    "trpg": 0,
+    "rbpg": 0.8,
+    "efpg": 7,
+    "fgpct": 17.9,
+    "p3pct": 9.5,
+    "ftpct": 57.1,
+    "pts_total": 46,
+    "reb_total": 68,
+    "ast_total": 12,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 84,
+    "jogador": "J. Fernando Carneiro Leão de",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 1,
+    "mpg": 15.9,
+    "ppg": 0,
+    "rpg": 0,
+    "apg": 0,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0,
+    "efpg": -7,
+    "fgpct": 0,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 0,
+    "reb_total": 0,
+    "ast_total": 0,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 35,
+    "jogador": "M. Morato Daher",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 6,
+    "mpg": 27.2,
+    "ppg": 7.7,
+    "rpg": 6.7,
+    "apg": 1.5,
+    "tpg": 0.2,
+    "trpg": 0,
+    "rbpg": 2,
+    "efpg": 7.3,
+    "fgpct": 29.6,
+    "p3pct": 27.6,
+    "ftpct": 75.0,
+    "pts_total": 46,
+    "reb_total": 40,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 61,
+    "jogador": "P. Luz",
+    "time": "Niltons",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 12.8,
+    "ppg": 1.9,
+    "rpg": 3.6,
+    "apg": 0.1,
+    "tpg": 0.1,
+    "trpg": 0.4,
+    "rbpg": 0.3,
+    "efpg": 2,
+    "fgpct": 28.0,
+    "p3pct": 0,
+    "ftpct": 25.0,
+    "pts_total": 15,
+    "reb_total": 29,
+    "ast_total": 1,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 13,
+    "jogador": "A. Victor Santos",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 3,
+    "mpg": 12.6,
+    "ppg": 0.3,
+    "rpg": 2.3,
+    "apg": 0,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0.3,
+    "efpg": -3,
+    "fgpct": 0,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 1,
+    "reb_total": 7,
+    "ast_total": 0,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 10,
+    "jogador": "A. Robalinho",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25.1,
+    "ppg": 5.3,
+    "rpg": 3.9,
+    "apg": 3.9,
+    "tpg": 0.8,
+    "trpg": 0.3,
+    "rbpg": 2.6,
+    "efpg": 5.4,
+    "fgpct": 25.6,
+    "p3pct": 0,
+    "ftpct": 40.0,
+    "pts_total": 42,
+    "reb_total": 31,
+    "ast_total": 31,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 80,
+    "jogador": "B. Rego Caldas",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 20.2,
+    "ppg": 1.5,
+    "rpg": 3.1,
+    "apg": 2.1,
+    "tpg": 0.4,
+    "trpg": 0.1,
+    "rbpg": 1.6,
+    "efpg": 3.1,
+    "fgpct": 26.7,
+    "p3pct": 0,
+    "ftpct": 40.0,
+    "pts_total": 12,
+    "reb_total": 25,
+    "ast_total": 17,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 77,
+    "jogador": "D. Pereira Rodrigues da",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 23.8,
+    "ppg": 8.2,
+    "rpg": 3.3,
+    "apg": 1.1,
+    "tpg": 0,
+    "trpg": 0.6,
+    "rbpg": 1.6,
+    "efpg": 7.3,
+    "fgpct": 41.3,
+    "p3pct": 40.0,
+    "ftpct": 52.6,
+    "pts_total": 74,
+    "reb_total": 30,
+    "ast_total": 10,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 12,
+    "jogador": "F. Coutinho Santos",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 18.5,
+    "ppg": 3.4,
+    "rpg": 1.7,
+    "apg": 1.4,
+    "tpg": 0,
+    "trpg": 0.3,
+    "rbpg": 0.6,
+    "efpg": 0,
+    "fgpct": 26.0,
+    "p3pct": 25.0,
+    "ftpct": 100,
+    "pts_total": 31,
+    "reb_total": 15,
+    "ast_total": 13,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 33,
+    "jogador": "J. da Silva Oliveira",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 28.9,
+    "ppg": 13.6,
+    "rpg": 12,
+    "apg": 2.8,
+    "tpg": 0.7,
+    "trpg": 0.6,
+    "rbpg": 1.3,
+    "efpg": 15.6,
+    "fgpct": 31.7,
+    "p3pct": 21.3,
+    "ftpct": 56.2,
+    "pts_total": 122,
+    "reb_total": 108,
+    "ast_total": 25,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 15,
+    "jogador": "L. Góis de Oliveira Silva",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 16,
+    "ppg": 2.7,
+    "rpg": 3.2,
+    "apg": 0.6,
+    "tpg": 0,
+    "trpg": 0.1,
+    "rbpg": 0.6,
+    "efpg": 2.8,
+    "fgpct": 31.2,
+    "p3pct": 60.0,
+    "ftpct": 25.0,
+    "pts_total": 24,
+    "reb_total": 29,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 0,
+    "jogador": "S. Lima Raposo",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 25.1,
+    "ppg": 5.7,
+    "rpg": 6.4,
+    "apg": 1.7,
+    "tpg": 0.1,
+    "trpg": 0.2,
+    "rbpg": 1,
+    "efpg": 3.1,
+    "fgpct": 23.1,
+    "p3pct": 17.0,
+    "ftpct": 11.1,
+    "pts_total": 51,
+    "reb_total": 58,
+    "ast_total": 15,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 25,
+    "jogador": "T. SALES DA SILVA",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 5,
+    "mpg": 10.9,
+    "ppg": 2.2,
+    "rpg": 1.8,
+    "apg": 0.6,
+    "tpg": 0,
+    "trpg": 0.2,
+    "rbpg": 0.6,
+    "efpg": 1,
+    "fgpct": 27.8,
+    "p3pct": 0,
+    "ftpct": 25.0,
+    "pts_total": 11,
+    "reb_total": 9,
+    "ast_total": 3,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 14,
+    "jogador": "V. dos Santos Nascimento",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 24.4,
+    "ppg": 5,
+    "rpg": 7.4,
+    "apg": 1.4,
+    "tpg": 0.8,
+    "trpg": 0.2,
+    "rbpg": 1.8,
+    "efpg": 9.7,
+    "fgpct": 34.5,
+    "p3pct": 0,
+    "ftpct": 25.9,
+    "pts_total": 45,
+    "reb_total": 67,
+    "ast_total": 13,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "D. Marques de Carvalho",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 5,
+    "mpg": 27.8,
+    "ppg": 5.8,
+    "rpg": 5,
+    "apg": 4.8,
+    "tpg": 0.2,
+    "trpg": 0.2,
+    "rbpg": 2,
+    "efpg": 10,
+    "fgpct": 39.3,
+    "p3pct": 0,
+    "ftpct": 53.8,
+    "pts_total": 29,
+    "reb_total": 25,
+    "ast_total": 24,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 7,
+    "jogador": "E. Rodrigues",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 6,
+    "mpg": 29.6,
+    "ppg": 13.2,
+    "rpg": 7.8,
+    "apg": 1.8,
+    "tpg": 0.7,
+    "trpg": 0.3,
+    "rbpg": 0.7,
+    "efpg": 15.3,
+    "fgpct": 42.7,
+    "p3pct": 0,
+    "ftpct": 46.9,
+    "pts_total": 79,
+    "reb_total": 47,
+    "ast_total": 11,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 5,
+    "jogador": "E. Mascarenhas Freixeira",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 15,
+    "ppg": 3.3,
+    "rpg": 2.3,
+    "apg": 0.3,
+    "tpg": 0.1,
+    "trpg": 0.4,
+    "rbpg": 0.3,
+    "efpg": 0.7,
+    "fgpct": 34.4,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 23,
+    "reb_total": 16,
+    "ast_total": 2,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 8,
+    "jogador": "J. Gomes Batista",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 15.8,
+    "ppg": 2.9,
+    "rpg": 1.1,
+    "apg": 0.2,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0.3,
+    "efpg": 1.4,
+    "fgpct": 39.4,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 26,
+    "reb_total": 10,
+    "ast_total": 2,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 82,
+    "jogador": "J. Batista de Lima Neto",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 27.9,
+    "ppg": 7.4,
+    "rpg": 10.2,
+    "apg": 1.8,
+    "tpg": 0.8,
+    "trpg": 0.2,
+    "rbpg": 0.7,
+    "efpg": 10.1,
+    "fgpct": 37.8,
+    "p3pct": 0,
+    "ftpct": 61.1,
+    "pts_total": 67,
+    "reb_total": 92,
+    "ast_total": 16,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 12,
+    "jogador": "L. Pontes Maranhão",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 29.2,
+    "ppg": 8.3,
+    "rpg": 4.4,
+    "apg": 2.8,
+    "tpg": 0.1,
+    "trpg": 0.3,
+    "rbpg": 2.1,
+    "efpg": 6,
+    "fgpct": 22.0,
+    "p3pct": 21.0,
+    "ftpct": 55.0,
+    "pts_total": 75,
+    "reb_total": 40,
+    "ast_total": 25,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 74,
+    "jogador": "N. Marques Ferreira",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 19.2,
+    "ppg": 3.7,
+    "rpg": 5.6,
+    "apg": 0.9,
+    "tpg": 0.4,
+    "trpg": 0,
+    "rbpg": 0.1,
+    "efpg": 6.7,
+    "fgpct": 30.8,
+    "p3pct": 0,
+    "ftpct": 56.2,
+    "pts_total": 33,
+    "reb_total": 50,
+    "ast_total": 8,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 14,
+    "jogador": "P. Henrique Barbosa Tafuri",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 20.6,
+    "ppg": 6.5,
+    "rpg": 4.6,
+    "apg": 0.1,
+    "tpg": 0.3,
+    "trpg": 0.3,
+    "rbpg": 1.5,
+    "efpg": 2.8,
+    "fgpct": 34.8,
+    "p3pct": 0,
+    "ftpct": 46.2,
+    "pts_total": 52,
+    "reb_total": 37,
+    "ast_total": 1,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 13,
+    "jogador": "P. Luiz C. de Medeiros",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 16,
+    "ppg": 1.3,
+    "rpg": 3.8,
+    "apg": 0.9,
+    "tpg": 0.1,
+    "trpg": 0.2,
+    "rbpg": 0.3,
+    "efpg": 2.1,
+    "fgpct": 22.7,
+    "p3pct": 0,
+    "ftpct": 100,
+    "pts_total": 12,
+    "reb_total": 34,
+    "ast_total": 8,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 16,
+    "jogador": "R. Carrera",
+    "time": "Madeiras",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 26.7,
+    "ppg": 5.1,
+    "rpg": 4.7,
+    "apg": 2.4,
+    "tpg": 0.8,
+    "trpg": 0.4,
+    "rbpg": 0.9,
+    "efpg": 3.9,
+    "fgpct": 26.5,
+    "p3pct": 0,
+    "ftpct": 40.0,
+    "pts_total": 46,
+    "reb_total": 42,
+    "ast_total": 22,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 8,
+    "jogador": "A. Castanha",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 22.7,
+    "ppg": 1.6,
+    "rpg": 2,
+    "apg": 1.6,
+    "tpg": 0.1,
+    "trpg": 0.2,
+    "rbpg": 0.9,
+    "efpg": -0.8,
+    "fgpct": 13.2,
+    "p3pct": 12.5,
+    "ftpct": 50.0,
+    "pts_total": 14,
+    "reb_total": 18,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "B. Cordeiro Lins",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 19.1,
+    "ppg": 3.6,
+    "rpg": 1.9,
+    "apg": 1.1,
+    "tpg": 0,
+    "trpg": 0.1,
+    "rbpg": 1.6,
+    "efpg": -0.7,
+    "fgpct": 14.5,
+    "p3pct": 17.6,
+    "ftpct": 50.0,
+    "pts_total": 25,
+    "reb_total": 13,
+    "ast_total": 8,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 3,
+    "jogador": "C. Luiz Gomes de Souza",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 21.8,
+    "ppg": 2.5,
+    "rpg": 1.9,
+    "apg": 0.9,
+    "tpg": 0,
+    "trpg": 0.4,
+    "rbpg": 0.6,
+    "efpg": -0.3,
+    "fgpct": 23.1,
+    "p3pct": 14.3,
+    "ftpct": 0,
+    "pts_total": 20,
+    "reb_total": 15,
+    "ast_total": 7,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 33,
+    "jogador": "C. Rodriguez da Silveira",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 19.2,
+    "ppg": 4.3,
+    "rpg": 1.3,
+    "apg": 0.1,
+    "tpg": 0.1,
+    "trpg": 0.3,
+    "rbpg": 0.4,
+    "efpg": -3.4,
+    "fgpct": 19.0,
+    "p3pct": 19.6,
+    "ftpct": 50.0,
+    "pts_total": 34,
+    "reb_total": 10,
+    "ast_total": 1,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 5,
+    "jogador": "G. André Torres de Farias Filho",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 30,
+    "ppg": 7.7,
+    "rpg": 7,
+    "apg": 2.2,
+    "tpg": 0.7,
+    "trpg": 1.1,
+    "rbpg": 0.9,
+    "efpg": 5.2,
+    "fgpct": 27.7,
+    "p3pct": 0,
+    "ftpct": 48.6,
+    "pts_total": 69,
+    "reb_total": 63,
+    "ast_total": 20,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 20,
+    "jogador": "J. da Costa Ribeiro Filho",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 6,
+    "mpg": 23,
+    "ppg": 6.7,
+    "rpg": 5.2,
+    "apg": 0.5,
+    "tpg": 0.2,
+    "trpg": 0.5,
+    "rbpg": 0.3,
+    "efpg": 2.7,
+    "fgpct": 26.4,
+    "p3pct": 23.3,
+    "ftpct": 50.0,
+    "pts_total": 40,
+    "reb_total": 31,
+    "ast_total": 3,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 16,
+    "jogador": "L. Andre Pereira Lopes",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25.4,
+    "ppg": 4.5,
+    "rpg": 9,
+    "apg": 1.1,
+    "tpg": 1,
+    "trpg": 0.4,
+    "rbpg": 0.9,
+    "efpg": 11.6,
+    "fgpct": 42.5,
+    "p3pct": 0,
+    "ftpct": 100,
+    "pts_total": 36,
+    "reb_total": 72,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 9,
+    "jogador": "L. Vital do Carmo Filho",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 19.7,
+    "ppg": 2.9,
+    "rpg": 5.4,
+    "apg": 1.2,
+    "tpg": 0.8,
+    "trpg": 0.1,
+    "rbpg": 0.8,
+    "efpg": 5.7,
+    "fgpct": 32.0,
+    "p3pct": 100,
+    "ftpct": 56.2,
+    "pts_total": 26,
+    "reb_total": 49,
+    "ast_total": 11,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 6,
+    "jogador": "M. Borges da Silva Junior",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25.4,
+    "ppg": 5.8,
+    "rpg": 5.5,
+    "apg": 1.1,
+    "tpg": 0.5,
+    "trpg": 0.8,
+    "rbpg": 0.9,
+    "efpg": 2.9,
+    "fgpct": 18.4,
+    "p3pct": 11.4,
+    "ftpct": 55.6,
+    "pts_total": 46,
+    "reb_total": 44,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 13,
+    "jogador": "Y. Petrovich",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 2,
+    "mpg": 15.6,
+    "ppg": 2.5,
+    "rpg": 3.5,
+    "apg": 2,
+    "tpg": 0.5,
+    "trpg": 0.5,
+    "rbpg": 0.5,
+    "efpg": -0.5,
+    "fgpct": 9.1,
+    "p3pct": 16.7,
+    "ftpct": 33.3,
+    "pts_total": 5,
+    "reb_total": 7,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 77,
+    "jogador": "A. de Paula",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 27.6,
+    "ppg": 8.9,
+    "rpg": 8.1,
+    "apg": 1.9,
+    "tpg": 0.8,
+    "trpg": 1.1,
+    "rbpg": 0.9,
+    "efpg": 11.8,
+    "fgpct": 43.3,
+    "p3pct": 0,
+    "ftpct": 46.4,
+    "pts_total": 71,
+    "reb_total": 65,
+    "ast_total": 15,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 15,
+    "jogador": "A. Augusto Costa de Azevedo",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 24.1,
+    "ppg": 7.5,
+    "rpg": 9.3,
+    "apg": 1.1,
+    "tpg": 1.1,
+    "trpg": 0.3,
+    "rbpg": 0.9,
+    "efpg": 9.4,
+    "fgpct": 34.2,
+    "p3pct": 0,
+    "ftpct": 44.4,
+    "pts_total": 60,
+    "reb_total": 74,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 28,
+    "jogador": "D. Negreiros Araujo",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 23.9,
+    "ppg": 7.4,
+    "rpg": 6.6,
+    "apg": 0.6,
+    "tpg": 0.4,
+    "trpg": 0.8,
+    "rbpg": 0.5,
+    "efpg": 9.1,
+    "fgpct": 41.5,
+    "p3pct": 100,
+    "ftpct": 50.0,
+    "pts_total": 59,
+    "reb_total": 53,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 25,
+    "jogador": "E. Moura Vasconcelos Neto",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 24.1,
+    "ppg": 4.5,
+    "rpg": 2.6,
+    "apg": 1.8,
+    "tpg": 0,
+    "trpg": 0.1,
+    "rbpg": 1,
+    "efpg": 1.6,
+    "fgpct": 20.6,
+    "p3pct": 16.7,
+    "ftpct": 75.0,
+    "pts_total": 36,
+    "reb_total": 21,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 45,
+    "jogador": "I. Castelo Branco de Lima",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 28.7,
+    "ppg": 7.6,
+    "rpg": 3.8,
+    "apg": 4,
+    "tpg": 0.3,
+    "trpg": 0.5,
+    "rbpg": 2.3,
+    "efpg": 7.6,
+    "fgpct": 28.0,
+    "p3pct": 18.5,
+    "ftpct": 50.0,
+    "pts_total": 61,
+    "reb_total": 30,
+    "ast_total": 32,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 22,
+    "jogador": "I. Emerson da Silva Leite",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 13.5,
+    "ppg": 2.4,
+    "rpg": 2.2,
+    "apg": 0.6,
+    "tpg": 0.1,
+    "trpg": 0.2,
+    "rbpg": 0.6,
+    "efpg": 0.9,
+    "fgpct": 39.3,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 22,
+    "reb_total": 20,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 67,
+    "jogador": "O. Spehner",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 17.9,
+    "ppg": 2.3,
+    "rpg": 4.1,
+    "apg": 0.3,
+    "tpg": 0.1,
+    "trpg": 0.3,
+    "rbpg": 0.6,
+    "efpg": 2.9,
+    "fgpct": 30.4,
+    "p3pct": 0,
+    "ftpct": 36.4,
+    "pts_total": 18,
+    "reb_total": 33,
+    "ast_total": 2,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 0,
+    "jogador": "P. Fernando Vieira Loyo",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 28,
+    "ppg": 3.1,
+    "rpg": 2.6,
+    "apg": 3.1,
+    "tpg": 0.1,
+    "trpg": 0.5,
+    "rbpg": 1.6,
+    "efpg": 1,
+    "fgpct": 16.7,
+    "p3pct": 12.5,
+    "ftpct": 57.1,
+    "pts_total": 25,
+    "reb_total": 21,
+    "ast_total": 25,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 7,
+    "jogador": "R. Fonseca Gomes Mussa",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25.9,
+    "ppg": 7.9,
+    "rpg": 8.1,
+    "apg": 1.8,
+    "tpg": 0.3,
+    "trpg": 0.1,
+    "rbpg": 1.9,
+    "efpg": 9.9,
+    "fgpct": 30.3,
+    "p3pct": 24.1,
+    "ftpct": 62.5,
+    "pts_total": 63,
+    "reb_total": 65,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 3,
+    "jogador": "R. de Albuquerque Lins",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 3,
+    "mpg": 15.9,
+    "ppg": 5.3,
+    "rpg": 1.3,
+    "apg": 0.7,
+    "tpg": 0.3,
+    "trpg": 0.3,
+    "rbpg": 2,
+    "efpg": 1,
+    "fgpct": 27.6,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 16,
+    "reb_total": 4,
+    "ast_total": 2,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 0,
+    "jogador": "A. Feitosa",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 26.9,
+    "ppg": 5.1,
+    "rpg": 2.6,
+    "apg": 1.1,
+    "tpg": 0.1,
+    "trpg": 0.1,
+    "rbpg": 1.4,
+    "efpg": 2.2,
+    "fgpct": 23.3,
+    "p3pct": 7.7,
+    "ftpct": 62.5,
+    "pts_total": 46,
+    "reb_total": 23,
+    "ast_total": 10,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 12,
+    "jogador": "C. Pinto Medeiros",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 17.1,
+    "ppg": 2.1,
+    "rpg": 2,
+    "apg": 0.6,
+    "tpg": 0.1,
+    "trpg": 0.1,
+    "rbpg": 0.7,
+    "efpg": 0.6,
+    "fgpct": 20.0,
+    "p3pct": 21.7,
+    "ftpct": 0,
+    "pts_total": 15,
+    "reb_total": 14,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 7,
+    "jogador": "C. Escobar Torresini",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 27.5,
+    "ppg": 8.6,
+    "rpg": 6.1,
+    "apg": 3,
+    "tpg": 0.4,
+    "trpg": 0.6,
+    "rbpg": 2.2,
+    "efpg": 8.8,
+    "fgpct": 29.7,
+    "p3pct": 20.0,
+    "ftpct": 66.7,
+    "pts_total": 77,
+    "reb_total": 55,
+    "ast_total": 27,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 34,
+    "jogador": "F. Marques",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 26.9,
+    "ppg": 7.2,
+    "rpg": 5.8,
+    "apg": 1.3,
+    "tpg": 0.3,
+    "trpg": 0.8,
+    "rbpg": 1.9,
+    "efpg": 5.8,
+    "fgpct": 28.8,
+    "p3pct": 25.0,
+    "ftpct": 37.5,
+    "pts_total": 65,
+    "reb_total": 52,
+    "ast_total": 12,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "J. Gonçalves Neto",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 28.8,
+    "ppg": 3,
+    "rpg": 6.4,
+    "apg": 2,
+    "tpg": 0.6,
+    "trpg": 0.1,
+    "rbpg": 1,
+    "efpg": 6.7,
+    "fgpct": 20.6,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 21,
+    "reb_total": 45,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 9,
+    "jogador": "L. Henriques Freitas",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 29.7,
+    "ppg": 17.4,
+    "rpg": 4.6,
+    "apg": 2.3,
+    "tpg": 0.2,
+    "trpg": 1.2,
+    "rbpg": 2.4,
+    "efpg": 13.4,
+    "fgpct": 35.7,
+    "p3pct": 25.9,
+    "ftpct": 59.3,
+    "pts_total": 157,
+    "reb_total": 41,
+    "ast_total": 21,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 77,
+    "jogador": "R. Barbosa Gouveia",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 21.6,
+    "ppg": 4.1,
+    "rpg": 4.6,
+    "apg": 0.9,
+    "tpg": 0.5,
+    "trpg": 0.1,
+    "rbpg": 1.4,
+    "efpg": 1.8,
+    "fgpct": 18.5,
+    "p3pct": 5.6,
+    "ftpct": 40.0,
+    "pts_total": 33,
+    "reb_total": 37,
+    "ast_total": 7,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 23,
+    "jogador": "S. Vieira Reis Júnior",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 5,
+    "mpg": 22.4,
+    "ppg": 1.4,
+    "rpg": 7.2,
+    "apg": 1.2,
+    "tpg": 0.4,
+    "trpg": 0.2,
+    "rbpg": 0.6,
+    "efpg": 6.2,
+    "fgpct": 20.0,
+    "p3pct": 0,
+    "ftpct": 33.3,
+    "pts_total": 7,
+    "reb_total": 36,
+    "ast_total": 6,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 17,
+    "jogador": "V. Barreto de Lima Rocha",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 19.5,
+    "ppg": 2.1,
+    "rpg": 3.6,
+    "apg": 0.1,
+    "tpg": 0,
+    "trpg": 0.9,
+    "rbpg": 0.4,
+    "efpg": -0.6,
+    "fgpct": 21.9,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 15,
+    "reb_total": 25,
+    "ast_total": 1,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 45,
+    "jogador": "W. Ernandes Ferreira de Souza",
+    "time": "Barca de Cristo",
+    "posicao": null,
+    "idade": null,
+    "jogos": 4,
+    "mpg": 14.2,
+    "ppg": 0.5,
+    "rpg": 1.3,
+    "apg": 0.3,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0,
+    "efpg": 0.3,
+    "fgpct": 33.3,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 2,
+    "reb_total": 5,
+    "ast_total": 1,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 22,
+    "jogador": "B. Duzi",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 24.1,
+    "ppg": 4,
+    "rpg": 3.3,
+    "apg": 1.3,
+    "tpg": 0,
+    "trpg": 0.3,
+    "rbpg": 1,
+    "efpg": 4.7,
+    "fgpct": 44.8,
+    "p3pct": 12.5,
+    "ftpct": 0,
+    "pts_total": 28,
+    "reb_total": 23,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 10,
+    "jogador": "D. Beltrão",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 6,
+    "mpg": 29.6,
+    "ppg": 9.2,
+    "rpg": 10.8,
+    "apg": 1.5,
+    "tpg": 0.8,
+    "trpg": 0.8,
+    "rbpg": 1.3,
+    "efpg": 11.5,
+    "fgpct": 23.9,
+    "p3pct": 11.8,
+    "ftpct": 67.9,
+    "pts_total": 55,
+    "reb_total": 65,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "D. Ferrari",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 26.5,
+    "ppg": 4.4,
+    "rpg": 6.3,
+    "apg": 1.5,
+    "tpg": 0.1,
+    "trpg": 0.4,
+    "rbpg": 1,
+    "efpg": 0.1,
+    "fgpct": 17.1,
+    "p3pct": 13.3,
+    "ftpct": 38.5,
+    "pts_total": 35,
+    "reb_total": 50,
+    "ast_total": 12,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 37,
+    "jogador": "F. Andrade Gama de Oliveira",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25.1,
+    "ppg": 6.4,
+    "rpg": 9,
+    "apg": 0.6,
+    "tpg": 0.4,
+    "trpg": 0.6,
+    "rbpg": 0.9,
+    "efpg": 6.1,
+    "fgpct": 28.9,
+    "p3pct": 33.3,
+    "ftpct": 33.3,
+    "pts_total": 51,
+    "reb_total": 72,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 72,
+    "jogador": "F. da Silva Lorega Neto",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 19.1,
+    "ppg": 2.3,
+    "rpg": 2.1,
+    "apg": 0.8,
+    "tpg": 0,
+    "trpg": 0.6,
+    "rbpg": 0.2,
+    "efpg": -0.4,
+    "fgpct": 20.0,
+    "p3pct": 15.0,
+    "ftpct": 40.0,
+    "pts_total": 21,
+    "reb_total": 19,
+    "ast_total": 7,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 5,
+    "jogador": "H. Lima de A. Fonseca",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 27.2,
+    "ppg": 6.2,
+    "rpg": 6.6,
+    "apg": 0.6,
+    "tpg": 0.4,
+    "trpg": 0.7,
+    "rbpg": 3,
+    "efpg": 5.6,
+    "fgpct": 27.6,
+    "p3pct": 11.1,
+    "ftpct": 46.2,
+    "pts_total": 56,
+    "reb_total": 59,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 15,
+    "jogador": "R. Pereira Guedes",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 4,
+    "mpg": 18.5,
+    "ppg": 1.8,
+    "rpg": 2.8,
+    "apg": 1,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0.5,
+    "efpg": -0.3,
+    "fgpct": 14.3,
+    "p3pct": 0,
+    "ftpct": 100,
+    "pts_total": 7,
+    "reb_total": 11,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 8,
+    "jogador": "T. Lima de Alcântara Fo",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 15,
+    "ppg": 2.1,
+    "rpg": 3,
+    "apg": 0.7,
+    "tpg": 0.3,
+    "trpg": 0.1,
+    "rbpg": 0.4,
+    "efpg": 1.9,
+    "fgpct": 33.3,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 15,
+    "reb_total": 21,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 7,
+    "jogador": "W. Ramos da Silva Reis",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 28.8,
+    "ppg": 4,
+    "rpg": 3.4,
+    "apg": 2.8,
+    "tpg": 0,
+    "trpg": 0.2,
+    "rbpg": 2.4,
+    "efpg": 1.1,
+    "fgpct": 16.7,
+    "p3pct": 11.5,
+    "ftpct": 33.3,
+    "pts_total": 36,
+    "reb_total": 31,
+    "ast_total": 25,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 4,
+    "jogador": "W. dos Santos Sun",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 13.8,
+    "ppg": 1,
+    "rpg": 1.6,
+    "apg": 0.9,
+    "tpg": 0.1,
+    "trpg": 0,
+    "rbpg": 0.4,
+    "efpg": 0.5,
+    "fgpct": 15.0,
+    "p3pct": 13.3,
+    "ftpct": 0,
+    "pts_total": 8,
+    "reb_total": 13,
+    "ast_total": 7,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 15,
+    "jogador": "A. Gomes de Oliveira",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 13.1,
+    "ppg": 1.9,
+    "rpg": 1.6,
+    "apg": 0.8,
+    "tpg": 0.1,
+    "trpg": 0,
+    "rbpg": 0,
+    "efpg": 1.1,
+    "fgpct": 20.0,
+    "p3pct": 22.7,
+    "ftpct": 0,
+    "pts_total": 15,
+    "reb_total": 13,
+    "ast_total": 6,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 8,
+    "jogador": "A. Machado da Silva",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 19.7,
+    "ppg": 2.2,
+    "rpg": 7.1,
+    "apg": 1.1,
+    "tpg": 0.2,
+    "trpg": 0.3,
+    "rbpg": 0.8,
+    "efpg": 5.4,
+    "fgpct": 21.4,
+    "p3pct": 0,
+    "ftpct": 33.3,
+    "pts_total": 20,
+    "reb_total": 64,
+    "ast_total": 10,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 10,
+    "jogador": "F. Antônio Mendonça de Oliveira",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 27.9,
+    "ppg": 6.6,
+    "rpg": 3.9,
+    "apg": 1.6,
+    "tpg": 0.1,
+    "trpg": 0.3,
+    "rbpg": 1.1,
+    "efpg": 3,
+    "fgpct": 28.1,
+    "p3pct": 20.8,
+    "ftpct": 64.3,
+    "pts_total": 46,
+    "reb_total": 27,
+    "ast_total": 11,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 77,
+    "jogador": "L. Vieira de Figueiredo",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 24.6,
+    "ppg": 5.4,
+    "rpg": 2.6,
+    "apg": 2.6,
+    "tpg": 0.6,
+    "trpg": 0.2,
+    "rbpg": 0.8,
+    "efpg": 2.6,
+    "fgpct": 35.8,
+    "p3pct": 41.7,
+    "ftpct": 100,
+    "pts_total": 49,
+    "reb_total": 23,
+    "ast_total": 23,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 79,
+    "jogador": "M. Aurelio Almeida da Rocha",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 5,
+    "mpg": 12.8,
+    "ppg": 2.8,
+    "rpg": 1.8,
+    "apg": 1,
+    "tpg": 0,
+    "trpg": 0.2,
+    "rbpg": 0.2,
+    "efpg": 2.4,
+    "fgpct": 30.0,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 14,
+    "reb_total": 9,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 57,
+    "jogador": "P. Breckenfeld",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 20.9,
+    "ppg": 2,
+    "rpg": 5.6,
+    "apg": 0.5,
+    "tpg": 0.3,
+    "trpg": 0.3,
+    "rbpg": 0.5,
+    "efpg": 4.3,
+    "fgpct": 24.0,
+    "p3pct": 0,
+    "ftpct": 57.1,
+    "pts_total": 16,
+    "reb_total": 45,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 5,
+    "jogador": "R. Monteiro de Carvalho",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 13.5,
+    "ppg": 2.8,
+    "rpg": 0.9,
+    "apg": 0.4,
+    "tpg": 0,
+    "trpg": 0.1,
+    "rbpg": 0.4,
+    "efpg": 0.9,
+    "fgpct": 28.6,
+    "p3pct": 29.2,
+    "ftpct": 66.7,
+    "pts_total": 25,
+    "reb_total": 8,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 7,
+    "jogador": "R. Lima dos Santos",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 24.9,
+    "ppg": 7.2,
+    "rpg": 6.2,
+    "apg": 1.7,
+    "tpg": 0.4,
+    "trpg": 0.7,
+    "rbpg": 1.4,
+    "efpg": 5.2,
+    "fgpct": 28.0,
+    "p3pct": 0,
+    "ftpct": 55.9,
+    "pts_total": 65,
+    "reb_total": 56,
+    "ast_total": 15,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 17,
+    "jogador": "R. de Azevedo França",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 28.4,
+    "ppg": 6.6,
+    "rpg": 6.1,
+    "apg": 1.6,
+    "tpg": 0.7,
+    "trpg": 0.1,
+    "rbpg": 1.1,
+    "efpg": 4.8,
+    "fgpct": 29.6,
+    "p3pct": 20.0,
+    "ftpct": 53.3,
+    "pts_total": 59,
+    "reb_total": 55,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 4,
+    "jogador": "Y. Kudryavtsev",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 28.7,
+    "ppg": 11.3,
+    "rpg": 9.8,
+    "apg": 1.4,
+    "tpg": 0.8,
+    "trpg": 1.7,
+    "rbpg": 1.7,
+    "efpg": 8.7,
+    "fgpct": 32.2,
+    "p3pct": 27.8,
+    "ftpct": 31.0,
+    "pts_total": 102,
+    "reb_total": 88,
+    "ast_total": 13,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 71,
+    "jogador": "A. Coutinho Dias Pereira",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 18,
+    "ppg": 4.6,
+    "rpg": 3,
+    "apg": 1.1,
+    "tpg": 0.1,
+    "trpg": 0.1,
+    "rbpg": 0.6,
+    "efpg": 5,
+    "fgpct": 37.8,
+    "p3pct": 36.0,
+    "ftpct": 0,
+    "pts_total": 37,
+    "reb_total": 24,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 5,
+    "jogador": "B. Pontes Mascena",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 29.4,
+    "ppg": 7.7,
+    "rpg": 2.6,
+    "apg": 1.8,
+    "tpg": 0.1,
+    "trpg": 0.2,
+    "rbpg": 1.4,
+    "efpg": 3.2,
+    "fgpct": 30.3,
+    "p3pct": 14.3,
+    "ftpct": 60.6,
+    "pts_total": 69,
+    "reb_total": 23,
+    "ast_total": 16,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 9,
+    "jogador": "D. Batista de Oliveira",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 28.4,
+    "ppg": 10.6,
+    "rpg": 3.7,
+    "apg": 1.6,
+    "tpg": 0.9,
+    "trpg": 0,
+    "rbpg": 3.8,
+    "efpg": 9.2,
+    "fgpct": 26.7,
+    "p3pct": 27.6,
+    "ftpct": 66.7,
+    "pts_total": 95,
+    "reb_total": 33,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 4,
+    "jogador": "F. Moura da Silva",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 6,
+    "mpg": 12.7,
+    "ppg": 1.7,
+    "rpg": 0.7,
+    "apg": 0,
+    "tpg": 0,
+    "trpg": 0.2,
+    "rbpg": 0.3,
+    "efpg": 0,
+    "fgpct": 33.3,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 10,
+    "reb_total": 4,
+    "ast_total": 0,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 21,
+    "jogador": "J. Henrique Nunes dos Santos",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 12.9,
+    "ppg": 0.9,
+    "rpg": 2.7,
+    "apg": 0.4,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0.6,
+    "efpg": 1.9,
+    "fgpct": 25.0,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 6,
+    "reb_total": 19,
+    "ast_total": 3,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 47,
+    "jogador": "K. Almeida Silva",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 17.1,
+    "ppg": 1,
+    "rpg": 2.5,
+    "apg": 1.8,
+    "tpg": 0.1,
+    "trpg": 0.1,
+    "rbpg": 0.6,
+    "efpg": 1.4,
+    "fgpct": 12.5,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 8,
+    "reb_total": 20,
+    "ast_total": 14,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 23,
+    "jogador": "M. Felipe Barbosa",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 24.1,
+    "ppg": 7.6,
+    "rpg": 6.8,
+    "apg": 1.2,
+    "tpg": 0.4,
+    "trpg": 0.4,
+    "rbpg": 0.8,
+    "efpg": 8.2,
+    "fgpct": 43.7,
+    "p3pct": 25.0,
+    "ftpct": 62.5,
+    "pts_total": 68,
+    "reb_total": 61,
+    "ast_total": 11,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "P. Souza de Gouvêa Vieira",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 26.5,
+    "ppg": 5,
+    "rpg": 8.6,
+    "apg": 1.3,
+    "tpg": 1.4,
+    "trpg": 0,
+    "rbpg": 0.6,
+    "efpg": 5.5,
+    "fgpct": 25.8,
+    "p3pct": 12.5,
+    "ftpct": 25.0,
+    "pts_total": 40,
+    "reb_total": 69,
+    "ast_total": 10,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 15,
+    "jogador": "T. Rodrigues Lira",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 21.2,
+    "ppg": 1.8,
+    "rpg": 1.6,
+    "apg": 2,
+    "tpg": 0,
+    "trpg": 0.1,
+    "rbpg": 1.6,
+    "efpg": 0.1,
+    "fgpct": 18.2,
+    "p3pct": 20.0,
+    "ftpct": 33.3,
+    "pts_total": 16,
+    "reb_total": 14,
+    "ast_total": 18,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 22,
+    "jogador": "V. Rocha Cortez Teles de Alencar",
+    "time": "Titans",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25,
+    "ppg": 9.8,
+    "rpg": 8.5,
+    "apg": 0.9,
+    "tpg": 0.9,
+    "trpg": 0.1,
+    "rbpg": 0.5,
+    "efpg": 11.4,
+    "fgpct": 31.6,
+    "p3pct": 28.6,
+    "ftpct": 72.2,
+    "pts_total": 78,
+    "reb_total": 68,
+    "ast_total": 7,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 10,
+    "jogador": "A. de Souza Silva Junior",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 27.6,
+    "ppg": 9.3,
+    "rpg": 7,
+    "apg": 2.3,
+    "tpg": 0.3,
+    "trpg": 0.2,
+    "rbpg": 2.4,
+    "efpg": 8.4,
+    "fgpct": 33.3,
+    "p3pct": 33.3,
+    "ftpct": 16.7,
+    "pts_total": 84,
+    "reb_total": 63,
+    "ast_total": 21,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 75,
+    "jogador": "B. Menezes Freire",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 17.5,
+    "ppg": 3.1,
+    "rpg": 3.9,
+    "apg": 0.5,
+    "tpg": 0.1,
+    "trpg": 0.4,
+    "rbpg": 0.8,
+    "efpg": 1.5,
+    "fgpct": 31.4,
+    "p3pct": 0,
+    "ftpct": 50.0,
+    "pts_total": 25,
+    "reb_total": 31,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 87,
+    "jogador": "D. Panduro Vasquez",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 21.4,
+    "ppg": 4.4,
+    "rpg": 3,
+    "apg": 2.5,
+    "tpg": 0,
+    "trpg": 0.8,
+    "rbpg": 1.8,
+    "efpg": 3.1,
+    "fgpct": 24.1,
+    "p3pct": 25.0,
+    "ftpct": 44.4,
+    "pts_total": 35,
+    "reb_total": 24,
+    "ast_total": 20,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 70,
+    "jogador": "E. Vitorino Alves Junior",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 21.7,
+    "ppg": 1.9,
+    "rpg": 3.6,
+    "apg": 1.7,
+    "tpg": 0.2,
+    "trpg": 0.1,
+    "rbpg": 1.4,
+    "efpg": 2.2,
+    "fgpct": 15.4,
+    "p3pct": 9.1,
+    "ftpct": 66.7,
+    "pts_total": 17,
+    "reb_total": 32,
+    "ast_total": 15,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 11,
+    "jogador": "F. José Macedo Santana",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 25.8,
+    "ppg": 2.5,
+    "rpg": 8.6,
+    "apg": 1.9,
+    "tpg": 0.4,
+    "trpg": 0.3,
+    "rbpg": 1.3,
+    "efpg": 9.4,
+    "fgpct": 50.0,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 20,
+    "reb_total": 69,
+    "ast_total": 15,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 8,
+    "jogador": "H. Lizandro Cavalcanti",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 25.2,
+    "ppg": 10.2,
+    "rpg": 5.1,
+    "apg": 0.4,
+    "tpg": 0.6,
+    "trpg": 0.3,
+    "rbpg": 0.4,
+    "efpg": 5.3,
+    "fgpct": 29.2,
+    "p3pct": 25.0,
+    "ftpct": 72.7,
+    "pts_total": 92,
+    "reb_total": 46,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 15,
+    "jogador": "L. Carlos da Silva Junior",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 7,
+    "mpg": 22.5,
+    "ppg": 3,
+    "rpg": 7,
+    "apg": 1.9,
+    "tpg": 0.4,
+    "trpg": 0,
+    "rbpg": 1.7,
+    "efpg": 5.1,
+    "fgpct": 22.7,
+    "p3pct": 0,
+    "ftpct": 20.0,
+    "pts_total": 21,
+    "reb_total": 49,
+    "ast_total": 13,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 17,
+    "jogador": "M. Luiz de Oliveira",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 8,
+    "mpg": 12.7,
+    "ppg": 2.3,
+    "rpg": 1.4,
+    "apg": 0.4,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0.3,
+    "efpg": -0.4,
+    "fgpct": 17.1,
+    "p3pct": 17.1,
+    "ftpct": 0,
+    "pts_total": 18,
+    "reb_total": 11,
+    "ast_total": 3,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 9,
+    "jogador": "T. Estevão da Silva",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 9,
+    "mpg": 21.1,
+    "ppg": 4.6,
+    "rpg": 1.9,
+    "apg": 1.4,
+    "tpg": 0,
+    "trpg": 0.6,
+    "rbpg": 0.2,
+    "efpg": -4.2,
+    "fgpct": 21.1,
+    "p3pct": 15.2,
+    "ftpct": 16.7,
+    "pts_total": 41,
+    "reb_total": 17,
+    "ast_total": 13,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 6,
+    "jogador": "T. Márcio F C Freire",
+    "time": "Marujos",
+    "posicao": null,
+    "idade": null,
+    "jogos": 6,
+    "mpg": 27,
+    "ppg": 13.5,
+    "rpg": 6.2,
+    "apg": 0.7,
+    "tpg": 0.5,
+    "trpg": 0.3,
+    "rbpg": 2.2,
+    "efpg": 12.8,
+    "fgpct": 35.5,
+    "p3pct": 17.4,
+    "ftpct": 55.9,
+    "pts_total": 81,
+    "reb_total": 37,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 23,
+    "jogador": "T. Falcão",
+    "time": "Ducks",
+    "posicao": null,
+    "idade": null,
+    "jogos": 5,
+    "mpg": 23.1,
+    "ppg": 8.8,
+    "rpg": 4.8,
+    "apg": 1.8,
+    "tpg": 0.2,
+    "trpg": 0.4,
+    "rbpg": 0.6,
+    "efpg": 8.4,
+    "fgpct": 37.3,
+    "p3pct": 0,
+    "ftpct": 75.0,
+    "pts_total": 44,
+    "reb_total": 24,
+    "ast_total": 9,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 27,
+    "jogador": "R. Fernandes Menezes",
+    "time": "IA Team",
+    "posicao": null,
+    "idade": null,
+    "jogos": 3,
+    "mpg": 27,
+    "ppg": 4,
+    "rpg": 6.7,
+    "apg": 1.7,
+    "tpg": 0.3,
+    "trpg": 0,
+    "rbpg": 1.7,
+    "efpg": 4,
+    "fgpct": 22.7,
+    "p3pct": 0,
+    "ftpct": 20.0,
+    "pts_total": 12,
+    "reb_total": 20,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 31,
+    "jogador": "G. Henriques Freitas",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 3,
+    "mpg": 31.7,
+    "ppg": 14.7,
+    "rpg": 6.7,
+    "apg": 1.7,
+    "tpg": 0.7,
+    "trpg": 1,
+    "rbpg": 2.3,
+    "efpg": 14.7,
+    "fgpct": 22.2,
+    "p3pct": 28.6,
+    "ftpct": 64.9,
+    "pts_total": 44,
+    "reb_total": 20,
+    "ast_total": 5,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 24,
+    "jogador": "E. Yurtschenko",
+    "time": "Christians",
+    "posicao": null,
+    "idade": null,
+    "jogos": 3,
+    "mpg": 14.8,
+    "ppg": 0,
+    "rpg": 3.3,
+    "apg": 0.7,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 0,
+    "efpg": -0.3,
+    "fgpct": 0,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 0,
+    "reb_total": 10,
+    "ast_total": 2,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 10,
+    "jogador": "R. da Silva Júnior",
+    "time": "Leões",
+    "posicao": null,
+    "idade": null,
+    "jogos": 1,
+    "mpg": 35,
+    "ppg": 4,
+    "rpg": 8,
+    "apg": 4,
+    "tpg": 0,
+    "trpg": 0,
+    "rbpg": 1,
+    "efpg": -2,
+    "fgpct": 16.7,
+    "p3pct": 0,
+    "ftpct": 0,
+    "pts_total": 4,
+    "reb_total": 8,
+    "ast_total": 4,
+    "status": "Disponivel"
+  },
+  {
+    "numero": 12,
+    "jogador": "L. Ventura Leite Júnior",
+    "time": "Don Gennaros",
+    "posicao": null,
+    "idade": null,
+    "jogos": 2,
+    "mpg": 21,
+    "ppg": 3.5,
+    "rpg": 5.5,
+    "apg": 0,
+    "tpg": 1,
+    "trpg": 0,
+    "rbpg": 0,
+    "efpg": 4.5,
+    "fgpct": 33.3,
+    "p3pct": 0,
+    "ftpct": 25.0,
+    "pts_total": 7,
+    "reb_total": 11,
+    "ast_total": 0,
+    "status": "Disponivel"
+  }
+];
+const GAMES_COUNT = 45;
+
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxY7FJy7rqmP2I0wOz-z1Nhuoz69iMc7zqGTsUP_uAeWWXgO18AxGSdbj_GHNb6GQyK/exec";
+let PLAYERS = STATIC_PLAYERS;
+let DRAFT = [];
+let liveMode = false;
+let editingSet = new Set();
+
+function isAvailable(status){ return !status || status === 'Disponivel' || status === 'Disponível'; }
+
+function posBadge(p){
+  if(!p) return '<span class="badge sem-posicao">—</span>';
+  const map = {ARMADOR:'armador', ALA:'ala', PIVO:'pivo', 'PIVÔ':'pivo'};
+  const cls = map[p.toUpperCase()] || 'sem-posicao';
+  const label = p.toUpperCase()==='PIVO' ? 'Pivô' : (p.charAt(0)+p.slice(1).toLowerCase());
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function statusHtml(p){
+  const s = p.status;
+  if(isAvailable(s)){
+    return '<span class="status"><span class="dot"></span>Disponível</span>';
+  }
+  const entry = DRAFT.find(d => d.atleta === p.jogador);
+  const lockTag = entry && entry.origem === 'Bloqueio' ? ' 🔒' : '';
+  return `<span class="status"><span class="dot taken"></span><span class="pill">${s}${lockTag}</span></span>`;
+}
+function fmt(v, suffix=''){
+  if(v === null || v === undefined || v === '') return '—';
+  return v + suffix;
+}
+function esc(s){
+  return String(s === null || s === undefined ? '' : s).replace(/"/g, '&quot;');
+}
+function displayName(p){
+  if(!p) return '';
+  return p.nomeCompleto || p.jogador;
+}
+function findPlayer(jogadorName){
+  return PLAYERS.find(p => p.jogador === jogadorName);
+}
+function nameFor(jogadorName){
+  const p = findPlayer(jogadorName);
+  return p ? displayName(p) : jogadorName;
+}
+function avg(nums){
+  const arr = nums.filter(n => typeof n === 'number' && !isNaN(n));
+  if(!arr.length) return null;
+  return Math.round((arr.reduce((a,b)=>a+b,0) / arr.length) * 10) / 10;
+}
+
+// ---------------- Conexão com o Web App ----------------
+
+function setConnStatus(mode, label){
+  const el = document.getElementById('connStatus');
+  el.className = 'conn-status' + (mode === 'live' ? ' live' : (mode === 'err' ? ' err' : ''));
+  document.getElementById('connLabel').textContent = label;
+}
+
+async function fetchLive(){
+  if(!WEBAPP_URL){
+    liveMode = false;
+    setConnStatus('off', 'Modo offline (dados fixos)');
+    document.getElementById('draftControls').style.display = 'none';
+    document.getElementById('draftNote').style.display = 'block';
+    document.getElementById('blockControls').style.display = 'none';
+    document.getElementById('blockNote').style.display = 'block';
+    return;
+  }
+  try{
+    const res = await fetch(WEBAPP_URL);
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Erro desconhecido do Web App');
+    PLAYERS = data.players;
+    DRAFT = data.draft;
+    liveMode = true;
+    setConnStatus('live', 'Conectado — lendo e gravando ao vivo');
+    document.getElementById('draftControls').style.display = 'flex';
+    document.getElementById('draftNote').style.display = 'none';
+    document.getElementById('blockControls').style.display = 'flex';
+    document.getElementById('blockNote').style.display = 'none';
+  }catch(err){
+    liveMode = false;
+    PLAYERS = STATIC_PLAYERS;
+    DRAFT = [];
+    setConnStatus('err', 'Não consegui conectar (verifique a URL) — mostrando dados fixos');
+    document.getElementById('draftControls').style.display = 'none';
+    document.getElementById('draftNote').style.display = 'block';
+    document.getElementById('blockControls').style.display = 'none';
+    document.getElementById('blockNote').style.display = 'block';
+  }
+  render();
+  renderDraft();
+  renderSuggest();
+  renderTeams();
+  renderBlocks();
+}
+
+async function postAction(payload){
+  const res = await fetch(WEBAPP_URL, { method: 'POST', body: JSON.stringify(payload) });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'Erro desconhecido do Web App');
+  return data;
+}
+
+// ---------------- Menu lateral ----------------
+
+document.querySelectorAll('#sideNav .nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#sideNav .nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const view = btn.dataset.view;
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    if(view === 'suggest') renderSuggest();
+    if(view === 'teams') renderTeams();
+  });
+});
+
+// ---------------- Tabela de Atletas ----------------
+
+let sortKey = 'ppg', sortDir = -1;
+
+function editRowHtml(p){
+  const posOptions = ['', 'ARMADOR', 'ALA', 'PIVO'].map(v => {
+    const cur = (p.posicao || '').toUpperCase();
+    const sel = (v === cur) || (v === '' && !cur) ? 'selected' : '';
+    const label = v === '' ? '— sem posição —' : (v === 'PIVO' ? 'Pivô' : v.charAt(0) + v.slice(1).toLowerCase());
+    return `<option value="${v}" ${sel}>${label}</option>`;
+  }).join('');
+  return `<td colspan="2">
+      <select class="edit-posicao" data-name="${esc(p.jogador)}">${posOptions}</select>
+    </td>
+    <td class="num" colspan="1">
+      <input type="number" class="edit-idade" data-name="${esc(p.jogador)}" min="14" max="60" value="${p.idade || ''}">
+    </td>`;
+}
+
+function render(){
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const posF = document.getElementById('posFilter').value;
+  const statF = document.getElementById('statusFilter').value;
+
+  let rows = PLAYERS.filter(p => {
+    if(q && !(p.jogador.toLowerCase().includes(q) || (p.nomeCompleto||'').toLowerCase().includes(q) || (p.time||'').toLowerCase().includes(q))) return false;
+    if(posF && (p.posicao||'').toUpperCase() !== posF) return false;
+    if(statF === 'Disponivel' && !isAvailable(p.status)) return false;
+    if(statF === 'Escolhido' && isAvailable(p.status)) return false;
+    return true;
+  });
+
+  rows.sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if(typeof av === 'string' || av === null) av = (av||'').toString();
+    if(typeof bv === 'string' || bv === null) bv = (bv||'').toString();
+    if(typeof av === 'string'){ return sortDir * av.localeCompare(bv); }
+    return sortDir * ((av||0) - (bv||0));
+  });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = rows.map(p => {
+    const taken = !isAvailable(p.status);
+    const editing = editingSet.has(p.jogador);
+    const posIdadeCells = editing
+      ? editRowHtml(p)
+      : `<td>${posBadge(p.posicao)}</td><td class="num">${fmt(p.idade)}</td>`;
+    const actionCell = editing
+      ? `<td>
+           <button class="iconbtn btn-save" data-name="${esc(p.jogador)}">💾</button>
+           <button class="iconbtn btn-cancel" data-name="${esc(p.jogador)}">✖️</button>
+         </td>`
+      : `<td><button class="iconbtn btn-edit" data-name="${esc(p.jogador)}" ${liveMode ? '' : 'disabled title="Conecte a URL do Web App para editar"'}>✏️</button></td>`;
+    const nameCell = p.nomeCompleto
+      ? `<strong>${p.nomeCompleto}</strong><div class="suggest-sub">${p.jogador}</div>`
+      : `<strong>${p.jogador}</strong>`;
+    return `<tr class="${taken?'taken':''}">
+      <td>${nameCell}</td>
+      <td>${p.time||'—'}</td>
+      ${posIdadeCells}
+      <td class="num">${fmt(p.jogos)}</td>
+      <td class="num">${fmt(p.ppg)}</td>
+      <td class="num">${fmt(p.rpg)}</td>
+      <td class="num">${fmt(p.apg)}</td>
+      <td class="num">${fmt(p.fgpct,'%')}</td>
+      <td class="num">${fmt(p.p3pct,'%')}</td>
+      <td class="num">${fmt(p.efpg)}</td>
+      <td>${statusHtml(p)}</td>
+      ${actionCell}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('emptyMsg').style.display = rows.length ? 'none' : 'block';
+
+  document.getElementById('kpiJogos').textContent = GAMES_COUNT;
+  document.getElementById('kpiAtletas').textContent = PLAYERS.length;
+  document.getElementById('kpiDisponiveis').textContent = PLAYERS.filter(p=>isAvailable(p.status)).length;
+  document.getElementById('kpiEscolhidos').textContent = PLAYERS.filter(p=>!isAvailable(p.status)).length;
+
+  tbody.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => {
+    editingSet.add(btn.dataset.name); render();
+  }));
+  tbody.querySelectorAll('.btn-cancel').forEach(btn => btn.addEventListener('click', () => {
+    editingSet.delete(btn.dataset.name); render();
+  }));
+  tbody.querySelectorAll('.btn-save').forEach(btn => btn.addEventListener('click', async () => {
+    const name = btn.dataset.name;
+    const row = btn.closest('tr');
+    const posicao = row.querySelector('.edit-posicao').value;
+    const idade = row.querySelector('.edit-idade').value;
+    btn.disabled = true;
+    try{
+      await postAction({ action: 'setAthleteInfo', jogador: name, posicao: posicao, idade: idade });
+      editingSet.delete(name);
+      await fetchLive();
+    }catch(err){
+      alert('Não consegui salvar: ' + err.message);
+      btn.disabled = false;
+    }
+  }));
+}
+
+document.getElementById('searchBox').addEventListener('input', render);
+document.getElementById('posFilter').addEventListener('change', render);
+document.getElementById('statusFilter').addEventListener('change', render);
+document.getElementById('sortBy').addEventListener('change', e => { sortKey = e.target.value; sortDir = -1; render(); });
+document.querySelectorAll('#playersTable thead th[data-key]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if(key === sortKey) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+    render();
+  });
+});
+
+// ---------------- Painel de Draft ----------------
+
+function renderDraft(){
+  const tbody = document.getElementById('draftBody');
+  const nextPick = DRAFT.find(d => !d.atleta);
+
+  tbody.innerHTML = DRAFT.map(d => {
+    const isNext = nextPick && d.pick === nextPick.pick;
+    let atletaCell = '<span class="pill">em aberto</span>';
+    if(d.atleta){
+      const nome = nameFor(d.atleta);
+      atletaCell = d.origem === 'Bloqueio' ? `🔒 ${nome}` : nome;
+    }
+    return `<tr class="${isNext ? 'next-pick' : ''}">
+      <td class="num">${d.pick}</td>
+      <td class="num">${d.rodada}</td>
+      <td>${d.franquia}</td>
+      <td>${atletaCell}</td>
+    </tr>`;
+  }).join('');
+
+  const select = document.getElementById('nextPickAthlete');
+  if(nextPick && liveMode){
+    const available = PLAYERS.filter(p => isAvailable(p.status)).sort((a,b) => displayName(a).localeCompare(displayName(b)));
+    select.innerHTML = `<option value="">Pick ${nextPick.pick} (${nextPick.franquia}) — escolha um atleta…</option>` +
+      available.map(p => `<option value="${esc(p.jogador)}">${displayName(p)} — ${p.time || ''}</option>`).join('');
+    document.getElementById('btnConfirmPick').disabled = false;
+  }else{
+    select.innerHTML = '<option value="">Draft completo ou desconectado</option>';
+    document.getElementById('btnConfirmPick').disabled = true;
+  }
+
+  const scrollBox = tbody.closest('.draft-scroll');
+  if(scrollBox && nextPick){
+    const nextRow = tbody.querySelector('tr.next-pick');
+    if(nextRow) nextRow.scrollIntoView({ block: 'center' });
+  }
+}
+
+document.getElementById('btnConfirmPick').addEventListener('click', async () => {
+  const nextPick = DRAFT.find(d => !d.atleta);
+  const athlete = document.getElementById('nextPickAthlete').value;
+  const msg = document.getElementById('draftMsg');
+  if(!nextPick || !athlete){ msg.innerHTML = '<div class="msg-error">Escolha um atleta antes de confirmar.</div>'; return; }
+  try{
+    await postAction({ action: 'registerDraftPick', pick: nextPick.pick, jogador: athlete });
+    msg.innerHTML = `<div class="msg-ok">Pick ${nextPick.pick} registrado: ${nameFor(athlete)}.</div>`;
+    await fetchLive();
+  }catch(err){
+    msg.innerHTML = `<div class="msg-error">Não consegui registrar: ${err.message}</div>`;
+  }
+});
+
+document.getElementById('btnUndoPick').addEventListener('click', async () => {
+  const msg = document.getElementById('draftMsg');
+  const filled = DRAFT.filter(d => d.atleta);
+  if(!filled.length){ msg.innerHTML = '<div class="msg-error">Nenhum pick registrado ainda.</div>'; return; }
+  const last = filled[filled.length - 1];
+  if(!confirm(`Desfazer o pick ${last.pick} (${nameFor(last.atleta)})?`)) return;
+  try{
+    await postAction({ action: 'clearDraftPick', pick: last.pick });
+    msg.innerHTML = `<div class="msg-ok">Pick ${last.pick} desfeito.</div>`;
+    await fetchLive();
+  }catch(err){
+    msg.innerHTML = `<div class="msg-error">Não consegui desfazer: ${err.message}</div>`;
+  }
+});
+
+// ---------------- Sugestão de Atletas ----------------
+
+let suggestPos = 'ARMADOR';
+let suggestSortKey = 'ppg';
+
+document.querySelectorAll('#posTabs .pos-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#posTabs .pos-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    suggestPos = btn.dataset.pos;
+    renderSuggest();
+  });
+});
+document.getElementById('suggestSort').addEventListener('change', e => {
+  suggestSortKey = e.target.value;
+  renderSuggest();
+});
+
+function renderSuggest(){
+  const list = document.getElementById('suggestList');
+  const emptyMsg = document.getElementById('suggestEmpty');
+
+  let rows = PLAYERS.filter(p => isAvailable(p.status) && (p.posicao||'').toUpperCase() === suggestPos);
+  rows.sort((a,b) => (b[suggestSortKey]||0) - (a[suggestSortKey]||0));
+
+  if(!rows.length){
+    list.innerHTML = '';
+    emptyMsg.style.display = 'block';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+
+  const statLabels = { ppg: 'PTS', rpg: 'REB', apg: 'AST', efpg: 'EFF' };
+
+  list.innerHTML = rows.map((p, i) => {
+    const stats = ['ppg','rpg','apg','efpg'].map(k => {
+      const hl = k === suggestSortKey ? ' hl' : '';
+      return `<span class="${hl.trim()}">${statLabels[k]} <b>${fmt(p[k])}</b></span>`;
+    }).join('');
+    return `<div class="suggest-card">
+      <div class="suggest-left">
+        <span class="suggest-rank">#${i+1}</span>
+        <div>
+          <div class="suggest-name">${displayName(p)}</div>
+          <div class="suggest-sub">${p.time || '—'} · ${fmt(p.idade)} anos · ${fmt(p.jogos)} jogos</div>
+        </div>
+      </div>
+      <div class="suggest-stats">${stats}</div>
+    </div>`;
+  }).join('');
+}
+
+// ---------------- Times (força das franquias) ----------------
+
+function getFranchises(){
+  return [...new Set(DRAFT.map(d => d.franquia).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+}
+
+function renderTeams(){
+  const grid = document.getElementById('teamsGrid');
+  const msg = document.getElementById('teamsMsg');
+
+  if(!liveMode || !DRAFT.length){
+    grid.innerHTML = '';
+    msg.innerHTML = '<div class="note" style="padding-top:0;">Conecte a URL do Web App para ver a força das franquias conforme o draft avança.</div>';
+    return;
+  }
+  msg.innerHTML = '';
+
+  const franquias = getFranchises();
+
+  grid.innerHTML = franquias.map(fr => {
+    const picks = DRAFT.filter(d => d.franquia === fr && d.atleta);
+    const jogadores = picks.map(d => PLAYERS.find(p => p.jogador === d.atleta)).filter(Boolean);
+    const count = jogadores.length;
+    const ppg = avg(jogadores.map(p => p.ppg));
+    const rpg = avg(jogadores.map(p => p.rpg));
+    const apg = avg(jogadores.map(p => p.apg));
+    const efpg = avg(jogadores.map(p => p.efpg));
+    return `<div class="team-card">
+      <h3>${fr}</h3>
+      <div class="count">${count} atleta${count === 1 ? '' : 's'} escolhido${count === 1 ? '' : 's'}</div>
+      <div class="team-stats">
+        <div>PPG (média)<b>${fmt(ppg)}</b></div>
+        <div>RPG (média)<b>${fmt(rpg)}</b></div>
+        <div>APG (média)<b>${fmt(apg)}</b></div>
+        <div>EFF (média)<b>${fmt(efpg)}</b></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---------------- Bloqueios (proteção pré-draft) ----------------
+
+function renderBlocks(){
+  const chips = document.getElementById('blockChips');
+  const franchiseSelect = document.getElementById('blockFranchise');
+  const athleteSelect = document.getElementById('blockAthlete');
+  const list = document.getElementById('blockList');
+  const btn = document.getElementById('btnBlockAthlete');
+
+  const franquias = getFranchises();
+  const blocksByFranchise = {};
+  franquias.forEach(fr => { blocksByFranchise[fr] = DRAFT.filter(d => d.franquia === fr && d.origem === 'Bloqueio'); });
+
+  chips.innerHTML = franquias.map(fr => {
+    const n = (blocksByFranchise[fr] || []).length;
+    return `<span class="block-chip ${n >= 2 ? 'full' : ''}">${fr}: ${n}/2</span>`;
+  }).join('');
+
+  franchiseSelect.innerHTML = franquias.length
+    ? franquias.map(fr => `<option value="${esc(fr)}">${fr} (${(blocksByFranchise[fr] || []).length}/2)</option>`).join('')
+    : '<option value="">Sem franquias na Ordem_Draft ainda</option>';
+
+  const available = PLAYERS.filter(p => isAvailable(p.status)).sort((a,b) => displayName(a).localeCompare(displayName(b)));
+  athleteSelect.innerHTML = available.map(p => `<option value="${esc(p.jogador)}">${displayName(p)} — ${p.time || ''}</option>`).join('');
+
+  const allBlocks = DRAFT.filter(d => d.origem === 'Bloqueio');
+  if(!allBlocks.length){
+    list.innerHTML = '<div class="note" style="padding-top:0;">Nenhum bloqueio registrado ainda.</div>';
+  }else{
+    list.innerHTML = allBlocks.map(d => `<div class="block-row">
+        <span>🔒 <strong>${nameFor(d.atleta)}</strong> — ${d.franquia} (pick ${d.pick})</span>
+        <button class="iconbtn btn-unblock" data-pick="${d.pick}" data-atleta="${esc(d.atleta)}">Desfazer bloqueio</button>
+      </div>`).join('');
+    list.querySelectorAll('.btn-unblock').forEach(b => b.addEventListener('click', async () => {
+      if(!confirm(`Desfazer o bloqueio de ${b.dataset.atleta}?`)) return;
+      try{
+        await postAction({ action: 'clearDraftPick', pick: Number(b.dataset.pick) });
+        await fetchLive();
+      }catch(err){
+        alert('Não consegui desfazer: ' + err.message);
+      }
+    }));
+  }
+
+  btn.disabled = !liveMode || !franquias.length;
+}
+
+document.getElementById('btnBlockAthlete').addEventListener('click', async () => {
+  const franquia = document.getElementById('blockFranchise').value;
+  const jogador = document.getElementById('blockAthlete').value;
+  const msg = document.getElementById('blockMsg');
+  if(!franquia || !jogador){ msg.innerHTML = '<div class="msg-error">Escolha a franquia e o atleta.</div>'; return; }
+  try{
+    await postAction({ action: 'blockAthlete', franquia: franquia, jogador: jogador });
+    msg.innerHTML = `<div class="msg-ok">${nameFor(jogador)} bloqueado por ${franquia}.</div>`;
+    await fetchLive();
+  }catch(err){
+    msg.innerHTML = `<div class="msg-error">Não consegui bloquear: ${err.message}</div>`;
+  }
+});
+
+// ---------------- Tema ----------------
+
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', () => {
+  const root = document.documentElement;
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  themeBtn.textContent = isDark ? 'Modo escuro' : 'Modo claro';
+});
+
+render();
+renderDraft();
+renderSuggest();
+renderTeams();
+renderBlocks();
+if(WEBAPP_URL){ fetchLive(); }
+</script>
+</body>
+</html>

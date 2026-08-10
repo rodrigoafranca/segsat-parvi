@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Segsat · Avaliação de Treinamento</title>
+<title>Segsat · Registros de Loja</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -68,14 +68,23 @@
   .success p{font-size:13px;color:var(--text2);}
   .error-msg{font-size:12px;color:var(--red);margin-top:4px;display:none;}
   .group-label{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0;margin-top:8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+  .foto-box{background:var(--surface2);border:2px dashed var(--border2);border-radius:10px;padding:26px 14px;margin-top:2px;text-align:center;cursor:pointer;transition:all 0.18s;}
+  .foto-box:hover{border-color:var(--green);}
+  .foto-box.has-foto{padding:0;border-style:solid;border-color:var(--green);overflow:hidden;line-height:0;}
+  .foto-box .foto-placeholder{font-size:13px;color:var(--text3);font-weight:600;}
+  .foto-box img{width:100%;max-height:240px;object-fit:cover;display:block;}
+  .foto-remove{display:block;text-align:center;font-size:11px;color:var(--red);margin-top:8px;cursor:pointer;font-weight:600;}
+  .num-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:13px;padding:10px 12px;outline:none;transition:border-color 0.15s;}
+  .num-input:focus{border-color:var(--green);}
+  .trocar-tipo{font-size:11px;color:var(--text3);margin-top:12px;display:inline-block;cursor:pointer;text-decoration:underline;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="logo">
     <div class="logo-badge"><img src="data:image/jpeg;base64,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" alt="Grupo Parvi"></div>
-    <div class="logo-title">🎓 Segsat · Avaliação</div>
-    <div class="logo-sub">Avalie o treinamento recebido</div>
+    <div class="logo-title">🎓 Segsat · Registros</div>
+    <div class="logo-sub">Treinamentos · Reuniões · Inventário</div>
   </div>
   <div id="form-content">
     <div class="loading">⏳ Carregando formulário...</div>
@@ -101,10 +110,22 @@ const TEMAS = [
   'Rastreio + Seguro'
 ];
 
+const TIPOS = [
+  { key: 'treinamento', label: '🎓 Treinamento' },
+  { key: 'bomdia',      label: '☀️ Reunião de Bom Dia' },
+  { key: 'inventario',  label: '📋 Inventário de Equipamentos' }
+];
+const TIPO_LABELS = { treinamento: 'Treinamento', bomdia: 'Reunião de Bom Dia', inventario: 'Inventário de Equipamentos' };
+const CARGOS = ['Gerente de Loja', 'Vendedor de Carros', 'Vendedor de Acessórios'];
+
 let LOJAS = [];
+let tipoEvento = '';
 let selectedNotas = {};
 let selectedTemas = [];
 let selectedPreparo = '';
+let selectedCargos = [];
+let fotoBase64 = null;
+let fotoNome = '';
 
 /* SVG do check verde */
 const CHECK_SVG = `<svg width="11" height="8" viewBox="0 0 11 8" fill="none">
@@ -151,45 +172,131 @@ function retryLojas() {
   init();
 }
 
-function renderForm() {
-  const marcas = {};
-  LOJAS.forEach(l => {
-    const m = l.marca || 'OUTRAS';
-    if(!marcas[m]) marcas[m] = [];
-    marcas[m].push(l);
-  });
-  const lojaOpts = LOJAS.length
-    ? Object.entries(marcas).sort((a,b)=>a[0].localeCompare(b[0])).map(([marca, lojas]) =>
-        `<optgroup label="${marca}">${lojas.map(l=>`<option value="${l.loja}" data-uf="${l.uf}">${l.loja}</option>`).join('')}</optgroup>`
-      ).join('')
-    : '<option value="">Nenhuma loja encontrada</option>';
-  const lojaAviso = lojasErro
-    ? `<p style="font-size:11px;color:var(--red);margin-top:6px">⚠️ Não foi possível carregar a lista de lojas (conexão instável).
-        <a href="javascript:retryLojas()" style="color:var(--green-d);font-weight:700;text-decoration:underline">Tentar novamente</a></p>`
-    : '';
+function totalPassos() {
+  if(tipoEvento==='treinamento') return 5;
+  if(tipoEvento==='bomdia')      return 4;
+  if(tipoEvento==='inventario')  return 3;
+  return 1;
+}
 
-  document.getElementById('form-content').innerHTML = `
-    <!-- Passo 1: Identificação -->
-    <div class="card">
-      <div class="step-label">Passo 1 de 4</div>
+function setTipoEvento(tipo) {
+  tipoEvento = tipo;
+  renderForm();
+  setTimeout(()=>{ const el=document.getElementById('card-identificacao'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 50);
+}
+
+function trocarTipo() {
+  tipoEvento = '';
+  selectedNotas = {}; selectedTemas = []; selectedPreparo = '';
+  selectedCargos = []; fotoBase64 = null; fotoNome = '';
+  renderForm();
+}
+
+function toggleCargo(cargo, el) {
+  if(selectedCargos.includes(cargo)) {
+    selectedCargos = selectedCargos.filter(c=>c!==cargo);
+    el.classList.remove('selected');
+  } else {
+    selectedCargos.push(cargo);
+    el.classList.add('selected');
+  }
+}
+
+/* Redimensiona a foto no navegador antes de enviar — evita uploads
+   gigantes (e lentos) pela rede móvel dos vendedores/coordenadores. */
+function comprimirImagem(file, maxLargura, qualidade) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('leitura'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('imagem'));
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxLargura) { h = Math.round(h * (maxLargura / w)); w = maxLargura; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', qualidade));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFotoChange(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  try {
+    fotoBase64 = await comprimirImagem(file, 1000, 0.72);
+    fotoNome = (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg';
+    atualizarPreviewFoto();
+  } catch(e) {
+    fotoBase64 = null; fotoNome = '';
+    const errEl = document.getElementById('error-msg');
+    if(errEl) { errEl.style.display='block'; errEl.textContent='⚠️ Não foi possível processar a foto. Tente outra imagem.'; }
+  }
+}
+
+function atualizarPreviewFoto() {
+  const box = document.getElementById('foto-box');
+  if(!box) return;
+  const rm = document.getElementById('foto-remove-wrap');
+  if(fotoBase64) {
+    box.classList.add('has-foto');
+    box.innerHTML = `<img src="${fotoBase64}" alt="Foto do registro">`;
+    if(rm) rm.style.display='block';
+  } else {
+    box.classList.remove('has-foto');
+    box.innerHTML = `<div class="foto-placeholder">📷 Toque para tirar ou anexar uma foto</div>`;
+    if(rm) rm.style.display='none';
+  }
+}
+
+function removerFoto(ev) {
+  if(ev) ev.stopPropagation();
+  fotoBase64 = null; fotoNome = '';
+  const input = document.getElementById('foto-input');
+  if(input) input.value = '';
+  atualizarPreviewFoto();
+}
+
+function blocoIdentificacao(lojaOpts, lojaAviso) {
+  const labelQuem = tipoEvento==='treinamento' ? 'Apresentador do treinamento' : 'Coordenador de praça';
+  return `
+    <div class="card" id="card-identificacao">
+      <div class="step-label">Passo 2 de ${totalPassos()}</div>
       <div class="step-title">Identificação</div>
-      <label>Apresentador do treinamento</label>
+      <label>${labelQuem}</label>
       <select id="apresentador">
-        <option value="">Selecione o apresentador</option>
+        <option value="">Selecione</option>
         ${APRESENTADORES.map(a=>`<option>${a}</option>`).join('')}
       </select>
-      <label>Sua loja</label>
+      <label>Loja</label>
       <select id="loja" onchange="setLoja(this)">
-        <option value="">Selecione sua loja</option>
+        <option value="">Selecione a loja</option>
         ${lojaOpts}
       </select>
       ${lojaAviso}
       <input type="hidden" id="loja-uf">
-    </div>
+    </div>`;
+}
 
-    <!-- Passo 2: Notas -->
+function blocoFotoBox(labelObrig) {
+  return `
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px;margin-top:-8px">${labelObrig} — obrigatório</p>
+    <div class="foto-box" id="foto-box" onclick="document.getElementById('foto-input').click()">
+      <div class="foto-placeholder">📷 Toque para tirar ou anexar uma foto</div>
+    </div>
+    <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none" onchange="handleFotoChange(event)">
+    <div id="foto-remove-wrap" style="display:none"><span class="foto-remove" onclick="removerFoto(event)">✕ Remover foto</span></div>`;
+}
+
+function blocoTreinamento() {
+  return `
     <div class="card">
-      <div class="step-label">Passo 2 de 4</div>
+      <div class="step-label">Passo 3 de ${totalPassos()}</div>
       <div class="step-title">Avalie o treinamento</div>
       <label>Clareza do conteúdo apresentado</label>
       <div class="nota-row" id="notas-clareza"></div>
@@ -201,9 +308,8 @@ function renderForm() {
       <div class="nota-row" id="notas-duracao"></div>
     </div>
 
-    <!-- Passo 3: Temas -->
     <div class="card">
-      <div class="step-label">Passo 3 de 4</div>
+      <div class="step-label">Passo 4 de ${totalPassos()}</div>
       <div class="step-title">O que foi abordado?</div>
       <div class="check-group" id="temas-group">
         ${TEMAS.map(t=>`
@@ -214,9 +320,8 @@ function renderForm() {
       </div>
     </div>
 
-    <!-- Passo 4: Feedback -->
     <div class="card">
-      <div class="step-label">Passo 4 de 4</div>
+      <div class="step-label">Passo 5 de ${totalPassos()}</div>
       <div class="step-title">Feedback final</div>
       <label>⚠️ Como você se sente após o treinamento?</label>
       <p style="font-size:12px;color:var(--text3);margin-bottom:10px;margin-top:-2px">Selecione uma das opções abaixo — obrigatório</p>
@@ -237,22 +342,104 @@ function renderForm() {
       <p id="preparo-obrig" class="radio-obrigatorio">⚠️ Selecione uma opção acima antes de enviar</p>
       <div class="sug-box" style="margin-top:16px">
         <div class="sug-label">💬 Sugestão de melhoria <span style="font-weight:400;font-style:italic">(opcional)</span></div>
-        <textarea id="sugestao" placeholder="Escreva aqui uma sugestão para melhorar os próximos treinamentos... (não é o campo de preparado)"></textarea>
+        <textarea id="sugestao" placeholder="Escreva aqui uma sugestão para melhorar os próximos treinamentos..."></textarea>
       </div>
+    </div>`;
+}
+
+function blocoBomDia() {
+  return `
+    <div class="card">
+      <div class="step-label">Passo 3 de ${totalPassos()}</div>
+      <div class="step-title">Quem participou da reunião?</div>
+      <label style="margin-top:0">Funções presentes</label>
+      <div class="check-group" id="cargos-group">
+        ${CARGOS.map(c=>`
+          <div class="check-opt" onclick="toggleCargo('${c}',this)" id="cargo-${c.replace(/[\s+]/g,'_')}">
+            <div class="check-icon">${CHECK_SVG}</div>
+            <span>${c}</span>
+          </div>`).join('')}
+      </div>
+      <label>Quantidade total de participantes</label>
+      <input type="number" id="qtd-participantes" class="num-input" min="1" inputmode="numeric" placeholder="Ex: 6">
     </div>
 
-    <button class="submit-btn" onclick="enviar()" id="btn-submit">Enviar Avaliação ✉️</button>
-    <div id="error-msg" class="error-msg" style="display:none;text-align:center;margin-top:8px"></div>
+    <div class="card">
+      <div class="step-label">Passo 4 de ${totalPassos()}</div>
+      <div class="step-title">Foto da reunião</div>
+      ${blocoFotoBox('Tire uma foto como registro da reunião')}
+    </div>`;
+}
+
+function blocoInventario() {
+  return `
+    <div class="card">
+      <div class="step-label">Passo 3 de ${totalPassos()}</div>
+      <div class="step-title">Foto do inventário</div>
+      ${blocoFotoBox('Tire uma foto como registro do inventário')}
+      <div class="sug-box" style="margin-top:16px">
+        <div class="sug-label">💬 Observação <span style="font-weight:400;font-style:italic">(opcional)</span></div>
+        <textarea id="observacao" placeholder="Alguma observação sobre o inventário..."></textarea>
+      </div>
+    </div>`;
+}
+
+function renderForm() {
+  const marcas = {};
+  LOJAS.forEach(l => {
+    const m = l.marca || 'OUTRAS';
+    if(!marcas[m]) marcas[m] = [];
+    marcas[m].push(l);
+  });
+  const lojaOpts = LOJAS.length
+    ? Object.entries(marcas).sort((a,b)=>a[0].localeCompare(b[0])).map(([marca, lojas]) =>
+        `<optgroup label="${marca}">${lojas.map(l=>`<option value="${l.loja}" data-uf="${l.uf}">${l.loja}</option>`).join('')}</optgroup>`
+      ).join('')
+    : '<option value="">Nenhuma loja encontrada</option>';
+  const lojaAviso = lojasErro
+    ? `<p style="font-size:11px;color:var(--red);margin-top:6px">⚠️ Não foi possível carregar a lista de lojas (conexão instável).
+        <a href="javascript:retryLojas()" style="color:var(--green-d);font-weight:700;text-decoration:underline">Tentar novamente</a></p>`
+    : '';
+
+  let camposEvento = '';
+  if(tipoEvento==='treinamento') camposEvento = blocoTreinamento();
+  else if(tipoEvento==='bomdia') camposEvento = blocoBomDia();
+  else if(tipoEvento==='inventario') camposEvento = blocoInventario();
+
+  document.getElementById('form-content').innerHTML = `
+    <!-- Passo 1: Tipo de evento -->
+    <div class="card">
+      <div class="step-label">Passo 1 de ${totalPassos()}</div>
+      <div class="step-title">Qual foi o evento realizado?</div>
+      <div class="radio-group">
+        ${TIPOS.map(t=>`
+          <div class="radio-opt ${tipoEvento===t.key?'selected':''}" onclick="setTipoEvento('${t.key}')">
+            <input type="radio" name="tipo-evento" ${tipoEvento===t.key?'checked':''}>
+            <span>${t.label}</span>
+          </div>`).join('')}
+      </div>
+      ${tipoEvento ? `<span class="trocar-tipo" onclick="trocarTipo()">↺ Alterar tipo de evento</span>` : ''}
+    </div>
+
+    ${tipoEvento ? blocoIdentificacao(lojaOpts, lojaAviso) : ''}
+    ${camposEvento}
+
+    ${tipoEvento ? `
+      <button class="submit-btn" onclick="enviar()" id="btn-submit">Enviar ✉️</button>
+      <div id="error-msg" class="error-msg" style="display:none;text-align:center;margin-top:8px"></div>
+    ` : ''}
   `;
 
-  // Renderiza botões de nota 1-10
-  ['clareza','apresentador','aplic','duracao'].forEach(tipo => {
-    const el = document.getElementById(`notas-${tipo}`);
-    if(!el) return;
-    el.innerHTML = [1,2,3,4,5,6,7,8,9,10].map(n =>
-      `<button class="nota-btn" onclick="setNota('${tipo}',${n},this)">${n}</button>`
-    ).join('');
-  });
+  // Renderiza botões de nota 1-10 (só existem no fluxo de Treinamento)
+  if(tipoEvento==='treinamento') {
+    ['clareza','apresentador','aplic','duracao'].forEach(tipo => {
+      const el = document.getElementById(`notas-${tipo}`);
+      if(!el) return;
+      el.innerHTML = [1,2,3,4,5,6,7,8,9,10].map(n =>
+        `<button class="nota-btn" onclick="setNota('${tipo}',${n},this)">${n}</button>`
+      ).join('');
+    });
+  }
 }
 
 function setLoja(sel) {
@@ -290,54 +477,89 @@ function setPreparo(val, el, tipo) {
 }
 
 async function enviar() {
-  const apresentador = document.getElementById('apresentador').value;
-  const loja         = document.getElementById('loja').value;
-  const uf           = document.getElementById('loja-uf').value;
-  const errEl        = document.getElementById('error-msg');
-
-  if(!apresentador) { errEl.style.display='block'; errEl.textContent='⚠️ Selecione o apresentador'; return; }
-  if(!loja)         { errEl.style.display='block'; errEl.textContent='⚠️ Selecione sua loja'; return; }
-  if(Object.keys(selectedNotas).length < 4) { errEl.style.display='block'; errEl.textContent='⚠️ Preencha todas as notas'; return; }
-  if(!selectedPreparo) { const ob=document.getElementById('preparo-obrig'); if(ob) ob.style.display='block'; errEl.style.display='block'; errEl.textContent='⚠️ Selecione como se sente após o treinamento'; return; }
+  const errEl = document.getElementById('error-msg');
   errEl.style.display = 'none';
 
-  const notas = selectedNotas;
-  const media = ((+notas.clareza + +notas.apresentador + +notas.aplic + +notas.duracao) / 4).toFixed(2);
+  if(!tipoEvento) { errEl.style.display='block'; errEl.textContent='⚠️ Selecione o tipo de evento'; return; }
+
+  const apresentador = document.getElementById('apresentador').value;
+  const loja          = document.getElementById('loja').value;
+  const uf            = document.getElementById('loja-uf').value;
+
+  if(!apresentador) { errEl.style.display='block'; errEl.textContent = tipoEvento==='treinamento' ? '⚠️ Selecione o apresentador' : '⚠️ Selecione quem preencheu'; return; }
+  if(!loja)         { errEl.style.display='block'; errEl.textContent='⚠️ Selecione a loja'; return; }
+
+  let payloadExtra = {};
+
+  if(tipoEvento==='treinamento') {
+    if(Object.keys(selectedNotas).length < 4) { errEl.style.display='block'; errEl.textContent='⚠️ Preencha todas as notas'; return; }
+    if(!selectedPreparo) { const ob=document.getElementById('preparo-obrig'); if(ob) ob.style.display='block'; errEl.style.display='block'; errEl.textContent='⚠️ Selecione como se sente após o treinamento'; return; }
+    const notas = selectedNotas;
+    const media = ((+notas.clareza + +notas.apresentador + +notas.aplic + +notas.duracao) / 4).toFixed(2);
+    payloadExtra = {
+      nota_clareza:      notas.clareza,
+      nota_apresentador: notas.apresentador,
+      nota_aplic:        notas.aplic,
+      nota_duracao:      notas.duracao,
+      nota_media:        media,
+      temas:             selectedTemas.join(', '),
+      preparo:           selectedPreparo,
+      sugestao:          (document.getElementById('sugestao')||{}).value || ''
+    };
+  } else if(tipoEvento==='bomdia') {
+    const qtd = parseInt((document.getElementById('qtd-participantes')||{}).value || '0', 10);
+    if(selectedCargos.length === 0) { errEl.style.display='block'; errEl.textContent='⚠️ Marque quem participou da reunião'; return; }
+    if(!qtd || qtd < 1) { errEl.style.display='block'; errEl.textContent='⚠️ Informe a quantidade de participantes'; return; }
+    if(!fotoBase64) { errEl.style.display='block'; errEl.textContent='⚠️ Anexe uma foto da reunião'; return; }
+    payloadExtra = {
+      participantes:     selectedCargos.join(', '),
+      qtd_participantes: qtd,
+      foto_base64:       fotoBase64,
+      foto_nome:          fotoNome
+    };
+  } else if(tipoEvento==='inventario') {
+    if(!fotoBase64) { errEl.style.display='block'; errEl.textContent='⚠️ Anexe uma foto do inventário'; return; }
+    payloadExtra = {
+      foto_base64: fotoBase64,
+      foto_nome:   fotoNome,
+      observacao:  (document.getElementById('observacao')||{}).value || ''
+    };
+  }
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
   btn.textContent = '⏳ Enviando...';
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method:'POST',
+      method: 'POST',
+      signal: controller.signal,
       body: JSON.stringify({
-        mes_ano:           MES_ANO,
-        apresentador,
-        loja,
-        uf,
-        nota_clareza:      notas.clareza,
-        nota_apresentador: notas.apresentador,
-        nota_aplic:        notas.aplic,
-        nota_duracao:      notas.duracao,
-        nota_media:        media,
-        temas:             selectedTemas.join(', '),
-        preparo:           selectedPreparo,
-        sugestao:          (document.getElementById('sugestao')||{}).value || '',
-        comentario:        ''
+        mes_ano:     MES_ANO,
+        tipo_evento: TIPO_LABELS[tipoEvento] || tipoEvento,
+        apresentador, loja, uf,
+        comentario: '',
+        ...payloadExtra
       })
     });
+    clearTimeout(timer);
     document.getElementById('form-content').innerHTML = `
       <div class="success">
         <div class="icon">🎉</div>
-        <h2>Avaliação enviada!</h2>
-        <p>Obrigado por participar. Seu feedback é muito importante para melhorarmos os treinamentos.</p>
+        <h2>Registro enviado!</h2>
+        <p>Obrigado por participar. Seu registro é muito importante para acompanharmos as lojas.</p>
       </div>`;
   } catch(e) {
+    clearTimeout(timer);
     btn.disabled = false;
-    btn.textContent = 'Enviar Avaliação ✉️';
+    btn.textContent = 'Enviar ✉️';
     errEl.style.display = 'block';
-    errEl.textContent = '❌ Erro ao enviar. Verifique sua conexão e tente novamente.';
+    errEl.textContent = e.name === 'AbortError'
+      ? '❌ O envio demorou demais. Verifique sua conexão e tente novamente.'
+      : '❌ Erro ao enviar. Verifique sua conexão e tente novamente.';
   }
 }
 

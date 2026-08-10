@@ -1436,6 +1436,17 @@ function trnDatasPorLoja(rows, tipo) {
 // Cobertura combinada (Treinamento + Reunião de Bom Dia + Inventário) por loja.
 // `dadosAteRef` alimenta o status (dias desde a última atividade, comparado a `referenceDate`).
 // `dadosMatriz` alimenta os checks de "o que foi feito" (mês selecionado, ou histórico todo).
+// Roster de "todas as lojas" — mesma fonte usada em Ranking de Lojas / Detalhe por Marca
+// (ALL_STORES, vindo da planilha de vendas do mês, aba INTEGRAÇÃO — inclui lojas zeradas,
+// não só as que venderam). Se ainda não carregou (ex: usuário abriu Treinamentos antes do
+// carregamento principal terminar), trnCarregarLojasFallback() busca e populariza ALL_STORES.
+function trnTodasLojas() {
+  return (window.ALL_STORES||[]).length ? [...new Set(window.ALL_STORES.map(s=>s.loja).filter(Boolean))] : [];
+}
+function trnInfoLoja(loja) {
+  return (window.ALL_STORES||[]).find(s=>s.loja===loja) || {};
+}
+
 function trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate) {
   const treinoRef = trnSessoesTreinamento(dadosAteRef);
   const bomdiaRef = trnDatasPorLoja(dadosAteRef, 'Reunião de Bom Dia');
@@ -1445,9 +1456,8 @@ function trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate) {
   const bomdiaMat = trnDatasPorLoja(dadosMatriz, 'Reunião de Bom Dia');
   const invMat    = trnDatasPorLoja(dadosMatriz, 'Inventário de Equipamentos');
 
-  const todasLojas = (window.ALL_STORES||[]).length
-    ? [...new Set((window.ALL_STORES||[]).map(s=>s.loja).filter(Boolean))]
-    : [...new Set([...dadosAteRef, ...dadosMatriz].map(r=>r.loja||'').filter(Boolean))];
+  let todasLojas = trnTodasLojas();
+  if(!todasLojas.length) todasLojas = [...new Set([...dadosAteRef, ...dadosMatriz].map(r=>r.loja||'').filter(Boolean))];
 
   return todasLojas.map(function(loja) {
     const datasRef = [].concat(treinoRef[loja]||[], bomdiaRef[loja]||[], invRef[loja]||[]).sort();
@@ -1458,10 +1468,10 @@ function trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate) {
       diasDesde = Math.floor((referenceDate - d) / 86400000);
       status = diasDesde < 60 ? 'ok' : diasDesde <= 90 ? 'alerta' : 'vencido';
     }
-    const info = (window.ALL_STORES||[]).find(s=>s.loja===loja) || {};
+    const info = trnInfoLoja(loja);
     return {
       loja, marca: info.marca || loja.split(' ')[0], uf: info.uf || '',
-      coordenador: UF_COORDENADOR[info.uf] || '—',
+      coordenador: info.coordenador || UF_COORDENADOR[info.uf] || '—',
       ultimaData, diasDesde, status,
       temTreinamento: !!(treinoMat[loja]||[]).length,
       temBomDia:      !!(bomdiaMat[loja]||[]).length,
@@ -1526,7 +1536,7 @@ function trnRenderizarCobertura() {
   const mesesTri = MESES.slice(qIdx*3, qIdx*3+3).map(m=>m+'/'+anoAt);
   const dadosTri  = porApresPraca.filter(r=>mesesTri.includes(r.mes||r.mes_ano||''));
   const treinoTri = trnSessoesTreinamento(dadosTri), bomdiaTri = trnDatasPorLoja(dadosTri,'Reunião de Bom Dia'), invTri = trnDatasPorLoja(dadosTri,'Inventário de Equipamentos');
-  const todasLojasArr = (window.ALL_STORES||[]).length ? [...new Set(window.ALL_STORES.map(s=>s.loja).filter(Boolean))] : [];
+  const todasLojasArr = trnTodasLojas();
   const cobertasTri = todasLojasArr.filter(l => (treinoTri[l]||[]).length || (bomdiaTri[l]||[]).length || (invTri[l]||[]).length);
   const pctTri = todasLojasArr.length ? Math.round((cobertasTri.length/todasLojasArr.length)*100) : 0;
 
@@ -1724,9 +1734,28 @@ const _ddAberto = {};
 // ============================================================
 let TRN_DADOS = [];
 
+// Garante que ALL_STORES (lista de lojas do mês, vinda da planilha de vendas — mesma fonte
+// usada em Ranking de Lojas / Detalhe por Marca, inclui lojas zeradas) esteja disponível mesmo
+// se o usuário abrir a aba Treinamentos antes do carregamento principal (loadData) terminar.
+// Sem isso, a Cobertura por Loja podia mostrar uma contagem incompleta só por causa da corrida
+// entre os dois carregamentos — não porque a planilha do mês estivesse incompleta.
+async function trnCarregarLojasFallback() {
+  if((window.ALL_STORES||[]).length) return; // já carregado pelo dashboard principal
+  try {
+    const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+    const res = await fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}&t=${Date.now()}`);
+    const json = await res.json();
+    if(json && json.allStores && json.allStores.length && !(window.ALL_STORES||[]).length) {
+      window.ALL_STORES = enrichStores(json.allStores);
+      trnRenderizarCobertura(); // recalcula agora que a lista completa de lojas chegou
+    }
+  } catch(e) { /* silencioso — a Cobertura por Loja só fica sem total até o loadData principal terminar */ }
+}
+
 async function trnCarregarDados() {
   const kpis = document.getElementById('trn-kpis');
   if(kpis) kpis.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">⏳ Carregando avaliações...</div>';
+  trnCarregarLojasFallback(); // fire-and-forget, não bloqueia o carregamento das avaliações
   try {
     const url = `${APPS_SCRIPT_URL}?action=treinamentos`;
     const res = await fetch(url);

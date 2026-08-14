@@ -1530,19 +1530,26 @@ function trnRenderizarCobertura() {
 
   // Cobertura do trimestre corrente (real, independente do filtro de mês) —
   // meta: toda loja recebe ao menos 1 das 3 atividades a cada 3 meses (126/3 ≈ 42 lojas/mês).
+  // Usa a data real de cada registro (timestamp) para decidir o trimestre/mês, em vez do texto
+  // da coluna "Mes" — registros antigos podem ter esse texto num formato diferente (ex: sem o
+  // "/ano"), o que fazia a comparação de string falhar e essa contagem zerar mesmo com atividade.
   const hoje  = new Date();
   const qIdx  = Math.floor(hoje.getMonth()/3);
   const anoAt = hoje.getFullYear();
-  const mesesTri = MESES.slice(qIdx*3, qIdx*3+3).map(m=>m+'/'+anoAt);
-  const dadosTri  = porApresPraca.filter(r=>mesesTri.includes(r.mes||r.mes_ano||''));
+  const nomesMesesTri = MESES.slice(qIdx*3, qIdx*3+3);
+  const triStart = new Date(anoAt, qIdx*3, 1);
+  const triEnd   = new Date(anoAt, qIdx*3+3, 1);
+  const dadosTri  = porApresPraca.filter(function(r){ const d = trnDataRowObj(r); return d && d>=triStart && d<triEnd; });
   const treinoTri = trnSessoesTreinamento(dadosTri), bomdiaTri = trnDatasPorLoja(dadosTri,'Reunião de Bom Dia'), invTri = trnDatasPorLoja(dadosTri,'Inventário de Equipamentos');
   const todasLojasArr = trnTodasLojas();
   const cobertasTri = todasLojasArr.filter(l => (treinoTri[l]||[]).length || (bomdiaTri[l]||[]).length || (invTri[l]||[]).length);
   const pctTri = todasLojasArr.length ? Math.round((cobertasTri.length/todasLojasArr.length)*100) : 0;
 
-  // Inventário do mês corrente — meta: 100% das lojas até dia 15.
-  const mesAtualStr = MESES[hoje.getMonth()]+'/'+anoAt;
-  const dadosInvMes = porApresPraca.filter(r=>(r.mes||r.mes_ano||'')===mesAtualStr);
+  // Inventário do mês corrente — meta: 100% das lojas até dia 15. Também por timestamp real.
+  const nomeMesAtual   = MESES[hoje.getMonth()];
+  const mesAtualStart  = new Date(anoAt, hoje.getMonth(), 1);
+  const mesAtualEnd    = new Date(anoAt, hoje.getMonth()+1, 1);
+  const dadosInvMes = porApresPraca.filter(function(r){ const d = trnDataRowObj(r); return d && d>=mesAtualStart && d<mesAtualEnd; });
   const invMesMap   = trnDatasPorLoja(dadosInvMes, 'Inventário de Equipamentos');
   const invFeitas   = todasLojasArr.filter(l=>(invMesMap[l]||[]).length);
   const pctInvMes   = todasLojasArr.length ? Math.round((invFeitas.length/todasLojasArr.length)*100) : 0;
@@ -1551,8 +1558,8 @@ function trnRenderizarCobertura() {
 
   const kpisEl = document.getElementById('cov-kpis');
   if(kpisEl) kpisEl.innerHTML = `
-    <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:${pctTri>=90?'var(--green)':pctTri>=70?'var(--gold)':'var(--red)'}">${cobertasTri.length}/${todasLojasArr.length} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctTri}%)</span></div><div class="kpi-lbl">Cobertura do Trimestre (${mesesTri.map(m=>m.split('/')[0].slice(0,3)).join('-')})</div><div class="kpi-accent g"></div></div>
-    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:${corInv}">${invFeitas.length}/${todasLojasArr.length} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctInvMes}%)</span></div><div class="kpi-lbl">Inventário de ${mesAtualStr.split('/')[0]}${invAtrasado?' ⚠️ atrasado':' · meta dia 15'}</div><div class="kpi-accent ${invAtrasado?'r':'b'}"></div></div>
+    <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:${pctTri>=90?'var(--green)':pctTri>=70?'var(--gold)':'var(--red)'}">${cobertasTri.length}/${todasLojasArr.length} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctTri}%)</span></div><div class="kpi-lbl">Cobertura do Trimestre (${nomesMesesTri.map(m=>m.slice(0,3)).join('-')})</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:${corInv}">${invFeitas.length}/${todasLojasArr.length} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctInvMes}%)</span></div><div class="kpi-lbl">Inventário de ${nomeMesAtual}${invAtrasado?' ⚠️ atrasado':' · meta dia 15'}</div><div class="kpi-accent ${invAtrasado?'r':'b'}"></div></div>
     <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${nOk}</div><div class="kpi-lbl">Em dia &lt;60d</div><div class="kpi-accent g"></div></div>
     <div class="kpi"><div class="kpi-ico">⚠️</div><div class="kpi-val" style="color:var(--gold)">${nAlerta}</div><div class="kpi-lbl">Alerta 60–90d</div><div class="kpi-accent gold"></div></div>
     <div class="kpi"><div class="kpi-ico">🔴</div><div class="kpi-val" style="color:var(--red)">${nVencido}</div><div class="kpi-lbl">Vencidas &gt;90d</div><div class="kpi-accent r"></div></div>

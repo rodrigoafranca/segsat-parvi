@@ -318,6 +318,8 @@ tr:hover td{background:var(--surface2);}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -845,6 +847,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
               <button id="cov-tab-nunca"   onclick="covLojaFiltrar('nunca')"   style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">⚫ Sem registro</button>
             </div>
             <input id="cov-search" placeholder="🔍 Buscar loja..." oninput="trnRenderizarCobertura()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:150px">
+            <button id="cov-export-btn" onclick="trnExportarRelatorioPDF()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;border:none;background:var(--green);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif"><span>📄</span> Exportar Relatório PDF</button>
           </div>
         </div>
         <!-- Legenda -->
@@ -1608,6 +1611,124 @@ function trnRenderizarCobertura() {
       <td style="${TD};text-align:center"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:${bgStatus[l.status]};color:${corStatus[l.status]}">${labelStatus[l.status]}</span></td>
     </tr>`;
   }).join('')}</tbody>`;
+}
+
+// ── EXPORTAR RELATÓRIO PDF (1 seção por praça, para os coordenadores) ────────
+const PRACAS_RELATORIO = [
+  { label:'Pernambuco', coord:'Clayton Barbosa', ufs:['PE'] },
+  { label:'AM / RR',    coord:'Lozania Fontes',  ufs:['AM','RR'] },
+  { label:'BA / SE',    coord:'Jairo Sodré',     ufs:['BA','SE'] },
+  { label:'PB / RN',    coord:'Paulo Vitor',     ufs:['PB','RN'] },
+  { label:'MA / PA',    coord:'Laila',           ufs:['MA','PA'] }
+];
+
+async function trnExportarRelatorioPDF() {
+  const btn = document.getElementById('cov-export-btn');
+  const btnHtmlOrig = btn ? btn.innerHTML : '';
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span>⏳</span> Gerando PDF...'; }
+  try {
+    if(!window.jspdf || !window.jspdf.jsPDF) throw new Error('Biblioteca de PDF não carregou — verifique a conexão e tente novamente.');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    // Mesmos filtros de mês/apresentador já usados na tela da Cobertura por Loja.
+    const mes   = (document.getElementById('trn-filtro-mes')?.value||'').trim();
+    const apres = (document.getElementById('trn-filtro-apres')?.value||'').trim();
+
+    let referenceDate = new Date();
+    if(mes) {
+      const partes = mes.split('/');
+      const idxMes = MESES.indexOf(partes[0]);
+      const ano    = parseInt(partes[1],10) || parseInt(ANO,10);
+      if(idxMes >= 0) referenceDate = new Date(ano, idxMes+1, 0);
+    }
+    const porApres = apres ? TRN_DADOS.filter(r=>(r.apresentador||'')===apres) : TRN_DADOS;
+    const dadosAteRef = porApres.filter(function(r){ const d = trnDataRowObj(r); return !d || d <= referenceDate; });
+    const dadosMatriz = mes ? porApres.filter(function(r){ return (r.mes||r.mes_ano||'')===mes; }) : porApres;
+    const cobertura = trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate);
+
+    const labelStatus  = { ok:'Em dia', alerta:'Alerta', vencido:'Vencida', nunca:'Sem registro' };
+    const corStatusRow = { ok:[70,150,40], alerta:[184,130,10], vencido:[176,32,32], nunca:[130,130,130] };
+    const periodoLabel = mes || 'Todos os meses (histórico)';
+    const hojeFmt = new Date().toLocaleDateString('pt-BR');
+
+    let algumaLoja = false;
+    PRACAS_RELATORIO.forEach(function(praca, idx) {
+      const lojasPraca = cobertura.filter(l => praca.ufs.includes(l.uf));
+      if(lojasPraca.length) algumaLoja = true;
+      if(idx > 0) doc.addPage();
+
+      doc.setFontSize(16);
+      doc.setTextColor(10,31,28);
+      doc.text('Cobertura de Treinamentos — Praça ' + praca.label, 40, 42);
+
+      doc.setFontSize(10);
+      doc.setTextColor(90,90,90);
+      doc.text('Coordenador: ' + praca.coord + '   ·   Período: ' + periodoLabel + '   ·   Emitido em ' + hojeFmt, 40, 60);
+
+      const nOk = lojasPraca.filter(l=>l.status==='ok').length;
+      const nAlerta = lojasPraca.filter(l=>l.status==='alerta').length;
+      const nVencido = lojasPraca.filter(l=>l.status==='vencido').length;
+      const nNunca = lojasPraca.filter(l=>l.status==='nunca').length;
+      doc.setFontSize(10);
+      doc.setTextColor(20,20,20);
+      doc.text(`✅ Em dia: ${nOk}    ⚠️ Alerta: ${nAlerta}    🔴 Vencidas: ${nVencido}    ⚫ Sem registro: ${nNunca}    ·    Total: ${lojasPraca.length} lojas`, 40, 78);
+
+      const rows = lojasPraca.map(function(l) {
+        const dataFmt = l.ultimaData
+          ? (function(){ const p=l.ultimaData.split('-'); return (p[2]||'')+'/'+(p[1]||'')+'/'+(p[0]||''); })()
+          : '—';
+        return [
+          l.loja, l.uf||'—',
+          l.temTreinamento ? 'Sim' : '—',
+          l.temBomDia ? 'Sim' : '—',
+          l.temInventario ? 'Sim' : '—',
+          dataFmt + (l.diasDesde!==null ? ' (' + l.diasDesde + 'd)' : ''),
+          labelStatus[l.status]
+        ];
+      });
+
+      doc.autoTable({
+        startY: 90,
+        margin: { left: 40, right: 40 },
+        head: [['Loja','UF','Treino','Bom Dia','Invent.','Último registro','Status']],
+        body: rows,
+        styles: { fontSize: 9, cellPadding: 5, valign: 'middle' },
+        headStyles: { fillColor: [10,58,50], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [240,245,244] },
+        columnStyles: {
+          0: { cellWidth: 220 },
+          1: { cellWidth: 40, halign: 'center' },
+          2: { cellWidth: 60, halign: 'center' },
+          3: { cellWidth: 60, halign: 'center' },
+          4: { cellWidth: 60, halign: 'center' },
+          5: { cellWidth: 120 },
+          6: { cellWidth: 90, halign: 'center' }
+        },
+        didParseCell: function(data) {
+          if(data.section === 'body' && data.column.index === 6) {
+            const key = Object.keys(labelStatus).find(k => labelStatus[k] === data.cell.raw);
+            if(key && corStatusRow[key]) { data.cell.styles.textColor = corStatusRow[key]; data.cell.styles.fontStyle = 'bold'; }
+          }
+        }
+      });
+
+      if(!lojasPraca.length) {
+        doc.setFontSize(11);
+        doc.setTextColor(120,120,120);
+        doc.text('Nenhuma loja encontrada para esta praça no período selecionado.', 40, 110);
+      }
+    });
+
+    if(!algumaLoja) throw new Error('Nenhuma loja encontrada — confira os filtros de mês/apresentador antes de exportar.');
+
+    const nomeArquivo = 'Cobertura_Treinamentos_Parvi_' + (mes ? mes.replace('/','_') : 'Historico') + '.pdf';
+    doc.save(nomeArquivo);
+  } catch(e) {
+    alert('Erro ao gerar o relatório PDF: ' + e.message);
+  } finally {
+    if(btn) { btn.disabled = false; btn.innerHTML = btnHtmlOrig; }
+  }
 }
 
 // ── REUNIÃO DE BOM DIA — KPIs, por loja e detalhado ──────────

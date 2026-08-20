@@ -1311,7 +1311,7 @@ async function carregarAcessosCoordenadores() {
       { nome:'Lozania Fontes',  praca:'AM / RR' },
       { nome:'Jairo Sodré',     praca:'BA / SE' },
       { nome:'Paulo Vitor',     praca:'PB / RN' },
-      { nome:'Laila',           praca:'MA / PA' },
+      { nome:'Antônio Martins', praca:'MA / PA' },
     ];
 
     const agora = new Date();
@@ -1386,7 +1386,7 @@ function trnSetTab(tab) {
 }
 
 const UF_PRACA_MAP = {'Pernambuco':['PE'],'AM / RR':['AM','RR'],'BA / SE':['BA','SE'],'PB / RN':['PB','RN'],'MA / PA':['MA','PA']};
-const UF_COORDENADOR = { PE:'Clayton Barbosa', AM:'Lozania Fontes', RR:'Lozania Fontes', BA:'Jairo Sodré', SE:'Jairo Sodré', PB:'Paulo Vitor', RN:'Paulo Vitor', MA:'Laila', PA:'Laila' };
+const UF_COORDENADOR = { PE:'Clayton Barbosa', AM:'Lozania Fontes', RR:'Lozania Fontes', BA:'Jairo Sodré', SE:'Jairo Sodré', PB:'Paulo Vitor', RN:'Paulo Vitor', MA:'Antônio Martins', PA:'Antônio Martins' };
 let _covLojaStatus = 'todas';
 
 function trnDataRowStr(r) {
@@ -1619,7 +1619,7 @@ const PRACAS_RELATORIO = [
   { label:'AM / RR',    coord:'Lozania Fontes',  ufs:['AM','RR'] },
   { label:'BA / SE',    coord:'Jairo Sodré',     ufs:['BA','SE'] },
   { label:'PB / RN',    coord:'Paulo Vitor',     ufs:['PB','RN'] },
-  { label:'MA / PA',    coord:'Laila',           ufs:['MA','PA'] }
+  { label:'MA / PA',    coord:'Antônio Martins', ufs:['MA','PA'] }
 ];
 
 async function trnExportarRelatorioPDF() {
@@ -4032,7 +4032,7 @@ const _PRACA_LABELS = {
   'AM': '🟣 AM / RR — Lozania',
   'BA': '🔵 BA / SE — Jairo',
   'PB': '🟠 PB / RN — Paulo',
-  'MA': '🟡 MA / PA — Laila'
+  'MA': '🟡 MA / PA — Antônio'
 };
 
 function renderEaPraca() {

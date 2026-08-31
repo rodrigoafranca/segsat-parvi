@@ -27,6 +27,7 @@
   --gold:     #9a6200;
   --gold-bg:  rgba(154,98,0,0.09);
   --purple:   #5c3a8a;
+  --purple-bg:rgba(92,58,138,0.10);
   --accent:   #009474;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -119,6 +120,7 @@ nav{
 .modo-opt:hover{color:var(--text);}
 .modo-opt.active{background:var(--blue);color:#fff;}
 .modo-opt.active.tri-active{background:var(--gold)!important;}
+.modo-opt.active.anual-active{background:var(--purple)!important;}
 .toggle-wrap{display:flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;user-select:none;}
 .toggle-wrap:hover{border-color:var(--border2);}
 .toggle{position:relative;width:28px;height:16px;flex-shrink:0;}
@@ -140,6 +142,7 @@ nav{
 .modo-badge{font-size:9px;padding:2px 7px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:0.5px;}
 .modo-badge.mensal{background:var(--blue-bg);color:var(--blue);}
 .modo-badge.trimestral{background:var(--gold-bg);color:var(--gold);}
+.modo-badge.anual{background:var(--purple-bg);color:var(--purple);}
 
 /* ── TOPBAR RIGHT ── */
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
@@ -411,8 +414,9 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
 
         <!-- MODO: botões Mensal / Trimestral -->
         <div class="modo-group">
-          <button class="modo-opt active" id="modo-mensal" onclick="setModo(false)">📅 Mensal</button>
-          <button class="modo-opt" id="modo-trimestral" onclick="setModo(true)">📊 Trimestral</button>
+          <button class="modo-opt active" id="modo-mensal" onclick="setModo('mensal')">📅 Mensal</button>
+          <button class="modo-opt" id="modo-trimestral" onclick="setModo('trimestral')">📊 Trimestral</button>
+          <button class="modo-opt" id="modo-anual" onclick="setModo('anual')">🗓️ Anual</button>
         </div>
 
         <div class="topbar-sep"></div>
@@ -462,7 +466,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
     <div class="g31">
       <div class="card">
         <div class="card-hd">
-          <div><div class="card-title">Evolução Diária</div><div class="card-sub">Vendas por dia do mês</div></div>
+          <div><div class="card-title">Evolução Diária</div><div class="card-sub" id="chart-dias-sub">Vendas por dia do mês</div></div>
           <div class="card-tag blue" id="chart-dias-tag">—</div>
         </div>
         <div class="chart-legend">
@@ -2153,6 +2157,7 @@ renderMarcaDetalhe = function(marca) {
 let MES_SELECIONADO  = MESES[MES_ATUAL] || 'ABRIL';
 let TRI_SELECIONADO  = Object.keys(TRIMESTRES)[TRI_ATUAL] || '1° TRI';
 let MODO_TRIMESTRAL  = false;
+let MODO_ANUAL        = false;
 let currentPage = 'geral', currentEstado = 'PE';
 
 // ============================================================
@@ -2213,7 +2218,7 @@ function buildSelectors() {
   if(mesMenu) mesMenu.innerHTML = MESES.map((m,i) => {
     const isFuture = i > MES_ATUAL;
     const isCurrent = i === MES_ATUAL;
-    const active = m === MES_SELECIONADO && !MODO_TRIMESTRAL;
+    const active = m === MES_SELECIONADO && !MODO_TRIMESTRAL && !MODO_ANUAL;
     return `<div class="sel-option${active?' active':''}${isFuture?' disabled':''}"
       onclick="${isFuture?'':'selecionarMes(\''+m+'\')'}">
       ${m}${isCurrent?' <span class="opt-tag">atual</span>':''}
@@ -2268,27 +2273,34 @@ function selecionarTri(tri) {
   loadData();
 }
 
-function setModo(trimestral) {
-  MODO_TRIMESTRAL = trimestral;
+function setModo(modo) {
+  // Compatibilidade com chamadas antigas via booleano (true=trimestral, false=mensal)
+  if(modo === true) modo = 'trimestral';
+  if(modo === false) modo = 'mensal';
+  MODO_TRIMESTRAL = modo === 'trimestral';
+  MODO_ANUAL      = modo === 'anual';
   // Botões de modo
-  document.getElementById('modo-mensal').className     = 'modo-opt' + (trimestral?'':' active');
-  document.getElementById('modo-trimestral').className = 'modo-opt' + (trimestral?' active tri-active':'');
+  document.getElementById('modo-mensal').className     = 'modo-opt' + (modo==='mensal'?' active':'');
+  document.getElementById('modo-trimestral').className = 'modo-opt' + (modo==='trimestral'?' active tri-active':'');
+  document.getElementById('modo-anual').className      = 'modo-opt' + (modo==='anual'?' active anual-active':'');
   // Seletores
-  document.getElementById('grupo-mes').style.display = trimestral ? 'none' : 'flex';
-  document.getElementById('grupo-tri').style.display = trimestral ? 'flex' : 'none';
+  document.getElementById('grupo-mes').style.display = modo==='mensal'     ? 'flex' : 'none';
+  document.getElementById('grupo-tri').style.display = modo==='trimestral' ? 'flex' : 'none';
   // Badge
   const badge = document.getElementById('modo-badge');
-  if(trimestral) { badge.textContent='TRIMESTRAL'; badge.className='modo-badge trimestral'; }
-  else           { badge.textContent='MENSAL';      badge.className='modo-badge mensal'; }
+  if(modo==='trimestral')      { badge.textContent='TRIMESTRAL'; badge.className='modo-badge trimestral'; }
+  else if(modo==='anual')      { badge.textContent='ANUAL';      badge.className='modo-badge anual'; }
+  else                         { badge.textContent='MENSAL';     badge.className='modo-badge mensal'; }
   buildSelectors();
   loadData();
 }
 
-function toggleModo() { setModo(!MODO_TRIMESTRAL); }
+function toggleModo() { setModo(MODO_TRIMESTRAL ? 'anual' : MODO_ANUAL ? 'mensal' : 'trimestral'); }
 
 // Rótulo atual para exibição
 function getPeriodoLabel() {
   if(MODO_TRIMESTRAL) return TRI_SELECIONADO + '/' + ANO.slice(-2);
+  if(MODO_ANUAL) return 'ANO ' + ANO;
   return MES_SELECIONADO.charAt(0)+MES_SELECIONADO.slice(1).toLowerCase()+'/'+ANO.slice(-2);
 }
 
@@ -2409,6 +2421,18 @@ async function loadData() {
       if(jsons.length===0) throw new Error(`Nenhum dado para ${TRI_SELECIONADO}`);
       ALL_STORES=enrichStores(mergeStores(jsons)); DAILY=mergeDaily(jsons); PLANOS=mergePlanos(jsons);
       STORE_PLANS=mergeStorePlans(jsons); META=mergeMeta(jsons, label);
+    } else if(MODO_ANUAL) {
+      const mesesDoAno = MESES.slice(0, MES_ATUAL+1);
+      setLoading(25, `Carregando ANO ${ANO} (${mesesDoAno.length} meses)...`);
+      const fetches = mesesDoAno.map(mes =>
+        fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}`)
+          .then(r=>r.json()).catch(()=>null)
+      );
+      setLoading(60, 'Consolidando ano...');
+      const jsons = (await Promise.all(fetches)).filter(j=>j&&!j.error);
+      if(jsons.length===0) throw new Error(`Nenhum dado para ${ANO}`);
+      ALL_STORES=enrichStores(mergeStores(jsons)); DAILY=mergeDaily(jsons); PLANOS=mergePlanos(jsons);
+      STORE_PLANS=mergeStorePlans(jsons); META=mergeMeta(jsons, label);
     } else {
       const controller = new AbortController();
       const timer = setTimeout(()=>controller.abort(),45000);
@@ -2460,6 +2484,16 @@ async function refreshData() {
     if(MODO_TRIMESTRAL) {
       const mesesDoTri = TRIMESTRES[TRI_SELECIONADO];
       const fetches = mesesDoTri.map(mes =>
+        fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}&t=${Date.now()}`)
+          .then(r=>r.json()).catch(()=>null)
+      );
+      const jsons = (await Promise.all(fetches)).filter(j=>j&&!j.error);
+      if(jsons.length===0) throw new Error('Sem dados');
+      ALL_STORES=enrichStores(mergeStores(jsons)); DAILY=mergeDaily(jsons); PLANOS=mergePlanos(jsons);
+      STORE_PLANS=mergeStorePlans(jsons); META=mergeMeta(jsons, getPeriodoLabel());
+    } else if(MODO_ANUAL) {
+      const mesesDoAno = MESES.slice(0, MES_ATUAL+1);
+      const fetches = mesesDoAno.map(mes =>
         fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}&t=${Date.now()}`)
           .then(r=>r.json()).catch(()=>null)
       );
@@ -2645,13 +2679,13 @@ function renderAll() {
 
   // Chart title tag
   document.getElementById('chart-dias-tag').textContent = `${DAILY.length} dias`;
+  document.getElementById('chart-dias-sub').textContent = MODO_ANUAL ? 'Vendas por dia do ano' : MODO_TRIMESTRAL ? 'Vendas por dia do trimestre' : 'Vendas por dia do mês';
   document.getElementById('planos-sub').textContent = `${totalSeg} contratos`;
   document.getElementById('lojas-sub').textContent  = `${ALL_STORES.length} lojas · inclui zeradas`;
   document.getElementById('lojas-tag').textContent  = `${ALL_STORES.length} lojas`;
 
   // Update page title
-  const ma=MES_SELECIONADO.charAt(0)+MES_SELECIONADO.slice(1).toLowerCase()+'/'+ANO.slice(-2);
-  document.getElementById('nav-mes-ano').textContent=ma;
+  document.getElementById('nav-mes-ano').textContent = getPeriodoLabel();
 
   // Charts
   setTimeout(()=>drawLineChart('chart-daily',DAILY),50);
@@ -2910,7 +2944,7 @@ function renderRankingLojas(tab) {
 
 // ── PROJEÇÃO DE VENDAS ──
 function renderProjecao(totalSeg, totalFat) {
-  if(MODO_TRIMESTRAL) { document.getElementById('card-projecao').innerHTML=''; return; }
+  if(MODO_TRIMESTRAL || MODO_ANUAL) { document.getElementById('card-projecao').innerHTML=''; return; }
 
   const MESES_IDX = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   const idxAtual = MESES_IDX.indexOf(MES_SELECIONADO);

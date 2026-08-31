@@ -759,7 +759,6 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
           <option>Clayton Barbosa</option>
           <option>Paulo Vitor</option>
           <option>Rodrigo França</option>
-          <option>Antônio Martins</option>
         </select>
         <select id="trn-filtro-praca" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
           <option value="">Todas as praças</option>
@@ -1312,7 +1311,7 @@ async function carregarAcessosCoordenadores() {
       { nome:'Lozania Fontes',  praca:'AM / RR' },
       { nome:'Jairo Sodré',     praca:'BA / SE' },
       { nome:'Paulo Vitor',     praca:'PB / RN' },
-      { nome:'Laila',           praca:'MA / PA' },
+      { nome:'Antônio Martins', praca:'MA / PA' },
     ];
 
     const agora = new Date();
@@ -1387,7 +1386,7 @@ function trnSetTab(tab) {
 }
 
 const UF_PRACA_MAP = {'Pernambuco':['PE'],'AM / RR':['AM','RR'],'BA / SE':['BA','SE'],'PB / RN':['PB','RN'],'MA / PA':['MA','PA']};
-const UF_COORDENADOR = { PE:'Clayton Barbosa', AM:'Lozania Fontes', RR:'Lozania Fontes', BA:'Jairo Sodré', SE:'Jairo Sodré', PB:'Paulo Vitor', RN:'Paulo Vitor', MA:'Laila', PA:'Laila' };
+const UF_COORDENADOR = { PE:'Clayton Barbosa', AM:'Lozania Fontes', RR:'Lozania Fontes', BA:'Jairo Sodré', SE:'Jairo Sodré', PB:'Paulo Vitor', RN:'Paulo Vitor', MA:'Antônio Martins', PA:'Antônio Martins' };
 let _covLojaStatus = 'todas';
 
 function trnDataRowStr(r) {
@@ -1620,7 +1619,7 @@ const PRACAS_RELATORIO = [
   { label:'AM / RR',    coord:'Lozania Fontes',  ufs:['AM','RR'] },
   { label:'BA / SE',    coord:'Jairo Sodré',     ufs:['BA','SE'] },
   { label:'PB / RN',    coord:'Paulo Vitor',     ufs:['PB','RN'] },
-  { label:'MA / PA',    coord:'Laila',           ufs:['MA','PA'] }
+  { label:'MA / PA',    coord:'Antônio Martins', ufs:['MA','PA'] }
 ];
 
 async function trnExportarRelatorioPDF() {
@@ -1953,7 +1952,7 @@ function trnRenderizar() {
     <div class="kpi"><div class="kpi-ico">📚</div><div class="kpi-val" style="color:var(--red)">${maisTreino} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctTreino}%)</span></div><div class="kpi-lbl">Precisam de Mais Treinamento</div><div class="kpi-accent r"></div></div>
     <div class="kpi"><div class="kpi-ico">👤</div><div class="kpi-val" style="color:var(--purple)">${apresSet.size}</div><div class="kpi-lbl">Apresentadores Avaliados</div><div class="kpi-accent p"></div></div>
     <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:var(--blue)">${totalAtividades}</div><div class="kpi-lbl">Atividades no Período (Trein. + Bom Dia + Invent.)</div><div class="kpi-accent b"></div></div>`;
-  const APRES = ['Lozania Fontes','Jairo Sodré','Clayton Barbosa','Paulo Vitor','Rodrigo França','Antônio Martins'];
+  const APRES = ['Lozania Fontes','Jairo Sodré','Clayton Barbosa','Paulo Vitor','Rodrigo França'];
   const apresEl = document.getElementById('trn-chart-apres');
   if(apresEl) apresEl.innerHTML = APRES.map(a => {
     const rows = dados.filter(r=>(r.apresentador||'')===a);
@@ -2930,6 +2929,8 @@ function renderProjecao(totalSeg, totalFat) {
     'MARÇO':    { seg:850,  fat:1192398,  acumDia10:97,   acumDia15:172, acumDia20:340, acumDia25:476 },
     'ABRIL':    { seg:888,  fat:1407486,  acumDia10:151,  acumDia15:233, acumDia20:340, acumDia25:449 },
     'MAIO':     { seg:846,  fat:1376756,  acumDia10:107,  acumDia15:239, acumDia20:352, acumDia25:477 },
+    'JUNHO':    { seg:721,  fat:1216626,  acumDia10:null, acumDia20:null },
+    'JULHO':    { seg:917,  fat:1514802,  acumDia10:null, acumDia20:null },
   };
 
   // Busca o acumulado exato de um mês num dado dia
@@ -4033,7 +4034,7 @@ const _PRACA_LABELS = {
   'AM': '🟣 AM / RR — Lozania',
   'BA': '🔵 BA / SE — Jairo',
   'PB': '🟠 PB / RN — Paulo',
-  'MA': '🟡 MA / PA — Laila'
+  'MA': '🟡 MA / PA — Antônio'
 };
 
 function renderEaPraca() {

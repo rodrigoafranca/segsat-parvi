@@ -677,11 +677,6 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
         </select>
         <select id="trn-filtro-apres" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
           <option value="">Todos os apresentadores</option>
-          <option>Lozania Fontes</option>
-          <option>Jairo Sodré</option>
-          <option>Clayton Barbosa</option>
-          <option>Paulo Vitor</option>
-          <option>Rodrigo França</option>
         </select>
       </div>
       <a href="https://rodrigoafranca.github.io/segsat-parvi/Formulario_Treinamento_Segsat.html" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:var(--blue);color:#fff;font-size:12px;font-weight:600;text-decoration:none">
@@ -3446,9 +3441,16 @@ async function trnCarregarDados() {
     if(json.error) throw new Error(json.error);
     TRN_DADOS = Array.isArray(json.treinamentos) ? json.treinamentos : (Array.isArray(json) ? json : []);
     // Só meses com registros desta praça aparecem no filtro.
-    const meses = [...new Set(TRN_DADOS.filter(r=>_PRACA_UFS.includes(r.uf||'')).map(r=>r.mes||r.mes_ano||'').filter(Boolean))].sort();
+    const registrosPraca = TRN_DADOS.filter(r=>_PRACA_UFS.includes(r.uf||''));
+    const meses = [...new Set(registrosPraca.map(r=>r.mes||r.mes_ano||'').filter(Boolean))].sort();
     const selMes = document.getElementById('trn-filtro-mes');
     if(selMes) selMes.innerHTML = '<option value="">Todos os meses</option>' + meses.map(m=>`<option>${m}</option>`).join('');
+    // Isolamento entre coordenadores: só apresentadores com registros nesta praça aparecem
+    // no filtro — antes a lista era estática com todos os coordenadores de todas as praças,
+    // expondo os nomes dos colegas de outras regiões mesmo sem acesso aos dados deles.
+    const apresentadores = [...new Set(registrosPraca.map(r=>r.apresentador||'').filter(Boolean))].sort();
+    const selApres = document.getElementById('trn-filtro-apres');
+    if(selApres) selApres.innerHTML = '<option value="">Todos os apresentadores</option>' + apresentadores.map(a=>`<option>${a}</option>`).join('');
     trnRenderizar();
   } catch(e) {
     if(kpis) kpis.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px">Erro ao carregar: ${e.message}</div>`;

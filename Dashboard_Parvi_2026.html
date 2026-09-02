@@ -1686,9 +1686,25 @@ async function trnExportarRelatorioPDF() {
       const nAlerta = lojasPraca.filter(l=>l.status==='alerta').length;
       const nVencido = lojasPraca.filter(l=>l.status==='vencido').length;
       const nNunca = lojasPraca.filter(l=>l.status==='nunca').length;
+      // Escrito em segmentos coloridos (sem emoji) — a fonte padrão do jsPDF (Helvetica) não
+      // tem os glifos de emoji e imprimia caracteres corrompidos no cabeçalho do PDF.
       doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      let sumX = 40;
+      const sumY = 78;
+      [
+        ['Em dia: ' + nOk, corStatusRow.ok],
+        ['   Alerta: ' + nAlerta, corStatusRow.alerta],
+        ['   Vencidas: ' + nVencido, corStatusRow.vencido],
+        ['   Sem registro: ' + nNunca, corStatusRow.nunca]
+      ].forEach(function(seg) {
+        doc.setTextColor(seg[1][0], seg[1][1], seg[1][2]);
+        doc.text(seg[0], sumX, sumY);
+        sumX += doc.getTextWidth(seg[0]);
+      });
+      doc.setFont(undefined, 'normal');
       doc.setTextColor(20,20,20);
-      doc.text(`✅ Em dia: ${nOk}    ⚠️ Alerta: ${nAlerta}    🔴 Vencidas: ${nVencido}    ⚫ Sem registro: ${nNunca}    ·    Total: ${lojasPraca.length} lojas`, 40, 78);
+      doc.text('    ·    Total: ' + lojasPraca.length + ' lojas', sumX, sumY);
 
       const rows = lojasPraca.map(function(l) {
         const dataFmt = l.ultimaData

@@ -2865,6 +2865,7 @@ const GAMES_COUNT = 45;
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxY7FJy7rqmP2I0wOz-z1Nhuoz69iMc7zqGTsUP_uAeWWXgO18AxGSdbj_GHNb6GQyK/exec";
 let PLAYERS = STATIC_PLAYERS;
 let DRAFT = [];
+let gamesCount = GAMES_COUNT;
 let liveMode = false;
 let editingSet = new Set();
 
@@ -2934,6 +2935,7 @@ async function fetchLive(){
     if(!data.ok) throw new Error(data.error || 'Erro desconhecido do Web App');
     PLAYERS = data.players;
     DRAFT = data.draft;
+    if(typeof data.totalJogos === 'number' && data.totalJogos > 0) gamesCount = data.totalJogos;
     liveMode = true;
     setConnStatus('live', 'Conectado — lendo e gravando ao vivo');
     document.getElementById('draftControls').style.display = 'flex';
@@ -2944,6 +2946,7 @@ async function fetchLive(){
     liveMode = false;
     PLAYERS = STATIC_PLAYERS;
     DRAFT = [];
+    gamesCount = GAMES_COUNT;
     setConnStatus('err', 'Não consegui conectar (verifique a URL) — mostrando dados fixos');
     document.getElementById('draftControls').style.display = 'none';
     document.getElementById('draftNote').style.display = 'block';
@@ -3052,7 +3055,7 @@ function render(){
 
   document.getElementById('emptyMsg').style.display = rows.length ? 'none' : 'block';
 
-  document.getElementById('kpiJogos').textContent = GAMES_COUNT;
+  document.getElementById('kpiJogos').textContent = gamesCount;
   document.getElementById('kpiAtletas').textContent = PLAYERS.length;
   document.getElementById('kpiDisponiveis').textContent = PLAYERS.filter(p=>isAvailable(p.status)).length;
   document.getElementById('kpiEscolhidos').textContent = PLAYERS.filter(p=>!isAvailable(p.status)).length;

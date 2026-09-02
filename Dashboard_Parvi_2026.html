@@ -1665,6 +1665,15 @@ async function trnExportarRelatorioPDF() {
     // Respeita o filtro de status ativo no card "Cobertura por Loja" (Todas/Em dia/Alerta/
     // Vencida/Sem registro) — o PDF deve trazer só as lojas que estão sendo exibidas na tela.
     const filtroStatusLabel = { todas:'Todas', ok:'Em dia', alerta:'Alerta', vencido:'Vencidas', nunca:'Sem registro' };
+    // Título do relatório muda conforme o filtro: "Sem registro" não é uma cobertura de
+    // treinamentos, é a lista de lojas que NÃO tiveram nenhuma das 3 atividades (visita).
+    const tituloRelatorio = {
+      todas:   'Cobertura de Treinamentos',
+      ok:      'Lojas em Dia',
+      alerta:  'Lojas em Alerta',
+      vencido: 'Lojas com Visita Vencida',
+      nunca:   'Lojas sem Visita'
+    };
     const cobertura = _covLojaStatus === 'todas' ? coberturaCompleta : coberturaCompleta.filter(l => l.status === _covLojaStatus);
     const filtroTitulo = _covLojaStatus === 'todas' ? '' : ' — Filtro: ' + filtroStatusLabel[_covLojaStatus];
 
@@ -1676,7 +1685,7 @@ async function trnExportarRelatorioPDF() {
 
       doc.setFontSize(16);
       doc.setTextColor(10,31,28);
-      doc.text('Cobertura de Treinamentos — Praça ' + praca.label + filtroTitulo, 40, 42);
+      doc.text(tituloRelatorio[_covLojaStatus] + ' — Praça ' + praca.label, 40, 42);
 
       doc.setFontSize(10);
       doc.setTextColor(90,90,90);

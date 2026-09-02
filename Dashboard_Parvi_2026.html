@@ -1455,11 +1455,17 @@ function trnInfoLoja(loja) {
 }
 
 function trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate) {
-  const treinoRef = trnSessoesTreinamento(dadosAteRef);
+  // Cobertura/status usa QUALQUER avaliação de Treinamento (>=1), não o dedup de 3+
+  // de trnSessoesTreinamento — aquele dedup serve só para CONTAR sessões de treino
+  // sem duplicar por vários vendedores avaliando a mesma sessão. Aqui a pergunta é
+  // apenas "essa loja teve alguma movimentação?", então 1 avaliação já basta —
+  // senão lojas com treino de poucos vendedores (menos de 3 avaliações) ficavam
+  // erradamente marcadas como "Sem registro".
+  const treinoRef = trnDatasPorLoja(dadosAteRef, 'Treinamento');
   const bomdiaRef = trnDatasPorLoja(dadosAteRef, 'Reunião de Bom Dia');
   const invRef    = trnDatasPorLoja(dadosAteRef, 'Inventário de Equipamentos');
 
-  const treinoMat = trnSessoesTreinamento(dadosMatriz);
+  const treinoMat = trnDatasPorLoja(dadosMatriz, 'Treinamento');
   const bomdiaMat = trnDatasPorLoja(dadosMatriz, 'Reunião de Bom Dia');
   const invMat    = trnDatasPorLoja(dadosMatriz, 'Inventário de Equipamentos');
 
@@ -1547,7 +1553,7 @@ function trnRenderizarCobertura() {
   const triStart = new Date(anoAt, qIdx*3, 1);
   const triEnd   = new Date(anoAt, qIdx*3+3, 1);
   const dadosTri  = porApresPraca.filter(function(r){ const d = trnDataRowObj(r); return d && d>=triStart && d<triEnd; });
-  const treinoTri = trnSessoesTreinamento(dadosTri), bomdiaTri = trnDatasPorLoja(dadosTri,'Reunião de Bom Dia'), invTri = trnDatasPorLoja(dadosTri,'Inventário de Equipamentos');
+  const treinoTri = trnDatasPorLoja(dadosTri,'Treinamento'), bomdiaTri = trnDatasPorLoja(dadosTri,'Reunião de Bom Dia'), invTri = trnDatasPorLoja(dadosTri,'Inventário de Equipamentos');
   const todasLojasArr = trnTodasLojas();
   const cobertasTri = todasLojasArr.filter(l => (treinoTri[l]||[]).length || (bomdiaTri[l]||[]).length || (invTri[l]||[]).length);
   const pctTri = todasLojasArr.length ? Math.round((cobertasTri.length/todasLojasArr.length)*100) : 0;

@@ -377,6 +377,8 @@ tr:hover td{background:var(--surface2);}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -501,6 +503,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
   <button class="nav-item" id="nav-comissoes" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
   <button class="nav-item" id="nav-estoque-at" onclick="navTo('estoque-at',this);carregarEstoqueAtualizadoPraca()"><span class="ni">📡</span> Estoque Atualizado</button>
+  <button class="nav-item" id="nav-treinamentos" onclick="navTo('treinamentos',this)"><span class="ni">🎓</span> Treinamentos</button>
   <div class="nav-section">Praças</div>
   <button class="nav-item" id="nav-pe"   onclick="navTo('pracas',this);setEstado('PE')"><span class="ni">📍</span> Pernambuco</button>
   <button class="nav-item" id="nav-am"   onclick="navTo('pracas',this);setEstado('AM')"><span class="ni">📍</span> AM / RR</button>
@@ -775,6 +778,122 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
       </div>
     </div>
   </div>
+
+  <!-- PAGE: TREINAMENTOS -->
+  <div class="page" id="page-treinamentos">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="trn-filtro-mes" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          <option value="">Todos os meses</option>
+        </select>
+        <select id="trn-filtro-apres" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+          <option value="">Todos os apresentadores</option>
+          <option>Lozania Fontes</option>
+          <option>Jairo Sodré</option>
+          <option>Clayton Barbosa</option>
+          <option>Paulo Vitor</option>
+          <option>Rodrigo França</option>
+        </select>
+      </div>
+      <a href="https://rodrigoafranca.github.io/segsat-parvi/Formulario_Treinamento_Segsat.html" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:var(--blue);color:#fff;font-size:12px;font-weight:600;text-decoration:none">
+        📋 Formulário de Avaliação
+      </a>
+    </div>
+
+    <!-- ABAS POR TIPO DE EVENTO -->
+    <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button id="trn-tab-treinamento" onclick="trnSetTab('treinamento')" style="padding:8px 16px;border:none;border-bottom:2px solid var(--green);background:none;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">🎓 Treinamento</button>
+      <button id="trn-tab-bomdia" onclick="trnSetTab('bomdia')" style="padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">☀️ Reunião de Bom Dia</button>
+      <button id="trn-tab-inventario" onclick="trnSetTab('inventario')" style="padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Inventário de Equipamentos</button>
+      <button id="trn-tab-cobertura" onclick="trnSetTab('cobertura')" style="padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📊 Cobertura por Loja</button>
+    </div>
+
+    <!-- PAINEL: TREINAMENTO -->
+    <div id="trn-panel-treinamento">
+      <!-- KPIs -->
+      <div class="kpi-row" id="trn-kpis" style="margin-bottom:14px"></div>
+
+      <!-- Notas por apresentador + Temas -->
+      <div class="g2" style="margin-bottom:12px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">⭐ Nota por Apresentador</div><div class="card-sub">Média das avaliações recebidas</div></div>
+          <div id="trn-chart-apres"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">📚 Temas mais Avaliados</div><div class="card-sub">Frequência por tema abordado</div></div>
+          <div id="trn-chart-temas"></div>
+        </div>
+      </div>
+
+      <!-- Tabela detalhada -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📋 Avaliações Detalhadas</div><div class="card-sub">Todas as respostas do formulário</div></div>
+        <div class="tbl-wrap"><table id="trn-table"></table></div>
+      </div>
+
+    </div>
+    <!-- /trn-panel-treinamento -->
+
+    <!-- PAINEL: REUNIÃO DE BOM DIA -->
+    <div id="trn-panel-bomdia" style="display:none">
+      <div class="kpi-row" id="bd-kpis" style="margin-bottom:14px"></div>
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">🏪 Reuniões por Loja</div><div class="card-sub">Quantidade de reuniões de bom dia registradas por loja</div></div></div>
+        <div id="bd-loja-lista"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📋 Registros Detalhados</div><div class="card-sub">Participantes, quantidade e foto de cada reunião</div></div>
+        <div class="tbl-wrap"><table id="bd-table"></table></div>
+      </div>
+    </div>
+    <!-- /trn-panel-bomdia -->
+
+    <!-- PAINEL: INVENTÁRIO DE EQUIPAMENTOS -->
+    <div id="trn-panel-inventario" style="display:none">
+      <div class="kpi-row" id="inv-kpis" style="margin-bottom:14px"></div>
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">🏪 Inventários por Loja</div><div class="card-sub">Quantidade de inventários registrados por loja</div></div></div>
+        <div id="inv-loja-lista"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📋 Registros Detalhados</div><div class="card-sub">Observações e foto de cada inventário</div></div>
+        <div class="tbl-wrap"><table id="inv-table"></table></div>
+      </div>
+    </div>
+    <!-- /trn-panel-inventario -->
+
+    <!-- PAINEL: COBERTURA POR LOJA -->
+    <div id="trn-panel-cobertura" style="display:none">
+      <div class="kpi-row" id="cov-kpis" style="margin-bottom:14px"></div>
+      <div class="card">
+        <div class="card-hd">
+          <div><div class="card-title">🏪 Cobertura por Loja</div><div class="card-sub" id="cov-sub">Treinamento, Reunião de Bom Dia e Inventário combinados · Reciclagem a cada 90 dias</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;gap:6px">
+              <button id="cov-tab-todas"   onclick="covLojaFiltrar('todas')"   style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--blue);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Todas</button>
+              <button id="cov-tab-ok"      onclick="covLojaFiltrar('ok')"      style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Em dia</button>
+              <button id="cov-tab-alerta"  onclick="covLojaFiltrar('alerta')"  style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">⚠️ Alerta</button>
+              <button id="cov-tab-vencido" onclick="covLojaFiltrar('vencido')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔴 Vencidas</button>
+              <button id="cov-tab-nunca"   onclick="covLojaFiltrar('nunca')"   style="padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">⚫ Sem registro</button>
+            </div>
+            <input id="cov-search" placeholder="🔍 Buscar loja..." oninput="trnRenderizarCobertura()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:150px">
+            <button id="cov-export-btn" onclick="trnExportarRelatorioPDF()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;border:none;background:var(--green);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif"><span>📄</span> Exportar Relatório PDF</button>
+          </div>
+        </div>
+        <!-- Legenda -->
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text3)">
+          <span><span style="color:var(--green);font-weight:600">Verde</span> &lt; 60 dias</span>
+          <span><span style="color:var(--gold);font-weight:600">Amarelo</span> 60–90 dias</span>
+          <span><span style="color:var(--red);font-weight:600">Vermelho</span> &gt; 90 dias</span>
+          <span><span style="color:var(--text3);font-weight:600">Cinza</span> Sem nenhum registro</span>
+          <span style="margin-left:auto">✔ = atividade no período selecionado (ou já feita, se "Todos os meses")</span>
+        </div>
+        <div class="tbl-wrap"><table id="cov-table"></table></div>
+      </div>
+    </div>
+    <!-- /trn-panel-cobertura -->
+  </div>
+  <!-- /page-treinamentos -->
 
 </div><!-- /main -->
 </div><!-- /layout -->
@@ -1157,7 +1276,7 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',pracas:'Visão por Praça'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca',comissoes:'Comissões',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
 }
 
@@ -2915,6 +3034,690 @@ navTo = function(page, btn) {
     document.getElementById('page-title').textContent = 'Estoque Atualizado · Rastreadores · ' + getPeriodoLabel();
   }
 };
+// ── TREINAMENTOS POR LOJA / COBERTURA COMBINADA (filtrado pela praça) ──
+// Tipo de evento do registro — linhas antigas (sem coluna Tipo Evento) são
+// tratadas como Treinamento, mesma regra usada no backend (doPost).
+function trnTipoDoRegistro(r) {
+  const t = String(r.tipo_evento || '').trim();
+  return t || 'Treinamento';
+}
+
+let _trnTabAtiva = 'treinamento';
+
+function trnSetTab(tab) {
+  _trnTabAtiva = tab;
+  ['treinamento','bomdia','inventario','cobertura'].forEach(t => {
+    const btn   = document.getElementById('trn-tab-'+t);
+    const panel = document.getElementById('trn-panel-'+t);
+    const ativo = t === tab;
+    if(btn)   { btn.style.borderBottom = ativo ? '2px solid var(--green)' : '2px solid transparent'; btn.style.color = ativo ? 'var(--green)' : 'var(--text2)'; }
+    if(panel) panel.style.display = ativo ? 'block' : 'none';
+  });
+}
+
+const UF_COORDENADOR = { PE:'Clayton Barbosa', AM:'Lozania Fontes', RR:'Lozania Fontes', BA:'Jairo Sodré', SE:'Jairo Sodré', PB:'Paulo Vitor', RN:'Paulo Vitor', MA:'Antônio Martins', PA:'Antônio Martins' };
+let _covLojaStatus = 'todas';
+
+function trnDataRowStr(r) {
+  if(r.timestamp) { const d = new Date(r.timestamp); if(!isNaN(d)) return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0'); }
+  if(r.data) return r.data;
+  return '';
+}
+function trnDataRowObj(r) {
+  if(r.timestamp) { const d = new Date(r.timestamp); if(!isNaN(d)) return d; }
+  if(r.data) { const d = new Date(r.data); if(!isNaN(d)) return d; }
+  return null;
+}
+
+// Agrupa avaliações de Treinamento por loja+dia — 3+ avaliações no mesmo dia = 1 treinamento
+// realizado (vários vendedores avaliando a mesma sessão não contam como treinamentos separados).
+function trnSessoesTreinamento(rows) {
+  const porLojaData = {};
+  rows.forEach(function(r) {
+    if(trnTipoDoRegistro(r) !== 'Treinamento') return;
+    const loja = r.loja || '—';
+    if(!loja || loja==='—') return;
+    const dataStr = trnDataRowStr(r);
+    if(!dataStr) return;
+    const key = loja + '||' + dataStr;
+    if(!porLojaData[key]) porLojaData[key] = { loja, data: dataStr, count: 0 };
+    porLojaData[key].count++;
+  });
+  const porLoja = {};
+  Object.values(porLojaData).forEach(function(s) {
+    if(s.count >= 3) { (porLoja[s.loja] = porLoja[s.loja]||[]).push(s.data); }
+  });
+  return porLoja;
+}
+
+// Datas em que uma loja teve registro de Reunião de Bom Dia / Inventário — sem dedup,
+// já que cada envio representa uma visita/ação real (não várias avaliações da mesma sessão).
+function trnDatasPorLoja(rows, tipo) {
+  const out = {};
+  rows.forEach(function(r) {
+    if(trnTipoDoRegistro(r) !== tipo) return;
+    const loja = r.loja || '—';
+    if(!loja || loja==='—') return;
+    const dataStr = trnDataRowStr(r);
+    if(!dataStr) return;
+    (out[loja] = out[loja]||[]).push(dataStr);
+  });
+  return out;
+}
+
+// Roster de "todas as lojas" — restrito à praça deste coordenador (_PRACA_UFS).
+// window.ALL_STORES vem da planilha de vendas do mês (aba INTEGRAÇÃO) e cobre TODAS as
+// praças — por isso o filtro por _PRACA_UFS aqui é o que garante o isolamento de dados
+// entre coordenadores nesta aba de Treinamentos.
+function trnTodasLojas() {
+  const lojas = (window.ALL_STORES||[]).filter(s => _PRACA_UFS.includes(s.uf));
+  return lojas.length ? [...new Set(lojas.map(s=>s.loja).filter(Boolean))] : [];
+}
+function trnInfoLoja(loja) {
+  return (window.ALL_STORES||[]).find(s=>s.loja===loja) || {};
+}
+
+function trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate) {
+  // Cobertura/status usa QUALQUER avaliação de Treinamento (>=1), não o dedup de 3+
+  // de trnSessoesTreinamento — aquele dedup serve só para CONTAR sessões de treino
+  // sem duplicar por vários vendedores avaliando a mesma sessão. Aqui a pergunta é
+  // apenas "essa loja teve alguma movimentação?", então 1 avaliação já basta —
+  // senão lojas com treino de poucos vendedores (menos de 3 avaliações) ficavam
+  // erradamente marcadas como "Sem registro".
+  const treinoRef = trnDatasPorLoja(dadosAteRef, 'Treinamento');
+  const bomdiaRef = trnDatasPorLoja(dadosAteRef, 'Reunião de Bom Dia');
+  const invRef    = trnDatasPorLoja(dadosAteRef, 'Inventário de Equipamentos');
+
+  const treinoMat = trnDatasPorLoja(dadosMatriz, 'Treinamento');
+  const bomdiaMat = trnDatasPorLoja(dadosMatriz, 'Reunião de Bom Dia');
+  const invMat    = trnDatasPorLoja(dadosMatriz, 'Inventário de Equipamentos');
+
+  let todasLojas = trnTodasLojas();
+  if(!todasLojas.length) todasLojas = [...new Set([...dadosAteRef, ...dadosMatriz].map(r=>r.loja||'').filter(Boolean))];
+
+  return todasLojas.map(function(loja) {
+    const datasRef = [].concat(treinoRef[loja]||[], bomdiaRef[loja]||[], invRef[loja]||[]).sort();
+    const ultimaData = datasRef.length ? datasRef[datasRef.length-1] : null;
+    let diasDesde = null, status = 'nunca';
+    if(ultimaData) {
+      const d = new Date(ultimaData);
+      diasDesde = Math.floor((referenceDate - d) / 86400000);
+      status = diasDesde < 60 ? 'ok' : diasDesde <= 90 ? 'alerta' : 'vencido';
+    }
+    const info = trnInfoLoja(loja);
+    return {
+      loja, marca: info.marca || loja.split(' ')[0], uf: info.uf || '',
+      coordenador: info.coordenador || UF_COORDENADOR[info.uf] || '—',
+      ultimaData, diasDesde, status,
+      temTreinamento: !!(treinoMat[loja]||[]).length,
+      temBomDia:      !!(bomdiaMat[loja]||[]).length,
+      temInventario:  !!(invMat[loja]||[]).length
+    };
+  }).sort(function(a,b) {
+    const ord = { vencido:0, nunca:1, alerta:2, ok:3 };
+    return (ord[a.status]||0) - (ord[b.status]||0) || a.loja.localeCompare(b.loja);
+  });
+}
+
+function covLojaFiltrar(status) {
+  _covLojaStatus = status;
+  ['todas','ok','alerta','vencido','nunca'].forEach(function(s) {
+    const btn = document.getElementById('cov-tab-'+s);
+    if(!btn) return;
+    btn.style.background = s===status ? 'var(--blue)' : 'var(--surface2)';
+    btn.style.color      = s===status ? '#fff' : 'var(--text2)';
+  });
+  trnRenderizarCobertura();
+}
+
+function trnRenderizarCobertura() {
+  const mes   = (document.getElementById('trn-filtro-mes')?.value||'').trim();
+  const apres = (document.getElementById('trn-filtro-apres')?.value||'').trim();
+
+  // Isolamento por praça: só registros das UFs deste coordenador entram aqui.
+  const porApresPraca = TRN_DADOS.filter(function(r) {
+    if(!_PRACA_UFS.includes(r.uf||'')) return false;
+    if(apres && (r.apresentador||'') !== apres) return false;
+    return true;
+  });
+
+  // Data de referência para o status: fim do mês selecionado, ou hoje se "Todos os meses".
+  let referenceDate = new Date();
+  if(mes) {
+    const partes = mes.split('/');
+    const idxMes = MESES.indexOf(partes[0]);
+    const ano    = parseInt(partes[1],10) || parseInt(ANO,10);
+    if(idxMes >= 0) referenceDate = new Date(ano, idxMes+1, 0); // último dia do mês selecionado
+  }
+
+  const dadosAteRef = porApresPraca.filter(function(r) {
+    const d = trnDataRowObj(r);
+    return !d || d <= referenceDate;
+  });
+  // Checks da matriz: se um mês está selecionado, só o que ocorreu nele; senão, histórico todo.
+  const dadosMatriz = mes ? porApresPraca.filter(function(r){ return (r.mes||r.mes_ano||'')===mes; }) : porApresPraca;
+
+  const lojas = trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate);
+
+  const nOk      = lojas.filter(l=>l.status==='ok').length;
+  const nAlerta  = lojas.filter(l=>l.status==='alerta').length;
+  const nVencido = lojas.filter(l=>l.status==='vencido').length;
+  const nNunca   = lojas.filter(l=>l.status==='nunca').length;
+
+  // Cobertura do trimestre corrente (real, independente do filtro de mês) —
+  // meta: toda loja recebe ao menos 1 das 3 atividades a cada 3 meses.
+  const hoje  = new Date();
+  const qIdx  = Math.floor(hoje.getMonth()/3);
+  const anoAt = hoje.getFullYear();
+  const nomesMesesTri = MESES.slice(qIdx*3, qIdx*3+3);
+  const triStart = new Date(anoAt, qIdx*3, 1);
+  const triEnd   = new Date(anoAt, qIdx*3+3, 1);
+  const dadosTri  = porApresPraca.filter(function(r){ const d = trnDataRowObj(r); return d && d>=triStart && d<triEnd; });
+  const treinoTri = trnDatasPorLoja(dadosTri,'Treinamento'), bomdiaTri = trnDatasPorLoja(dadosTri,'Reunião de Bom Dia'), invTri = trnDatasPorLoja(dadosTri,'Inventário de Equipamentos');
+  const todasLojasArr = trnTodasLojas();
+  const cobertasTri = todasLojasArr.filter(l => (treinoTri[l]||[]).length || (bomdiaTri[l]||[]).length || (invTri[l]||[]).length);
+  const pctTri = todasLojasArr.length ? Math.round((cobertasTri.length/todasLojasArr.length)*100) : 0;
+
+  // Inventário do mês corrente — meta: 100% das lojas até dia 15.
+  const nomeMesAtual   = MESES[hoje.getMonth()];
+  const mesAtualStart  = new Date(anoAt, hoje.getMonth(), 1);
+  const mesAtualEnd    = new Date(anoAt, hoje.getMonth()+1, 1);
+  const dadosInvMes = porApresPraca.filter(function(r){ const d = trnDataRowObj(r); return d && d>=mesAtualStart && d<mesAtualEnd; });
+  const invMesMap   = trnDatasPorLoja(dadosInvMes, 'Inventário de Equipamentos');
+  const invFeitas   = todasLojasArr.filter(l=>(invMesMap[l]||[]).length);
+  const pctInvMes   = todasLojasArr.length ? Math.round((invFeitas.length/todasLojasArr.length)*100) : 0;
+  const invAtrasado = hoje.getDate() > 15 && pctInvMes < 100;
+  const corInv = invAtrasado ? 'var(--red)' : (pctInvMes>=100 ? 'var(--green)' : 'var(--gold)');
+
+  const kpisEl = document.getElementById('cov-kpis');
+  if(kpisEl) kpisEl.innerHTML = `
+    <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:${pctTri>=90?'var(--green)':pctTri>=70?'var(--gold)':'var(--red)'}">${cobertasTri.length}/${todasLojasArr.length} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctTri}%)</span></div><div class="kpi-lbl">Cobertura do Trimestre (${nomesMesesTri.map(m=>m.slice(0,3)).join('-')})</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:${corInv}">${invFeitas.length}/${todasLojasArr.length} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctInvMes}%)</span></div><div class="kpi-lbl">Inventário de ${nomeMesAtual}${invAtrasado?' ⚠️ atrasado':' · meta dia 15'}</div><div class="kpi-accent ${invAtrasado?'r':'b'}"></div></div>
+    <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${nOk}</div><div class="kpi-lbl">Em dia &lt;60d</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">⚠️</div><div class="kpi-val" style="color:var(--gold)">${nAlerta}</div><div class="kpi-lbl">Alerta 60–90d</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">🔴</div><div class="kpi-val" style="color:var(--red)">${nVencido}</div><div class="kpi-lbl">Vencidas &gt;90d</div><div class="kpi-accent r"></div></div>
+    <div class="kpi"><div class="kpi-ico">⚫</div><div class="kpi-val" style="color:var(--text3)">${nNunca}</div><div class="kpi-lbl">Sem Registro</div><div class="kpi-accent o"></div></div>`;
+
+  const sub = document.getElementById('cov-sub');
+  if(sub) sub.textContent = mes
+    ? `Checks referentes a ${mes} · status calculado até ${referenceDate.toLocaleDateString('pt-BR')}`
+    : 'Checks = já teve a atividade alguma vez · status calculado até hoje';
+
+  const search = (document.getElementById('cov-search')?.value||'').toLowerCase().trim();
+  let filtradas = _covLojaStatus === 'todas' ? lojas : lojas.filter(l=>l.status===_covLojaStatus);
+  if(search) filtradas = filtradas.filter(l=>l.loja.toLowerCase().includes(search));
+
+  const TH = 'font-size:10px;font-weight:700;text-transform:uppercase;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border);color:var(--text2)';
+  const TD = 'padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
+  const corStatus   = { ok:'var(--green)', alerta:'var(--gold)', vencido:'var(--red)', nunca:'var(--text3)' };
+  const labelStatus = { ok:'Em dia', alerta:'Alerta', vencido:'Vencida', nunca:'Sem registro' };
+  const bgStatus    = { ok:'rgba(100,204,50,0.1)', alerta:'rgba(245,166,35,0.12)', vencido:'rgba(226,75,74,0.1)', nunca:'var(--surface2)' };
+  const check = function(ok) { return ok ? '<span style="color:var(--green);font-weight:700">✔</span>' : '<span style="color:var(--text3)">—</span>'; };
+
+  const tbl = document.getElementById('cov-table');
+  if(!tbl) return;
+  if(!filtradas.length) { tbl.innerHTML = '<tr><td style="padding:20px;color:var(--text3);text-align:center">Nenhuma loja encontrada.</td></tr>'; return; }
+  tbl.innerHTML = `<thead><tr>
+    <th style="${TH};text-align:left">Loja</th>
+    <th style="${TH};text-align:left">UF</th>
+    <th style="${TH};text-align:left">Coordenador</th>
+    <th style="${TH};text-align:center">🎓 Treino</th>
+    <th style="${TH};text-align:center">☀️ Bom Dia</th>
+    <th style="${TH};text-align:center">📋 Invent.</th>
+    <th style="${TH};text-align:left">Último registro</th>
+    <th style="${TH};text-align:center">Status</th>
+  </tr></thead><tbody>${filtradas.map(function(l) {
+    const dataFmt = l.ultimaData
+      ? (function(){ const p=l.ultimaData.split('-'); return (p[2]||'')+'/'+(p[1]||'')+'/'+(p[0]||''); })()
+      : '—';
+    return `<tr>
+      <td style="${TD};font-weight:500">${l.loja}</td>
+      <td style="${TD};color:var(--text3)">${l.uf||'—'}</td>
+      <td style="${TD}">${l.coordenador}</td>
+      <td style="${TD};text-align:center">${check(l.temTreinamento)}</td>
+      <td style="${TD};text-align:center">${check(l.temBomDia)}</td>
+      <td style="${TD};text-align:center">${check(l.temInventario)}</td>
+      <td style="${TD};color:var(--text3)">${dataFmt}${l.diasDesde!==null?' · '+l.diasDesde+'d':''}</td>
+      <td style="${TD};text-align:center"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:${bgStatus[l.status]};color:${corStatus[l.status]}">${labelStatus[l.status]}</span></td>
+    </tr>`;
+  }).join('')}</tbody>`;
+}
+
+// ── EXPORTAR RELATÓRIO PDF (praça única deste coordenador) ────────
+async function trnExportarRelatorioPDF() {
+  const btn = document.getElementById('cov-export-btn');
+  const btnHtmlOrig = btn ? btn.innerHTML : '';
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span>⏳</span> Gerando PDF...'; }
+  try {
+    if(!window.jspdf || !window.jspdf.jsPDF) throw new Error('Biblioteca de PDF não carregou — verifique a conexão e tente novamente.');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    // Mesmos filtros de mês/apresentador já usados na tela da Cobertura por Loja.
+    const mes   = (document.getElementById('trn-filtro-mes')?.value||'').trim();
+    const apres = (document.getElementById('trn-filtro-apres')?.value||'').trim();
+
+    let referenceDate = new Date();
+    if(mes) {
+      const partes = mes.split('/');
+      const idxMes = MESES.indexOf(partes[0]);
+      const ano    = parseInt(partes[1],10) || parseInt(ANO,10);
+      if(idxMes >= 0) referenceDate = new Date(ano, idxMes+1, 0);
+    }
+    const porPraca = TRN_DADOS.filter(r => _PRACA_UFS.includes(r.uf||''));
+    const porApres = apres ? porPraca.filter(r=>(r.apresentador||'')===apres) : porPraca;
+    const dadosAteRef = porApres.filter(function(r){ const d = trnDataRowObj(r); return !d || d <= referenceDate; });
+    const dadosMatriz = mes ? porApres.filter(function(r){ return (r.mes||r.mes_ano||'')===mes; }) : porApres;
+    const coberturaCompleta = trnCalcularCobertura(dadosAteRef, dadosMatriz, referenceDate);
+
+    const labelStatus  = { ok:'Em dia', alerta:'Alerta', vencido:'Vencida', nunca:'Sem registro' };
+    const corStatusRow = { ok:[70,150,40], alerta:[184,130,10], vencido:[176,32,32], nunca:[130,130,130] };
+    const periodoLabel = mes || 'Todos os meses (histórico)';
+    const hojeFmt = new Date().toLocaleDateString('pt-BR');
+
+    // Respeita o filtro de status ativo no card "Cobertura por Loja" (Todas/Em dia/Alerta/
+    // Vencida/Sem registro) — o PDF deve trazer só as lojas que estão sendo exibidas na tela.
+    const filtroStatusLabel = { todas:'Todas', ok:'Em dia', alerta:'Alerta', vencido:'Vencidas', nunca:'Sem registro' };
+    // Título do relatório muda conforme o filtro: "Sem registro" não é uma cobertura de
+    // treinamentos, é a lista de lojas que NÃO tiveram nenhuma das 3 atividades (visita).
+    const tituloRelatorio = {
+      todas:   'Cobertura de Treinamentos',
+      ok:      'Lojas em Dia',
+      alerta:  'Lojas em Alerta',
+      vencido: 'Lojas com Visita Vencida',
+      nunca:   'Lojas sem Visita'
+    };
+    const cobertura = _covLojaStatus === 'todas' ? coberturaCompleta : coberturaCompleta.filter(l => l.status === _covLojaStatus);
+
+    if(!cobertura.length) throw new Error('Nenhuma loja encontrada' + (_covLojaStatus==='todas'?'':' para o filtro "'+filtroStatusLabel[_covLojaStatus]+'"') + ' — confira os filtros antes de exportar.');
+
+    doc.setFontSize(16);
+    doc.setTextColor(10,31,28);
+    doc.text(tituloRelatorio[_covLojaStatus] + ' — Praça ' + NOME_PRACA_ACESSO, 40, 42);
+
+    doc.setFontSize(10);
+    doc.setTextColor(90,90,90);
+    doc.text('Coordenador: ' + NOME_COORDENADOR_ACESSO + '   ·   Período: ' + periodoLabel + '   ·   Filtro: ' + filtroStatusLabel[_covLojaStatus] + '   ·   Emitido em ' + hojeFmt, 40, 60);
+
+    const nOk = cobertura.filter(l=>l.status==='ok').length;
+    const nAlerta = cobertura.filter(l=>l.status==='alerta').length;
+    const nVencido = cobertura.filter(l=>l.status==='vencido').length;
+    const nNunca = cobertura.filter(l=>l.status==='nunca').length;
+    // Escrito em segmentos coloridos (sem emoji) — a fonte padrão do jsPDF (Helvetica) não
+    // tem os glifos de emoji e imprimia caracteres corrompidos no cabeçalho do PDF.
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    let sumX = 40;
+    const sumY = 78;
+    [
+      ['Em dia: ' + nOk, corStatusRow.ok],
+      ['   Alerta: ' + nAlerta, corStatusRow.alerta],
+      ['   Vencidas: ' + nVencido, corStatusRow.vencido],
+      ['   Sem registro: ' + nNunca, corStatusRow.nunca]
+    ].forEach(function(seg) {
+      doc.setTextColor(seg[1][0], seg[1][1], seg[1][2]);
+      doc.text(seg[0], sumX, sumY);
+      sumX += doc.getTextWidth(seg[0]);
+    });
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(20,20,20);
+    doc.text('    ·    Total: ' + cobertura.length + ' lojas', sumX, sumY);
+
+    const rows = cobertura.map(function(l) {
+      const dataFmt = l.ultimaData
+        ? (function(){ const p=l.ultimaData.split('-'); return (p[2]||'')+'/'+(p[1]||'')+'/'+(p[0]||''); })()
+        : '—';
+      return [
+        l.loja, l.uf||'—',
+        l.temTreinamento ? 'Sim' : '—',
+        l.temBomDia ? 'Sim' : '—',
+        l.temInventario ? 'Sim' : '—',
+        dataFmt + (l.diasDesde!==null ? ' (' + l.diasDesde + 'd)' : ''),
+        labelStatus[l.status]
+      ];
+    });
+
+    doc.autoTable({
+      startY: 90,
+      margin: { left: 40, right: 40 },
+      head: [['Loja','UF','Treino','Bom Dia','Invent.','Último registro','Status']],
+      body: rows,
+      styles: { fontSize: 9, cellPadding: 5, valign: 'middle' },
+      headStyles: { fillColor: [10,58,50], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240,245,244] },
+      columnStyles: {
+        0: { cellWidth: 220 },
+        1: { cellWidth: 40, halign: 'center' },
+        2: { cellWidth: 60, halign: 'center' },
+        3: { cellWidth: 60, halign: 'center' },
+        4: { cellWidth: 60, halign: 'center' },
+        5: { cellWidth: 120 },
+        6: { cellWidth: 90, halign: 'center' }
+      },
+      didParseCell: function(data) {
+        if(data.section === 'body' && data.column.index === 6) {
+          const key = Object.keys(labelStatus).find(k => labelStatus[k] === data.cell.raw);
+          if(key && corStatusRow[key]) { data.cell.styles.textColor = corStatusRow[key]; data.cell.styles.fontStyle = 'bold'; }
+        }
+      }
+    });
+
+    const sufixoFiltro = _covLojaStatus === 'todas' ? '' : '_' + filtroStatusLabel[_covLojaStatus].replace(/\s+/g,'');
+    const nomeArquivo = 'Cobertura_Treinamentos_' + NOME_PRACA_ACESSO.replace(/[^a-zA-Z0-9]/g,'_') + '_' + (mes ? mes.replace('/','_') : 'Historico') + sufixoFiltro + '.pdf';
+    doc.save(nomeArquivo);
+  } catch(e) {
+    alert('Erro ao gerar o relatório PDF: ' + e.message);
+  } finally {
+    if(btn) { btn.disabled = false; btn.innerHTML = btnHtmlOrig; }
+  }
+}
+
+// ── REUNIÃO DE BOM DIA — KPIs, por loja e detalhado ──────────
+function trnRenderizarBomDia() {
+  const dados = trnFiltrar().filter(r => trnTipoDoRegistro(r) === 'Reunião de Bom Dia');
+  const total = dados.length;
+  const lojasSet = new Set(dados.map(r=>r.loja||'').filter(Boolean));
+  const totalParticipantes = dados.reduce((a,r)=>a+(parseInt(r.qtd_participantes)||0),0);
+  const mediaParticipantes = total ? (totalParticipantes/total).toFixed(1) : '—';
+  const comGerente = dados.filter(r=>String(r.participantes_presentes||'').includes('Gerente de Loja')).length;
+  const pctGerente = total ? Math.round((comGerente/total)*100) : 0;
+
+  const kpisEl = document.getElementById('bd-kpis');
+  if(kpisEl) kpisEl.innerHTML = `
+    <div class="kpi"><div class="kpi-ico">☀️</div><div class="kpi-val" style="color:var(--blue)">${total}</div><div class="kpi-lbl">Reuniões Registradas</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">🏪</div><div class="kpi-val" style="color:var(--green)">${lojasSet.size}</div><div class="kpi-lbl">Lojas com Registro</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">👥</div><div class="kpi-val" style="color:var(--gold)">${totalParticipantes}</div><div class="kpi-lbl">Participantes Totais</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:var(--text)">${mediaParticipantes}</div><div class="kpi-lbl">Média por Reunião</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">👤</div><div class="kpi-val" style="color:${pctGerente>=70?'var(--green)':'var(--orange)'}">${pctGerente}%</div><div class="kpi-lbl">Com Gerente Presente</div><div class="kpi-accent ${pctGerente>=70?'g':'o'}"></div></div>`;
+
+  // Por loja
+  const porLoja = {};
+  dados.forEach(r=>{
+    const loja = r.loja || '—';
+    if(!porLoja[loja]) porLoja[loja]={loja, count:0, ultimaData:null, uf:r.uf||''};
+    porLoja[loja].count++;
+    const d = r.timestamp ? new Date(r.timestamp) : null;
+    if(d && !isNaN(d) && (!porLoja[loja].ultimaData || d>porLoja[loja].ultimaData)) porLoja[loja].ultimaData = d;
+  });
+  const lojasArr = Object.values(porLoja).sort((a,b)=>b.count-a.count);
+  const lojaListaEl = document.getElementById('bd-loja-lista');
+  if(lojaListaEl) lojaListaEl.innerHTML = lojasArr.length ? lojasArr.map(l=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);margin-bottom:5px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${l.loja}</div>
+        <div style="font-size:10px;color:var(--text3)">${l.uf}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3)">Última: ${l.ultimaData?l.ultimaData.toLocaleDateString('pt-BR'):'—'}</div>
+      <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:var(--blue-bg);color:var(--blue)">${l.count} reunião${l.count>1?'ões':''}</span>
+    </div>`).join('') : '<div style="padding:16px;color:var(--text3);text-align:center">Nenhuma reunião registrada ainda</div>';
+
+  // Tabela detalhada
+  const TH = 'font-size:10px;font-weight:700;text-transform:uppercase;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border);color:var(--text2)';
+  const TD = 'padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
+  const tbl = document.getElementById('bd-table');
+  if(!tbl) return;
+  if(!dados.length) { tbl.innerHTML = '<tr><td style="padding:20px;color:var(--text3);text-align:center">Nenhum registro encontrado.</td></tr>'; return; }
+  const sorted = [...dados].sort((a,b)=> new Date(b.timestamp||0) - new Date(a.timestamp||0));
+  tbl.innerHTML = `<thead><tr>
+    <th style="${TH};text-align:left">Data</th>
+    <th style="${TH};text-align:left">Coordenador</th>
+    <th style="${TH};text-align:left">Loja</th>
+    <th style="${TH};text-align:left">Presentes</th>
+    <th style="${TH};text-align:center">Qtd</th>
+    <th style="${TH};text-align:center">Foto</th>
+  </tr></thead><tbody>${sorted.map(r=>{
+    const data = r.timestamp ? new Date(r.timestamp).toLocaleDateString('pt-BR') : '—';
+    const foto = r.foto_url ? `<a href="${r.foto_url}" target="_blank" style="color:var(--blue);font-weight:600">📷 Ver foto</a>` : '<span style="color:var(--text3)">—</span>';
+    return `<tr>
+      <td style="${TD};color:var(--text3)">${data}</td>
+      <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
+      <td style="${TD}">${r.loja||'—'}</td>
+      <td style="${TD};font-size:11px;color:var(--text2)">${r.participantes_presentes||'—'}</td>
+      <td style="${TD};text-align:center;font-weight:700;color:var(--gold)">${r.qtd_participantes||'—'}</td>
+      <td style="${TD};text-align:center">${foto}</td>
+    </tr>`;
+  }).join('')}</tbody>`;
+}
+
+// ── INVENTÁRIO DE EQUIPAMENTOS — KPIs, por loja e detalhado ──
+function trnRenderizarInventario() {
+  const dados = trnFiltrar().filter(r => trnTipoDoRegistro(r) === 'Inventário de Equipamentos');
+  const total = dados.length;
+  const lojasSet = new Set(dados.map(r=>r.loja||'').filter(Boolean));
+
+  const kpisEl = document.getElementById('inv-kpis');
+  if(kpisEl) kpisEl.innerHTML = `
+    <div class="kpi"><div class="kpi-ico">📋</div><div class="kpi-val" style="color:var(--blue)">${total}</div><div class="kpi-lbl">Inventários Registrados</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">🏪</div><div class="kpi-val" style="color:var(--green)">${lojasSet.size}</div><div class="kpi-lbl">Lojas com Registro</div><div class="kpi-accent g"></div></div>`;
+
+  const porLoja = {};
+  dados.forEach(r=>{
+    const loja = r.loja || '—';
+    if(!porLoja[loja]) porLoja[loja]={loja, count:0, ultimaData:null, uf:r.uf||''};
+    porLoja[loja].count++;
+    const d = r.timestamp ? new Date(r.timestamp) : null;
+    if(d && !isNaN(d) && (!porLoja[loja].ultimaData || d>porLoja[loja].ultimaData)) porLoja[loja].ultimaData = d;
+  });
+  const lojasArr = Object.values(porLoja).sort((a,b)=>b.count-a.count);
+  const lojaListaEl = document.getElementById('inv-loja-lista');
+  if(lojaListaEl) lojaListaEl.innerHTML = lojasArr.length ? lojasArr.map(l=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:0.5px solid var(--border2);margin-bottom:5px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${l.loja}</div>
+        <div style="font-size:10px;color:var(--text3)">${l.uf}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3)">Última: ${l.ultimaData?l.ultimaData.toLocaleDateString('pt-BR'):'—'}</div>
+      <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:var(--blue-bg);color:var(--blue)">${l.count} inventário${l.count>1?'s':''}</span>
+    </div>`).join('') : '<div style="padding:16px;color:var(--text3);text-align:center">Nenhum inventário registrado ainda</div>';
+
+  const TH = 'font-size:10px;font-weight:700;text-transform:uppercase;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border);color:var(--text2)';
+  const TD = 'padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
+  const tbl = document.getElementById('inv-table');
+  if(!tbl) return;
+  if(!dados.length) { tbl.innerHTML = '<tr><td style="padding:20px;color:var(--text3);text-align:center">Nenhum registro encontrado.</td></tr>'; return; }
+  const sorted = [...dados].sort((a,b)=> new Date(b.timestamp||0) - new Date(a.timestamp||0));
+  tbl.innerHTML = `<thead><tr>
+    <th style="${TH};text-align:left">Data</th>
+    <th style="${TH};text-align:left">Coordenador</th>
+    <th style="${TH};text-align:left">Loja</th>
+    <th style="${TH};text-align:left">Observação</th>
+    <th style="${TH};text-align:center">Foto</th>
+  </tr></thead><tbody>${sorted.map(r=>{
+    const data = r.timestamp ? new Date(r.timestamp).toLocaleDateString('pt-BR') : '—';
+    const foto = r.foto_url ? `<a href="${r.foto_url}" target="_blank" style="color:var(--blue);font-weight:600">📷 Ver foto</a>` : '<span style="color:var(--text3)">—</span>';
+    return `<tr>
+      <td style="${TD};color:var(--text3)">${data}</td>
+      <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
+      <td style="${TD}">${r.loja||'—'}</td>
+      <td style="${TD};font-size:11px;color:var(--text2)">${r.observacao||'—'}</td>
+      <td style="${TD};text-align:center">${foto}</td>
+    </tr>`;
+  }).join('')}</tbody>`;
+}
+
+// ============================================================
+// MÓDULO TREINAMENTOS (dados restritos à praça deste coordenador)
+// ============================================================
+let TRN_DADOS = [];
+
+// Garante que ALL_STORES (lista de lojas do mês, vinda da planilha de vendas) esteja
+// disponível mesmo se o usuário abrir a aba Treinamentos antes do carregamento principal
+// (loadData) terminar.
+async function trnCarregarLojasFallback() {
+  if((window.ALL_STORES||[]).length) return; // já carregado pelo dashboard principal
+  try {
+    const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+    const res = await fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}&t=${Date.now()}`);
+    const json = await res.json();
+    if(json && json.allStores && json.allStores.length && !(window.ALL_STORES||[]).length) {
+      window.ALL_STORES = enrichStores(json.allStores);
+      trnRenderizarCobertura(); // recalcula agora que a lista completa de lojas chegou
+    }
+  } catch(e) { /* silencioso — a Cobertura por Loja só fica sem total até o loadData principal terminar */ }
+}
+
+async function trnCarregarDados() {
+  const kpis = document.getElementById('trn-kpis');
+  if(kpis) kpis.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">⏳ Carregando avaliações...</div>';
+  trnCarregarLojasFallback(); // fire-and-forget, não bloqueia o carregamento das avaliações
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=treinamentos`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
+    TRN_DADOS = Array.isArray(json.treinamentos) ? json.treinamentos : (Array.isArray(json) ? json : []);
+    // Só meses com registros desta praça aparecem no filtro.
+    const meses = [...new Set(TRN_DADOS.filter(r=>_PRACA_UFS.includes(r.uf||'')).map(r=>r.mes||r.mes_ano||'').filter(Boolean))].sort();
+    const selMes = document.getElementById('trn-filtro-mes');
+    if(selMes) selMes.innerHTML = '<option value="">Todos os meses</option>' + meses.map(m=>`<option>${m}</option>`).join('');
+    trnRenderizar();
+  } catch(e) {
+    if(kpis) kpis.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px">Erro ao carregar: ${e.message}</div>`;
+  }
+}
+
+// Isolamento de dados: só retorna registros das UFs desta praça (_PRACA_UFS), nunca
+// de outras praças — este coordenador não tem acesso a dados de Treinamentos de outros.
+function trnFiltrar() {
+  const mes   = (document.getElementById('trn-filtro-mes')?.value||'').trim();
+  const apres = (document.getElementById('trn-filtro-apres')?.value||'').trim();
+  return TRN_DADOS.filter(r => {
+    if(!_PRACA_UFS.includes(r.uf||'')) return false;
+    if(mes   && (r.mes||r.mes_ano||'') !== mes) return false;
+    if(apres && (r.apresentador||'') !== apres) return false;
+    return true;
+  });
+}
+
+function trnRenderizar() {
+  // A partir da introdução dos tipos "Reunião de Bom Dia" e "Inventário de
+  // Equipamentos" na mesma planilha, esta aba precisa se restringir a
+  // registros de Treinamento — os outros dois têm suas próprias abas.
+  const dados = trnFiltrar().filter(r => trnTipoDoRegistro(r) === 'Treinamento');
+  const TH = 'font-size:10px;font-weight:700;text-transform:uppercase;padding:7px 8px;background:var(--surface2);border-bottom:0.5px solid var(--border);color:var(--text2)';
+  const TD = 'padding:8px 8px;border-bottom:0.5px solid var(--border);font-size:12px;vertical-align:middle';
+  const total = dados.length;
+  const medias = dados.map(r=>parseFloat(r.nota_media||r.nota_m_dia||0)).filter(v=>v>0);
+  const notaMedia = medias.length ? (medias.reduce((a,b)=>a+b,0)/medias.length).toFixed(1) : '—';
+  const preparados  = dados.filter(r=>{
+    const prep = String(r.se_sente_preparado||r.preparo||'').toLowerCase();
+    const sug  = String(r.sugestao||r.sugest_o||'').toLowerCase();
+    const sugEhPrep = sug.includes('preparado')||sug.includes('prática')||sug.includes('treinamento');
+    return prep.includes('sim') || (sugEhPrep && sug.includes('sim'));
+  }).length;
+  const maisPratica = dados.filter(r=>String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('pr'+'tica') || String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('pratica') || String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('prática')).length;
+  const maisTreino  = dados.filter(r=>String(r.se_sente_preparado||r.preparo||'').toLowerCase().includes('treinamento')).length;
+  const pctPrep     = total ? Math.round((preparados/total)*100) : 0;
+  const pctPratica  = total ? Math.round((maisPratica/total)*100) : 0;
+  const pctTreino   = total ? Math.round((maisTreino/total)*100) : 0;
+  const apresSet = new Set(dados.map(r=>r.apresentador||'').filter(Boolean));
+
+  // Card novo: soma de Treinamentos (deduplicados) + Reunião de Bom Dia + Inventário,
+  // respeitando os mesmos filtros de mês/apresentador desta aba.
+  const todosFiltrados = trnFiltrar();
+  const bomdiaFiltrados = todosFiltrados.filter(r=>trnTipoDoRegistro(r)==='Reunião de Bom Dia');
+  const invFiltrados    = todosFiltrados.filter(r=>trnTipoDoRegistro(r)==='Inventário de Equipamentos');
+  const nTreinosDedup   = Object.values(trnSessoesTreinamento(dados)).reduce((a,arr)=>a+arr.length,0);
+  const totalAtividades = nTreinosDedup + bomdiaFiltrados.length + invFiltrados.length;
+
+  const kpiEl = document.getElementById('trn-kpis');
+  if(kpiEl) kpiEl.innerHTML = `
+    <div class="kpi"><div class="kpi-ico">🎓</div><div class="kpi-val" style="color:var(--blue)">${total}</div><div class="kpi-lbl">Avaliações</div><div class="kpi-accent b"></div></div>
+    <div class="kpi"><div class="kpi-ico">⭐</div><div class="kpi-val" style="color:var(--gold)">${notaMedia}</div><div class="kpi-lbl">Nota Média</div><div class="kpi-accent gold"></div></div>
+    <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${preparados} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctPrep}%)</span></div><div class="kpi-lbl">Preparados</div><div class="kpi-accent g"></div></div>
+    <div class="kpi"><div class="kpi-ico">🔄</div><div class="kpi-val" style="color:var(--gold)">${maisPratica} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctPratica}%)</span></div><div class="kpi-lbl">Precisam de Mais Prática</div><div class="kpi-accent o"></div></div>
+    <div class="kpi"><div class="kpi-ico">📚</div><div class="kpi-val" style="color:var(--red)">${maisTreino} <span style="font-size:14px;font-weight:400;color:var(--text3)">(${pctTreino}%)</span></div><div class="kpi-lbl">Precisam de Mais Treinamento</div><div class="kpi-accent r"></div></div>
+    <div class="kpi"><div class="kpi-ico">👤</div><div class="kpi-val" style="color:var(--purple)">${apresSet.size}</div><div class="kpi-lbl">Apresentadores Avaliados</div><div class="kpi-accent p"></div></div>
+    <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:var(--blue)">${totalAtividades}</div><div class="kpi-lbl">Atividades no Período (Trein. + Bom Dia + Invent.)</div><div class="kpi-accent b"></div></div>`;
+  const APRES = ['Lozania Fontes','Jairo Sodré','Clayton Barbosa','Paulo Vitor','Rodrigo França'];
+  const apresEl = document.getElementById('trn-chart-apres');
+  if(apresEl) apresEl.innerHTML = APRES.map(a => {
+    const rows = dados.filter(r=>(r.apresentador||'')===a);
+    const ns = rows.map(r=>parseFloat(r.nota_media||r.nota_m_dia||0)).filter(v=>v>0);
+    const med = ns.length ? (ns.reduce((x,y)=>x+y,0)/ns.length) : 0;
+    const cor = med>=8?'var(--green)':med>=6?'var(--gold)':'var(--red)';
+    const nTreinos = Object.values(trnSessoesTreinamento(rows)).reduce((a,arr)=>a+arr.length,0);
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--text);font-weight:500">${a}</span>
+        <span style="color:${cor};font-weight:700">${med?med.toFixed(1):'—'} <span style="color:var(--text3);font-weight:400">(${nTreinos} treinamento${nTreinos!==1?'s':''} · ${rows.length} avaliaç${rows.length!==1?'ões':'ão'})</span></span>
+      </div>
+      <div style="height:6px;background:var(--border2);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${(med/10)*100}%;background:${cor};border-radius:99px"></div>
+      </div></div>`;
+  }).join('');
+  const TEMAS = ['Autosegsat','Segsat Family','Livre','Técnica de ofertar','Contorno de objeções','Precificações'];
+  const temasEl = document.getElementById('trn-chart-temas');
+  if(temasEl) {
+    const ct = {};
+    dados.forEach(r=>{ const t=String(r.temas_abordados||r.temas||''); TEMAS.forEach(tm=>{ if(t.toLowerCase().includes(tm.toLowerCase())) ct[tm]=(ct[tm]||0)+1; }); });
+    const maxT = Math.max(...Object.values(ct),1);
+    temasEl.innerHTML = TEMAS.map(tm=>`<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--text)">${tm}</span><span style="color:var(--blue);font-weight:600">${ct[tm]||0}</span>
+      </div>
+      <div style="height:5px;background:var(--border2);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${((ct[tm]||0)/maxT)*100}%;background:var(--blue);border-radius:99px"></div>
+      </div></div>`).join('');
+  }
+  const tbl = document.getElementById('trn-table');
+  if(tbl) {
+    if(!dados.length){ tbl.innerHTML='<tr><td style="padding:20px;color:var(--text3);text-align:center">Nenhuma avaliação encontrada — acesse o formulário para coletar avaliações.</td></tr>'; }
+    else {
+      tbl.innerHTML = `<thead><tr>
+        <th style="${TH};text-align:left">Data</th>
+        <th style="${TH};text-align:left">Apresentador</th>
+        <th style="${TH};text-align:left">Loja</th>
+        <th style="${TH};text-align:left">Setor</th>
+        <th style="${TH};text-align:center">Nota</th>
+        <th style="${TH};text-align:center">Preparado?</th>
+        <th style="${TH};text-align:left">Temas</th>
+        <th style="${TH};text-align:left">Sugestão</th>
+      </tr></thead><tbody>${dados.map(r=>{
+        const nota=parseFloat(r.nota_media||r.nota_m_dia||0);
+        const cor=nota>=8?'var(--green)':nota>=6?'var(--gold)':'var(--red)';
+        const data=r.timestamp?new Date(r.timestamp).toLocaleDateString('pt-BR'):(r.data||'');
+
+        // Campo "preparado": verifica campo oficial E detecta se está na sugestão
+        const preparadoRaw = String(r.se_sente_preparado||r.preparo||'').toLowerCase();
+        const sugestaoRaw  = String(r.sugestao||r.sugest_o||'');
+        const sugestaoEmPrep = sugestaoRaw.toLowerCase().includes('preparado') || sugestaoRaw.toLowerCase().includes('prática') || sugestaoRaw.toLowerCase().includes('treinamento');
+        const sim = preparadoRaw.includes('sim') || (sugestaoEmPrep && sugestaoRaw.toLowerCase().includes('sim'));
+
+        // Sugestão: limpa se for número (nota no lugar errado) ou se foi usada como preparo
+        const sugestaoEhNumero = !isNaN(parseFloat(sugestaoRaw)) && sugestaoRaw.trim() !== '';
+        const sugestaoFinal = sugestaoEhNumero || sugestaoEmPrep ? '—' : (sugestaoRaw || '—');
+
+        return `<tr>
+          <td style="${TD};color:var(--text3)">${data}</td>
+          <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
+          <td style="${TD}">${r.loja||'—'}</td>
+          <td style="${TD}">${(()=>{
+            const s=r.setor||'—';
+            if(s==='—') return '<span style="color:var(--text3)">—</span>';
+            const ico=s.includes('Carros')?'🚗':s.includes('cess')?'🔧':s.includes('Entrega')?'📋':'🤝';
+            return `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(0,148,116,0.08);color:var(--green-d);white-space:nowrap">${ico} ${s}</span>`;
+          })()}</td>
+          <td style="${TD};text-align:center;font-weight:700;color:${cor}">${nota?nota.toFixed(1):'—'}</td>
+          <td style="${TD};text-align:center"><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${sim?'rgba(100,204,50,0.1)':'rgba(226,75,74,0.1)'};color:${sim?'var(--green)':'var(--red)'}">${sim?'✅ Sim':'❌ Não'}</span></td>
+          <td style="${TD};font-size:11px;color:var(--text2)">${r.temas_abordados||r.temas||'—'}</td>
+          <td style="${TD};font-size:11px;color:var(--text3)">${sugestaoFinal}</td>
+        </tr>`;
+      }).join('')}</tbody>`;
+    }
+  }
+  trnRenderizarCobertura();
+  trnRenderizarBomDia();
+  trnRenderizarInventario();
+}
+
+// Dispara o carregamento dos dados de Treinamentos ao navegar para a aba.
+const _origNavToTrn = navTo;
+navTo = function(page, btn) {
+  _origNavToTrn(page, btn);
+  if(page==='treinamentos') trnCarregarDados();
+};
+
 </script>
 </body>
 </html>

@@ -2571,7 +2571,7 @@ function renderMetaTrimestre() {
     const necessario = Math.max(0, necessarioRaw);
     const pctNecessario = m3.car > 0 ? necessario / m3.car : 0;
     return { ...r, m1, m2, m3, necessarioRaw, necessario, pctNecessario, bateu: necessarioRaw <= 0 };
-  }).sort((a, b) => b.pctNecessario - a.pctNecessario); // ordenado por % de conversão necessário (maior esforço primeiro)
+  }).sort((a, b) => a.pctNecessario - b.pctNecessario); // ordenado por % de conversão necessário (melhor conversão / menor esforço primeiro)
 
   const tot = rows.reduce((acc, r) => {
     acc.m1seg += r.m1.seg; acc.m1car += r.m1.car;

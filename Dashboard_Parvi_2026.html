@@ -2576,26 +2576,37 @@ function renderMetaTrimestre() {
   const tot = rows.reduce((acc, r) => {
     acc.m1seg += r.m1.seg; acc.m1car += r.m1.car;
     acc.m2seg += r.m2.seg; acc.m2car += r.m2.car;
-    acc.m3car += r.m3.car; acc.necessario += Math.max(0, r.necessarioRaw);
+    acc.m3car += r.m3.car;
     return acc;
-  }, { m1seg: 0, m1car: 0, m2seg: 0, m2car: 0, m3car: 0, necessario: 0 });
+  }, { m1seg: 0, m1car: 0, m2seg: 0, m2car: 0, m3car: 0 });
   const totPctM1 = tot.m1car > 0 ? tot.m1seg / tot.m1car : 0;
   const totPctM2 = tot.m2car > 0 ? tot.m2seg / tot.m2car : 0;
-  const totPctNecessario = tot.m3car > 0 ? tot.necessario / tot.m3car : 0;
+
+  // Meta da MARCA: calculada sobre o total agregado (todas as lojas somadas) no trimestre — NÃO é a soma das
+  // necessidades de cada loja já truncadas em 0. A meta da loja (prêmio da gerência) e a meta da marca (prêmio
+  // da diretoria) são independentes: uma loja acima da meta compensa outra abaixo dentro do resultado da marca,
+  // e a marca pode bater a meta mesmo com lojas individualmente abaixo — e vice-versa.
+  const totalCarrosTriMarca = tot.m1car + tot.m2car + tot.m3car;
+  const necessarioTotalMarca = metaPct * totalCarrosTriMarca;
+  const jaVendidoMarca = tot.m1seg + tot.m2seg;
+  const necessarioRawMarca = necessarioTotalMarca - jaVendidoMarca;
+  const necessarioMarca = Math.max(0, necessarioRawMarca);
+  const pctNecessarioMarca = tot.m3car > 0 ? necessarioMarca / tot.m3car : 0;
+  const marcaBateu = necessarioRawMarca <= 0;
 
   if (titleEl) titleEl.textContent = `🎯 ${marca} — Meta Trimestre (${MT_TRI})`;
   if (subEl) subEl.textContent = rows.length
-    ? `${mtMesLabel(meses[0])} + ${mtMesLabel(meses[1])} (fechados) · ${mtMesLabel(meses[2])} (fechamento — carros ao vivo da planilha)`
+    ? `${mtMesLabel(meses[0])} + ${mtMesLabel(meses[1])} (fechados) · ${mtMesLabel(meses[2])} (fechamento — carros ao vivo da planilha) · meta da loja (gerência) e meta da marca (diretoria) são apuradas de forma independente`
     : `Nenhuma loja ${marca} encontrada neste trimestre`;
   if (tagEl) tagEl.textContent = `Meta ${Math.round(metaPct * 100)}%`;
 
   if (kpisEl) {
-    const corPct = totPctNecessario > metaPct * 1.3 ? 'var(--red)' : totPctNecessario > metaPct ? 'var(--orange)' : 'var(--green)';
+    const corPct = marcaBateu ? 'var(--green)' : pctNecessarioMarca > metaPct * 1.3 ? 'var(--red)' : pctNecessarioMarca > metaPct ? 'var(--orange)' : 'var(--green)';
     kpisEl.innerHTML = `
-      <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--gold)">${fNum1(tot.necessario)}</div><div class="kpi-lbl">Segsat necessário em ${mtMesLabel(meses[2])}</div><div class="kpi-accent gold"></div></div>
+      <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--gold)">${fNum1(necessarioMarca)}</div><div class="kpi-lbl">Segsat necessário da MARCA em ${mtMesLabel(meses[2])}</div><div class="kpi-accent gold"></div></div>
       <div class="kpi"><div class="kpi-ico">🚗</div><div class="kpi-val" style="color:var(--blue)">${tot.m3car.toLocaleString('pt-BR')}</div><div class="kpi-lbl">Carros em ${mtMesLabel(meses[2])} (ao vivo)</div><div class="kpi-accent b"></div></div>
-      <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:${corPct}">${fPct(totPctNecessario)}</div><div class="kpi-lbl">% de conversão necessário</div><div class="kpi-accent ${totPctNecessario > metaPct ? 'o' : 'g'}"></div></div>
-      <div class="kpi"><div class="kpi-ico">✅</div><div class="kpi-val" style="color:var(--green)">${rows.filter(r => r.bateu).length}/${rows.length}</div><div class="kpi-lbl">Lojas que já bateram a meta</div><div class="kpi-accent g"></div></div>`;
+      <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:${corPct}">${fPct(pctNecessarioMarca)}</div><div class="kpi-lbl">% de conversão necessário (marca)</div><div class="kpi-accent ${marcaBateu ? 'g' : pctNecessarioMarca > metaPct ? 'o' : 'g'}"></div></div>
+      <div class="kpi"><div class="kpi-ico">${marcaBateu ? '🏆' : '✅'}</div><div class="kpi-val" style="color:var(--green)">${marcaBateu ? 'Marca OK' : rows.filter(r => r.bateu).length + '/' + rows.length}</div><div class="kpi-lbl">${marcaBateu ? 'Marca já bateu a meta do trimestre' : 'Lojas que já bateram a própria meta'}</div><div class="kpi-accent g"></div></div>`;
   }
 
   if (!rows.length) {
@@ -2626,10 +2637,10 @@ function renderMetaTrimestre() {
     </tr>`;
   }).join('')}
   <tr style="font-weight:700;background:var(--surface2)">
-    <td class="td-main">TOTAL</td>
+    <td class="td-main">TOTAL — MARCA${marcaBateu ? ' <span style="color:var(--green);font-size:10px;font-weight:600">🏆 Dentro da Meta</span>' : ''}</td>
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${tot.m1seg}</td><td class="td-mono" style="text-align:center">${tot.m1car}</td><td class="td-mono" style="text-align:center">${fPct(totPctM1)}</td>
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${tot.m2seg}</td><td class="td-mono" style="text-align:center">${tot.m2car}</td><td class="td-mono" style="text-align:center">${fPct(totPctM2)}</td>
-    <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:var(--gold)">${fNum1(tot.necessario)}</td><td class="td-mono" style="text-align:center">${tot.m3car}</td><td class="td-mono" style="text-align:center;color:var(--gold)">${fPct(totPctNecessario)}</td>
+    <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fNum1(necessarioMarca)}</td><td class="td-mono" style="text-align:center">${tot.m3car}</td><td class="td-mono" style="text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fPct(pctNecessarioMarca)}</td>
   </tr>
   </tbody>`;
 }

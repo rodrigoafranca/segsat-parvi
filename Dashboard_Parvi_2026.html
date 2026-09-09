@@ -2576,9 +2576,9 @@ function renderMetaTrimestre() {
   const tot = rows.reduce((acc, r) => {
     acc.m1seg += r.m1.seg; acc.m1car += r.m1.car;
     acc.m2seg += r.m2.seg; acc.m2car += r.m2.car;
-    acc.m3car += r.m3.car;
+    acc.m3seg += r.m3.seg; acc.m3car += r.m3.car;
     return acc;
-  }, { m1seg: 0, m1car: 0, m2seg: 0, m2car: 0, m3car: 0 });
+  }, { m1seg: 0, m1car: 0, m2seg: 0, m2car: 0, m3seg: 0, m3car: 0 });
   const totPctM1 = tot.m1car > 0 ? tot.m1seg / tot.m1car : 0;
   const totPctM2 = tot.m2car > 0 ? tot.m2seg / tot.m2car : 0;
 
@@ -2593,6 +2593,13 @@ function renderMetaTrimestre() {
   const necessarioMarca = Math.max(0, necessarioRawMarca);
   const pctNecessarioMarca = tot.m3car > 0 ? necessarioMarca / tot.m3car : 0;
   const marcaBateu = necessarioRawMarca <= 0;
+
+  // Totalizador real do trimestre inteiro (Segsat e Carros vendidos de fato nos 3 meses, incluindo o
+  // que já foi vendido no mês de fechamento até agora) — conversão acumulada real da marca no trimestre.
+  const segsatTotalTri = tot.m1seg + tot.m2seg + tot.m3seg;
+  const carrosTotalTri = totalCarrosTriMarca;
+  const pctTotalTri = carrosTotalTri > 0 ? segsatTotalTri / carrosTotalTri : 0;
+  const triBateu = pctTotalTri >= metaPct;
 
   if (titleEl) titleEl.textContent = `🎯 ${marca} — Meta Trimestre (${MT_TRI})`;
   if (subEl) subEl.textContent = rows.length
@@ -2641,6 +2648,16 @@ function renderMetaTrimestre() {
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${tot.m1seg}</td><td class="td-mono" style="text-align:center">${tot.m1car}</td><td class="td-mono" style="text-align:center">${fPct(totPctM1)}</td>
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${tot.m2seg}</td><td class="td-mono" style="text-align:center">${tot.m2car}</td><td class="td-mono" style="text-align:center">${fPct(totPctM2)}</td>
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fNum1(necessarioMarca)}</td><td class="td-mono" style="text-align:center">${tot.m3car}</td><td class="td-mono" style="text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fPct(pctNecessarioMarca)}</td>
+  </tr>
+  <tr style="font-weight:700;background:${triBateu ? 'var(--green-bg)' : 'var(--gold-bg)'}">
+    <td colspan="10" style="text-align:center;padding:12px 10px;font-size:12.5px;color:var(--text)">
+      🏁 TOTAL DO TRIMESTRE (real, ${meses.map(mtMesLabel).join(' + ')}) —
+      Segsat: <span style="font-family:'DM Mono',monospace;color:var(--text)">${segsatTotalTri.toLocaleString('pt-BR')}</span> ·
+      Carros: <span style="font-family:'DM Mono',monospace;color:var(--text)">${carrosTotalTri.toLocaleString('pt-BR')}</span> ·
+      Conversão: <span style="font-family:'DM Mono',monospace;color:${triBateu ? 'var(--green)' : 'var(--orange)'}">${fPct(pctTotalTri)}</span>
+      <span style="font-weight:400;color:var(--text3)">(meta ${Math.round(metaPct * 100)}%)</span>
+      ${triBateu ? '<span style="color:var(--green)">✅ Meta do trimestre batida</span>' : ''}
+    </td>
   </tr>
   </tbody>`;
 }

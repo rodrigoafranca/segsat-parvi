@@ -1865,7 +1865,7 @@ function trnRenderizarBomDia() {
     <th style="${TH};text-align:center">Foto</th>
   </tr></thead><tbody>${sorted.map(r=>{
     const data = r.timestamp ? new Date(r.timestamp).toLocaleDateString('pt-BR') : '—';
-    const foto = r.foto_url ? `<a href="${r.foto_url}" target="_blank" style="color:var(--blue);font-weight:600">📷 Ver foto</a>` : '<span style="color:var(--text3)">—</span>';
+    const foto = trnRenderFotos(r.foto_url);
     return `<tr>
       <td style="${TD};color:var(--text3)">${data}</td>
       <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
@@ -1922,7 +1922,7 @@ function trnRenderizarInventario() {
     <th style="${TH};text-align:center">Foto</th>
   </tr></thead><tbody>${sorted.map(r=>{
     const data = r.timestamp ? new Date(r.timestamp).toLocaleDateString('pt-BR') : '—';
-    const foto = r.foto_url ? `<a href="${r.foto_url}" target="_blank" style="color:var(--blue);font-weight:600">📷 Ver foto</a>` : '<span style="color:var(--text3)">—</span>';
+    const foto = trnRenderFotos(r.foto_url);
     return `<tr>
       <td style="${TD};color:var(--text3)">${data}</td>
       <td style="${TD};font-weight:500">${r.apresentador||'—'}</td>
@@ -1940,6 +1940,16 @@ const _ddAberto = {};
 // MÓDULO TREINAMENTOS
 // ============================================================
 let TRN_DADOS = [];
+
+// Um registro pode ter mais de uma foto — "Foto URL" vem com as URLs separadas por ", ".
+// Sempre usar esta função para renderizar fotos em vez de montar o <a href> na mão.
+function trnRenderFotos(fotoUrlStr) {
+  const urls = String(fotoUrlStr || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!urls.length) return '<span style="color:var(--text3)">—</span>';
+  if (urls.length === 1) return `<a href="${urls[0]}" target="_blank" style="color:var(--blue);font-weight:600">📷 Ver foto</a>`;
+  return urls.map((u, i) => `<a href="${u}" target="_blank" style="color:var(--blue);font-weight:600;margin-right:6px;white-space:nowrap">📷 Foto ${i + 1}</a>`).join('');
+}
+
 
 // Garante que ALL_STORES (lista de lojas do mês, vinda da planilha de vendas — mesma fonte
 // usada em Ranking de Lojas / Detalhe por Marca, inclui lojas zeradas) esteja disponível mesmo
@@ -2075,6 +2085,7 @@ function trnRenderizar() {
         <th style="${TH};text-align:center">Preparado?</th>
         <th style="${TH};text-align:left">Temas</th>
         <th style="${TH};text-align:left">Sugestão</th>
+        <th style="${TH};text-align:center">Foto</th>
       </tr></thead><tbody>${dados.map(r=>{
         const nota=parseFloat(r.nota_media||r.nota_m_dia||0);
         const cor=nota>=8?'var(--green)':nota>=6?'var(--gold)':'var(--red)';
@@ -2089,6 +2100,7 @@ function trnRenderizar() {
         // Sugestão: limpa se for número (nota no lugar errado) ou se foi usada como preparo
         const sugestaoEhNumero = !isNaN(parseFloat(sugestaoRaw)) && sugestaoRaw.trim() !== '';
         const sugestaoFinal = sugestaoEhNumero || sugestaoEmPrep ? '—' : (sugestaoRaw || '—');
+        const foto = trnRenderFotos(r.foto_url);
 
         return `<tr>
           <td style="${TD};color:var(--text3)">${data}</td>
@@ -2104,6 +2116,7 @@ function trnRenderizar() {
           <td style="${TD};text-align:center"><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${sim?'rgba(100,204,50,0.1)':'rgba(226,75,74,0.1)'};color:${sim?'var(--green)':'var(--red)'}">${sim?'✅ Sim':'❌ Não'}</span></td>
           <td style="${TD};font-size:11px;color:var(--text2)">${r.temas_abordados||r.temas||'—'}</td>
           <td style="${TD};font-size:11px;color:var(--text3)">${sugestaoFinal}</td>
+          <td style="${TD};text-align:center">${foto}</td>
         </tr>`;
       }).join('')}</tbody>`;
     }
@@ -2556,14 +2569,24 @@ function renderMetaTrimestre() {
       const m = s.marca || getMarcaByName(s.loja);
       if (m !== marca) return;
       if (!storeMap[s.loja]) {
-        storeMap[s.loja] = { loja: s.loja, uf: s.uf, meses: [{ seg: 0, car: 0 }, { seg: 0, car: 0 }, { seg: 0, car: 0 }] };
+        storeMap[s.loja] = { loja: s.loja, uf: s.uf, meses: [{ seg: 0, car: 0, carAoVivo: 0 }, { seg: 0, car: 0, carAoVivo: 0 }, { seg: 0, car: 0, carAoVivo: 0 }] };
       }
-      storeMap[s.loja].meses[idx] = { seg: s.segsat || 0, car: s.carros || 0 };
+      // ATENÇÃO (pedido Rodrigo 15/09/2026): SÓ no menu Meta Trimestre, o mês de fechamento (3º mês) usa a
+      // Meta de Carros (coluna J da planilha) como o "Carros" do mês, em vez do carros ao vivo — evita que a
+      // coluna fique com números absurdos (%  tipo 870%) no início do mês, quando os carros reais ainda estão
+      // quase zerados. Se a Meta de Carros não foi preenchida, cai pra 0 igual antes. Guardamos o carros ao
+      // vivo à parte (carAoVivo) só de referência — nenhum cálculo do card usa mais esse valor.
+      storeMap[s.loja].meses[idx] = idx === 2
+        ? { seg: s.segsat || 0, car: s.metaCarros || 0, carAoVivo: s.carros || 0 }
+        : { seg: s.segsat || 0, car: s.carros || 0, carAoVivo: s.carros || 0 };
     });
   });
 
   const rows = Object.values(storeMap).map(r => {
     const [m1, m2, m3] = r.meses;
+    // m3.car já vem como a Meta de Carros (coluna J) do mês de fechamento — ver comentário na montagem do
+    // storeMap acima. Todo o cálculo abaixo (necessário, %, objetivo) passa a ser sobre esse valor, só neste
+    // menu (Meta Trimestre); o restante do dashboard continua usando o carros ao vivo normalmente.
     const totalCarrosTri = m1.car + m2.car + m3.car;
     const necessarioTotal = metaPct * totalCarrosTri;
     const jaVendido = m1.seg + m2.seg;
@@ -2571,13 +2594,17 @@ function renderMetaTrimestre() {
     // mais do que a meta trimestral inteira exige; é esse valor que soma certinho com os outros meses
     // para bater o "Objetivo 3 TRI" abaixo, e é o mesmo valor somado na linha TOTAL — MARCA.
     const necessarioRaw = necessarioTotal - jaVendido;
-    const pctNecessario = m3.car > 0 ? necessarioRaw / m3.car : 0;
+    const bateu = necessarioRaw <= 0;
+    // % de conversão necessário no mês de fechamento, com base na Meta de Carros. Se a loja já bateu a
+    // própria meta com os 2 meses fechados, não faz sentido mostrar um número negativo — trava em 0/0,0%.
+    const necessarioDisplay = bateu ? 0 : necessarioRaw;
+    const pctNecessario = bateu ? 0 : (m3.car > 0 ? necessarioRaw / m3.car : 0);
     // Objetivo do trimestre inteiro para esta loja, em números absolutos (Segsat/Carros/%) — é simplesmente
     // os 2 meses fechados + o necessário (raw) do fechamento, então a % sempre bate com a meta da marca.
     const objSeg = jaVendido + necessarioRaw;
     const objCar = totalCarrosTri;
     const objPct = objCar > 0 ? objSeg / objCar : metaPct;
-    return { ...r, m1, m2, m3, necessarioRaw, pctNecessario, objSeg, objCar, objPct, bateu: necessarioRaw <= 0 };
+    return { ...r, m1, m2, m3, necessarioRaw, necessarioDisplay, pctNecessario, objSeg, objCar, objPct, bateu };
   }).sort((a, b) => a.pctNecessario - b.pctNecessario); // ordenado por % de conversão necessário (melhor conversão / menor esforço primeiro)
 
   const tot = rows.reduce((acc, r) => {
@@ -2597,8 +2624,11 @@ function renderMetaTrimestre() {
   const necessarioTotalMarca = metaPct * totalCarrosTriMarca;
   const jaVendidoMarca = tot.m1seg + tot.m2seg;
   const necessarioRawMarca = necessarioTotalMarca - jaVendidoMarca; // valor raw, pode ser negativo (marca já bateu com sobra)
-  const pctNecessarioMarca = tot.m3car > 0 ? necessarioRawMarca / tot.m3car : 0;
   const marcaBateu = necessarioRawMarca <= 0;
+  // Mesma trava de exibição do nível loja: se a marca já bateu a própria meta com os 2 meses fechados, mostra
+  // 0/0,0% em vez de um número negativo.
+  const necessarioMarcaDisplay = marcaBateu ? 0 : necessarioRawMarca;
+  const pctNecessarioMarca = marcaBateu ? 0 : (tot.m3car > 0 ? necessarioRawMarca / tot.m3car : 0);
   // Objetivo do trimestre inteiro para a MARCA, em números absolutos
   const objSegMarca = jaVendidoMarca + necessarioRawMarca;
   const objCarMarca = totalCarrosTriMarca;
@@ -2613,15 +2643,15 @@ function renderMetaTrimestre() {
 
   if (titleEl) titleEl.textContent = `🎯 ${marca} — Meta Trimestre (${MT_TRI})`;
   if (subEl) subEl.textContent = rows.length
-    ? `${mtMesLabel(meses[0])} + ${mtMesLabel(meses[1])} (fechados) · ${mtMesLabel(meses[2])} (fechamento — carros ao vivo da planilha) · meta da loja (gerência) e meta da marca (diretoria) são apuradas de forma independente`
+    ? `${mtMesLabel(meses[0])} + ${mtMesLabel(meses[1])} (fechados) · ${mtMesLabel(meses[2])} (fechamento — Meta de Carros da coluna J da planilha) · meta da loja (gerência) e meta da marca (diretoria) são apuradas de forma independente`
     : `Nenhuma loja ${marca} encontrada neste trimestre`;
   if (tagEl) tagEl.textContent = `Meta ${Math.round(metaPct * 100)}%`;
 
   if (kpisEl) {
     const corPct = marcaBateu ? 'var(--green)' : pctNecessarioMarca > metaPct * 1.3 ? 'var(--red)' : pctNecessarioMarca > metaPct ? 'var(--orange)' : 'var(--green)';
     kpisEl.innerHTML = `
-      <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--gold)">${fNum1(Math.max(0, necessarioRawMarca))}</div><div class="kpi-lbl">Segsat necessário da MARCA em ${mtMesLabel(meses[2])}</div><div class="kpi-accent gold"></div></div>
-      <div class="kpi"><div class="kpi-ico">🚗</div><div class="kpi-val" style="color:var(--blue)">${tot.m3car.toLocaleString('pt-BR')}</div><div class="kpi-lbl">Carros em ${mtMesLabel(meses[2])} (ao vivo)</div><div class="kpi-accent b"></div></div>
+      <div class="kpi"><div class="kpi-ico">🎯</div><div class="kpi-val" style="color:var(--gold)">${fNum1(necessarioMarcaDisplay)}</div><div class="kpi-lbl">Segsat necessário da MARCA em ${mtMesLabel(meses[2])} (Meta de Carros)</div><div class="kpi-accent gold"></div></div>
+      <div class="kpi"><div class="kpi-ico">🚗</div><div class="kpi-val" style="color:var(--blue)">${tot.m3car.toLocaleString('pt-BR')}</div><div class="kpi-lbl">Meta de Carros em ${mtMesLabel(meses[2])} (coluna J)</div><div class="kpi-accent b"></div></div>
       <div class="kpi"><div class="kpi-ico">📊</div><div class="kpi-val" style="color:${corPct}">${fPct(pctNecessarioMarca)}</div><div class="kpi-lbl">% de conversão necessário (marca)</div><div class="kpi-accent ${marcaBateu ? 'g' : pctNecessarioMarca > metaPct ? 'o' : 'g'}"></div></div>
       <div class="kpi"><div class="kpi-ico">${marcaBateu ? '🏆' : '✅'}</div><div class="kpi-val" style="color:var(--green)">${marcaBateu ? 'Marca OK' : rows.filter(r => r.bateu).length + '/' + rows.length}</div><div class="kpi-lbl">${marcaBateu ? 'Marca já bateu a meta do trimestre' : 'Lojas que já bateram a própria meta'}</div><div class="kpi-accent g"></div></div>`;
   }
@@ -2635,13 +2665,13 @@ function renderMetaTrimestre() {
     <th rowspan="2" style="${THG};vertical-align:bottom;min-width:140px;text-align:left">Loja</th>
     <th colspan="3" style="${THG};text-align:center;border-left:1.5px solid var(--border2)">${mtMesLabel(meses[0])}</th>
     <th colspan="3" style="${THG};text-align:center;border-left:1.5px solid var(--border2)">${mtMesLabel(meses[1])}</th>
-    <th colspan="3" style="${THG};text-align:center;border-left:1.5px solid var(--border2);color:var(--gold)">${mtMesLabel(meses[2])} (Obj. Tri)</th>
-    <th colspan="3" style="${THG};text-align:center;border-left:1.5px solid var(--border2);color:var(--purple)">Objetivo 3° TRI</th>
+    <th colspan="3" style="${THG};text-align:center;border-left:1.5px solid var(--border2);color:var(--gold)">${mtMesLabel(meses[2])} (Meta de Carros)</th>
+    <th colspan="3" style="${THG};text-align:center;border-left:1.5px solid var(--border2);color:var(--blue)">Objetivo 3° TRI</th>
   </tr><tr>
     <th style="${THSUB};border-left:1.5px solid var(--border2)">Segsat</th><th style="${THSUB}">Carros</th><th style="${THSUB}">%</th>
     <th style="${THSUB};border-left:1.5px solid var(--border2)">Segsat</th><th style="${THSUB}">Carros</th><th style="${THSUB}">%</th>
-    <th style="${THSUB};border-left:1.5px solid var(--border2);color:var(--gold)">Segsat</th><th style="${THSUB};color:var(--gold)">Carros</th><th style="${THSUB};color:var(--gold)">%</th>
-    <th style="${THSUB};border-left:1.5px solid var(--border2);color:var(--purple)">Segsat</th><th style="${THSUB};color:var(--purple)">Carros</th><th style="${THSUB};color:var(--purple)">%</th>
+    <th style="${THSUB};border-left:1.5px solid var(--border2);color:var(--gold)">Segsat</th><th style="${THSUB};color:var(--gold)">Meta Carros</th><th style="${THSUB};color:var(--gold)">%</th>
+    <th style="${THSUB};border-left:1.5px solid var(--border2);color:var(--blue)">Segsat</th><th style="${THSUB};color:var(--blue)">Carros</th><th style="${THSUB};color:var(--blue)">%</th>
   </tr></thead>
   <tbody>${rows.map(r => {
     const pM1 = r.m1.car > 0 ? r.m1.seg / r.m1.car : 0;
@@ -2652,16 +2682,16 @@ function renderMetaTrimestre() {
       <td class="td-main">${r.loja}${r.bateu ? ' <span style="color:var(--green);font-size:10px;font-weight:600">✅ Dentro da Meta</span>' : ''}</td>
       <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${r.m1.seg}</td><td class="td-mono" style="text-align:center">${r.m1.car}</td><td class="td-mono" style="text-align:center">${fPct(pM1)}</td>
       <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${r.m2.seg}</td><td class="td-mono" style="text-align:center">${r.m2.car}</td><td class="td-mono" style="text-align:center">${fPct(pM2)}</td>
-      <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;font-weight:700;color:${corPct}">${Math.round(r.necessarioRaw)}</td><td class="td-mono" style="text-align:center">${r.m3.car}</td><td class="td-mono" style="text-align:center;font-weight:${pesoPct};color:${corPct}">${fPct(r.pctNecessario)}</td>
-      <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:var(--purple)">${Math.round(r.objSeg)}</td><td class="td-mono" style="text-align:center">${r.objCar}</td><td class="td-mono" style="text-align:center;color:var(--purple)">${fPct(r.objPct)}</td>
+      <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;font-weight:700;color:${corPct}">${Math.round(r.necessarioDisplay)}</td><td class="td-mono" style="text-align:center">${r.m3.car}</td><td class="td-mono" style="text-align:center;font-weight:${pesoPct};color:${corPct}">${fPct(r.pctNecessario)}</td>
+      <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:var(--blue)">${Math.round(r.objSeg)}</td><td class="td-mono" style="text-align:center">${r.objCar}</td><td class="td-mono" style="text-align:center;color:var(--blue)">${fPct(r.objPct)}</td>
     </tr>`;
   }).join('')}
   <tr style="font-weight:700;background:var(--surface2)">
     <td class="td-main">TOTAL — MARCA${marcaBateu ? ' <span style="color:var(--green);font-size:10px;font-weight:600">🏆 Dentro da Meta</span>' : ''}</td>
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${tot.m1seg}</td><td class="td-mono" style="text-align:center">${tot.m1car}</td><td class="td-mono" style="text-align:center">${fPct(totPctM1)}</td>
     <td class="td-mono" style="border-left:1px solid var(--border);text-align:center">${tot.m2seg}</td><td class="td-mono" style="text-align:center">${tot.m2car}</td><td class="td-mono" style="text-align:center">${fPct(totPctM2)}</td>
-    <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fNum1(necessarioRawMarca)}</td><td class="td-mono" style="text-align:center">${tot.m3car}</td><td class="td-mono" style="text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fPct(pctNecessarioMarca)}</td>
-    <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:var(--purple)">${fNum1(objSegMarca)}</td><td class="td-mono" style="text-align:center">${objCarMarca}</td><td class="td-mono" style="text-align:center;color:var(--purple)">${fPct(objPctMarca)}</td>
+    <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fNum1(necessarioMarcaDisplay)}</td><td class="td-mono" style="text-align:center">${tot.m3car}</td><td class="td-mono" style="text-align:center;color:${marcaBateu ? 'var(--green)' : 'var(--gold)'}">${fPct(pctNecessarioMarca)}</td>
+    <td class="td-mono" style="border-left:1px solid var(--border);text-align:center;color:var(--blue)">${fNum1(objSegMarca)}</td><td class="td-mono" style="text-align:center">${objCarMarca}</td><td class="td-mono" style="text-align:center;color:var(--blue)">${fPct(objPctMarca)}</td>
   </tr>
   <tr style="font-weight:700;background:${triBateu ? 'var(--green-bg)' : 'var(--gold-bg)'}">
     <td colspan="13" style="text-align:center;padding:12px 10px;font-size:12.5px;color:var(--text)">

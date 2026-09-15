@@ -234,11 +234,13 @@
     <h2>Conexão com a planilha do Google</h2>
     <div class="conn-row">
       <span class="conn-status" id="connStatus"><span class="dot"></span><span id="connLabel">Modo offline (dados fixos)</span></span>
+      <button class="iconbtn" id="btnRetryConn" type="button" style="margin-left:10px;">🔄 Tentar novamente</button>
     </div>
     <div class="note" style="padding-top:0;">
       Este dashboard lê e grava direto nas abas <strong>Atletas</strong> e <strong>Ordem_Draft</strong> da sua
       planilha do Google — editar Posição/Idade ou confirmar uma escolha do draft aqui atualiza a planilha na
-      hora. Se o status acima não ficar verde, avise o Claude para verificar a conexão.
+      hora. Se o status acima não ficar verde, clique em "Tentar novamente" (o Google às vezes demora pra
+      "acordar" o script depois de um tempo sem uso) — se continuar assim, avise o Claude para verificar a conexão.
     </div>
   </div>
 
@@ -2924,7 +2926,25 @@ function setConnStatus(mode, label){
   document.getElementById('connLabel').textContent = label;
 }
 
-async function fetchLive(){
+function sleep_(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchOnce_(){
+  const res = await fetch(WEBAPP_URL);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'Erro desconhecido do Web App');
+  return data;
+}
+
+let autoRetryTimer = null;
+let fetchInFlight = false;
+
+// O Google Apps Script "adormece" depois de um tempo sem uso e a primeira
+// chamada pode demorar ou falhar — por isso tentamos algumas vezes com
+// espera crescente antes de desistir e cair pro modo offline (dados fixos).
+async function fetchLive(opts){
+  opts = opts || {};
+  const attempts = opts.attempts || 3;
+  const silent = !!opts.silent; // tentativa em segundo plano — não pisca o status se já está ao vivo
   if(!WEBAPP_URL){
     liveMode = false;
     setConnStatus('off', 'Modo offline (dados fixos)');
@@ -2934,35 +2954,62 @@ async function fetchLive(){
     document.getElementById('blockNote').style.display = 'block';
     return;
   }
-  try{
-    const res = await fetch(WEBAPP_URL);
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.error || 'Erro desconhecido do Web App');
-    PLAYERS = data.players;
-    DRAFT = data.draft;
-    if(typeof data.totalJogos === 'number' && data.totalJogos > 0) gamesCount = data.totalJogos;
-    liveMode = true;
-    setConnStatus('live', 'Conectado — lendo e gravando ao vivo');
-    document.getElementById('draftControls').style.display = 'flex';
-    document.getElementById('draftNote').style.display = 'none';
-    document.getElementById('blockControls').style.display = 'flex';
-    document.getElementById('blockNote').style.display = 'none';
-  }catch(err){
+  if(fetchInFlight) return;
+  fetchInFlight = true;
+  const btnRetry = document.getElementById('btnRetryConn');
+  if(btnRetry) btnRetry.disabled = true;
+
+  let ok = false;
+  for(let i = 0; i < attempts; i++){
+    if(!silent){
+      setConnStatus('off', attempts > 1 ? `Conectando... (tentativa ${i+1}/${attempts})` : 'Conectando...');
+    }
+    try{
+      const data = await fetchOnce_();
+      PLAYERS = data.players;
+      DRAFT = data.draft;
+      if(typeof data.totalJogos === 'number' && data.totalJogos > 0) gamesCount = data.totalJogos;
+      liveMode = true;
+      ok = true;
+      setConnStatus('live', 'Conectado — lendo e gravando ao vivo');
+      document.getElementById('draftControls').style.display = 'flex';
+      document.getElementById('draftNote').style.display = 'none';
+      document.getElementById('blockControls').style.display = 'flex';
+      document.getElementById('blockNote').style.display = 'none';
+      break;
+    }catch(err){
+      if(i < attempts - 1) await sleep_(1200 * (i + 1));
+    }
+  }
+
+  if(!ok && !silent){
     liveMode = false;
     PLAYERS = STATIC_PLAYERS;
     DRAFT = [];
     gamesCount = GAMES_COUNT;
-    setConnStatus('err', 'Não consegui conectar (verifique a URL) — mostrando dados fixos');
+    setConnStatus('err', 'Não consegui conectar agora — mostrando dados fixos (clique em "Tentar novamente")');
     document.getElementById('draftControls').style.display = 'none';
     document.getElementById('draftNote').style.display = 'block';
     document.getElementById('blockControls').style.display = 'none';
     document.getElementById('blockNote').style.display = 'block';
   }
+
+  fetchInFlight = false;
+  if(btnRetry) btnRetry.disabled = false;
+
   render();
   renderDraft();
   renderSuggest();
   renderTeams();
   renderBlocks();
+
+  // Se ficou offline (ou se essa foi uma tentativa silenciosa que falhou),
+  // continua tentando sozinho de tempos em tempos, sem precisar recarregar a página.
+  if(!liveMode && WEBAPP_URL && !autoRetryTimer){
+    autoRetryTimer = setInterval(() => {
+      if(!liveMode) fetchLive({ attempts: 1, silent: true });
+    }, 45000);
+  }
 }
 
 async function postAction(payload){
@@ -3331,6 +3378,11 @@ themeBtn.addEventListener('click', () => {
   root.setAttribute('data-theme', isDark ? 'light' : 'dark');
   themeBtn.textContent = isDark ? 'Modo escuro' : 'Modo claro';
 });
+
+const btnRetryConnEl = document.getElementById('btnRetryConn');
+if(btnRetryConnEl){
+  btnRetryConnEl.addEventListener('click', () => fetchLive());
+}
 
 render();
 renderDraft();

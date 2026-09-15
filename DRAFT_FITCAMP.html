@@ -105,6 +105,10 @@
     cursor:pointer;white-space:nowrap;
   }
   thead th.num, tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  td.rank-cell{color:var(--text-secondary);font-weight:600;}
+  tbody tr:nth-child(1) td.rank-cell,
+  tbody tr:nth-child(2) td.rank-cell,
+  tbody tr:nth-child(3) td.rank-cell{color:var(--series-2);}
   thead th:hover{color:var(--text-primary);}
   tbody td{padding:8px 10px;border-bottom:1px solid var(--grid);white-space:nowrap;}
   tbody tr:hover{background:var(--page);}
@@ -344,6 +348,7 @@
           <table id="playersTable">
             <thead>
               <tr>
+                <th class="num">#</th>
                 <th data-key="jogador">Atleta</th>
                 <th data-key="time">Time atual (2026)</th>
                 <th data-key="posicao">Posição</th>
@@ -3022,7 +3027,7 @@ function render(){
   });
 
   const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = rows.map(p => {
+  tbody.innerHTML = rows.map((p, idx) => {
     const taken = !isAvailable(p.status);
     const editing = editingSet.has(p.jogador);
     const posIdadeCells = editing
@@ -3038,6 +3043,7 @@ function render(){
       ? `<strong>${p.nomeCompleto}</strong><div class="suggest-sub">${p.jogador}</div>`
       : `<strong>${p.jogador}</strong>`;
     return `<tr class="${taken?'taken':''}">
+      <td class="num rank-cell">${idx+1}º</td>
       <td>${nameCell}</td>
       <td>${p.time||'—'}</td>
       ${posIdadeCells}

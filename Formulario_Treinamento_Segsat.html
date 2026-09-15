@@ -97,7 +97,20 @@
 
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAkbdcZnRi5znrmqfKqgl1n4mOhrmCIj2d3LZlXcTfHrWdDuM_1v4HmTa91mjM7FGKcQ/exec';
-const MES_ANO = 'MAIO_2026';
+
+const MESES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+
+// Mês/ano usados nas chamadas ao backend, calculados a partir da data real do
+// aparelho (não é mais um texto fixo tipo 'MAIO_2026' — isso ficava desatualizado
+// e fazia a lista de lojas "sumir" a cada novo mês).
+function mesAnoOffset(offsetMeses) {
+  const d = new Date();
+  d.setDate(1); // evita bug de virar 2 meses ao subtrair em dias 29-31
+  d.setMonth(d.getMonth() - offsetMeses);
+  return MESES[d.getMonth()] + '_' + d.getFullYear();
+}
+
+const MES_ANO = mesAnoOffset(0);
 
 const APRESENTADORES = [
   'Antônio Martins','Clayton Barbosa','Jairo Sodré','Lozania Fontes','Paulo Vitor','Rodrigo França'
@@ -137,8 +150,8 @@ const CHECK_SVG = `<svg width="11" height="8" viewBox="0 0 11 8" fill="none">
 
 let lojasErro = false;
 
-async function fetchLojasOnce(timeoutMs) {
-  const [mes, ano] = MES_ANO.split('_');
+async function fetchLojasOnce(timeoutMs, mesAnoStr) {
+  const [mes, ano] = (mesAnoStr || MES_ANO).split('_');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -157,16 +170,30 @@ async function fetchLojasOnce(timeoutMs) {
 
 async function init() {
   lojasErro = false;
-  try {
-    LOJAS = await fetchLojasOnce(9000);
-    if (LOJAS.length === 0) {
-      // Pode ter sido uma falha passageira de rede — tenta mais uma vez antes de desistir.
-      LOJAS = await fetchLojasOnce(9000);
+  // Tenta o mês atual e, se a planilha desse mês ainda não tiver sido criada (ou
+  // vier vazia por qualquer motivo), cai automaticamente para os 2 meses
+  // anteriores — assim o formulário nunca fica sem lista de lojas por causa do
+  // calendário. Isso só afeta QUAL lista de lojas é exibida; o registro em si
+  // sempre é salvo com o mês real (o backend calcula isso sozinho).
+  const tentativas = [mesAnoOffset(0), mesAnoOffset(1), mesAnoOffset(2)];
+  for (const mesAno of tentativas) {
+    try {
+      let resultado = await fetchLojasOnce(9000, mesAno);
+      if (resultado.length === 0) {
+        // Pode ter sido uma falha passageira de rede — tenta mais uma vez antes de desistir deste mês.
+        resultado = await fetchLojasOnce(9000, mesAno);
+      }
+      if (resultado.length > 0) {
+        LOJAS = resultado;
+        renderForm();
+        return;
+      }
+    } catch(e) {
+      // segue para o mês anterior
     }
-  } catch(e) {
-    LOJAS = [];
   }
-  if (LOJAS.length === 0) lojasErro = true;
+  LOJAS = [];
+  lojasErro = true;
   renderForm();
 }
 

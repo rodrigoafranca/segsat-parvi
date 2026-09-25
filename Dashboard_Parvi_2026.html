@@ -794,12 +794,11 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
           <option value="3">3º Trimestre — Jul, Ago, Set</option>
           <option value="4">4º Trimestre — Out, Nov, Dez</option>
         </select>
-        <select id="trn-filtro-apres" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+        <select id="trn-filtro-apres" onchange="trnOnFiltroApres()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
           <option value="">Todos os apresentadores</option>
         </select>
-        <select id="trn-filtro-praca" onchange="trnRenderizar()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+        <select id="trn-filtro-praca" onchange="trnRenderizar()" title="Praça / UF — as opções dependem do apresentador selecionado" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
           <option value="">Todas as praças</option>
-          <option>Pernambuco</option><option>AM / RR</option><option>BA / SE</option><option>PB / RN</option><option>MA / PA</option>
         </select>
       </div>
       <a href="https://rodrigoafranca.github.io/segsat-parvi/Formulario_Treinamento_Segsat.html" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:var(--blue);color:#fff;font-size:12px;font-weight:600;text-decoration:none">
@@ -1416,83 +1415,119 @@ async function carregarAcessosCoordenadores() {
   }
 }
 
+// Dashboard GERAL — enxerga todas as UFs.
+const TRN_CONFIG = { ufsAutorizadas: null };
 // ════════════════════════════════════════════════════════════════════════════
 // 🎓 TREINAMENTOS · ☀️ REUNIÃO DE BOM DIA · 📋 INVENTÁRIO — VISITAS ÀS LOJAS
 // ────────────────────────────────────────────────────────────────────────────
-// REGRA PRINCIPAL (revisão 25/09/2026): existe UMA única fonte de dados filtrada.
+// MÓDULO COMPARTILHADO — o MESMO código roda no Dashboard Geral e nos 5 dashboards
+// de praça. A única diferença entre os arquivos é a linha `TRN_CONFIG` logo acima
+// deste bloco (ufsAutorizadas = null no Geral; UFs da praça nos coordenadores).
 //
-//   TRN_DADOS (registros brutos da aba "Treinamentos", já normalizados)
-//     → trnContexto() aplica os filtros globais do cabeçalho (Período = Mês OU
-//       Trimestre, Apresentador, Praça)
-//     → ctx.dados / ctx.visitas
+// FONTE ÚNICA DE DADOS:
+//   API ?action=treinamentos
+//     → trnPrepararRegistros()  (normaliza, resolve UF, marca testes)
+//     → descarta registros de TESTE e, nos dashboards de praça, registros de UFs
+//       não autorizadas — eles nunca entram em TRN_DADOS
+//     → trnContexto() aplica os filtros do cabeçalho (Período, Apresentador, Praça)
+//     → ctx.dados / ctx.visitas, consumidos por TODAS as abas, cards, gráficos,
+//       tabelas, Cobertura por Loja e PDF.
 //
-// Todas as abas, cards, gráficos, tabelas, a Cobertura por Loja e o PDF recebem
-// o MESMO `ctx` — nenhum componente reinterpreta os filtros por conta própria.
-//
-// VISITA = 1 atividade realizada numa loja, de qualquer um dos 3 tipos.
-// Chave de visita = tipo + apresentador + loja + dia. Assim:
-//   • 10 vendedores avaliando o mesmo treinamento (mesmo apresentador, mesma
-//     loja, mesmo dia) = 1 treinamento = 1 visita;
-//   • o mesmo inventário/bom dia enviado 2x no mesmo dia pela mesma pessoa na
-//     mesma loja (reenvio) = 1 visita.
-// Antes, um treinamento só era contado se tivesse 3+ avaliações no mesmo dia —
-// treinamentos com 1 ou 2 avaliações simplesmente desapareciam da contagem.
+// VISITA = 1 atividade numa loja. Chave = tipo + apresentador + loja + dia:
+//   • 10 avaliações do mesmo treinamento = 1 treinamento = 1 visita;
+//   • reenvio do mesmo Bom Dia/Inventário no mesmo dia = 1 visita.
 // ════════════════════════════════════════════════════════════════════════════
 
 const TRN_T   = 'Treinamento';
 const TRN_BD  = 'Reunião de Bom Dia';
 const TRN_INV = 'Inventário de Equipamentos';
 
-const UF_PRACA_MAP = {'Pernambuco':['PE'],'AM / RR':['AM','RR'],'BA / SE':['BA','SE'],'PB / RN':['PB','RN'],'MA / PA':['MA','PA']};
-const UF_COORDENADOR = { PE:'Clayton Barbosa', AM:'Lozania Fontes', RR:'Lozania Fontes', BA:'Jairo Sodré', SE:'Jairo Sodré', PB:'Paulo Vitor', RN:'Paulo Vitor', MA:'Antônio Martins', PA:'Antônio Martins' };
-// Lista base de apresentadores — o filtro também inclui qualquer outro nome que apareça na base.
+// ── RESPONSABILIDADE: apresentador/coordenador → UFs ───────────────────────
+// ÚNICO lugar do sistema que define quem responde por quais UFs. Filtro de
+// apresentador, filtro de praça, coluna "Coordenador", roster da Cobertura e PDF
+// consultam esta estrutura. Para trocar um coordenador, altere só aqui (nos 6 arquivos).
+// Apresentadores fora desta lista (ex.: Rodrigo França) não restringem o universo.
+const TRN_RESPONSABILIDADE = {
+  'Lozania Fontes':  ['AM','RR'],
+  'Clayton Barbosa': ['PE'],
+  'Paulo Vitor':     ['PB','RN'],
+  'Antônio Martins': ['MA','PA'],
+  'Jairo Sodré':     ['BA','SE']
+};
+const TRN_PRACAS = [
+  { label:'Pernambuco', ufs:['PE'] },
+  { label:'AM / RR',    ufs:['AM','RR'] },
+  { label:'BA / SE',    ufs:['BA','SE'] },
+  { label:'PB / RN',    ufs:['PB','RN'] },
+  { label:'MA / PA',    ufs:['MA','PA'] }
+];
+function trnUFsDoApresentador(nome) { const u = TRN_RESPONSABILIDADE[String(nome||'').trim()]; return u ? u.slice() : null; }
+function trnCoordenadorDaUF(uf) {
+  for(const nome in TRN_RESPONSABILIDADE) if(TRN_RESPONSABILIDADE[nome].includes(uf)) return nome;
+  return '—';
+}
+function trnPracaDaUF(uf) { const p = TRN_PRACAS.find(p => p.ufs.includes(uf)); return p ? p.label : ''; }
+
+// UFs que ESTE dashboard pode enxergar (null = Dashboard Geral, todas).
+const TRN_UFS_AUTORIZADAS = (typeof TRN_CONFIG !== 'undefined' && Array.isArray(TRN_CONFIG.ufsAutorizadas) && TRN_CONFIG.ufsAutorizadas.length)
+  ? TRN_CONFIG.ufsAutorizadas.map(u => String(u).toUpperCase()) : null;
+function trnUFAutorizada(uf) { return !TRN_UFS_AUTORIZADAS || TRN_UFS_AUTORIZADAS.includes(uf); }
+
+// ── REGISTROS DE TESTE — ignorados em TODAS as métricas, sem apagar da planilha ──
+// Identificados pelo Timestamp (único por envio). Auditoria 25/09/2026 — 13 registros, confirmados pelo Rodrigo.
+// Alternativa futura: criar na aba "Treinamentos" uma coluna "Status Registro" e
+// preencher TESTE — o dashboard também ignora essas linhas automaticamente.
+const TRN_REGISTROS_TESTE = [
+  { ts:'2026-05-11T19:16:42.261Z', motivo:'colunas deslocadas + sugestão "teste 2" (Lozania · AUDI RECIFE)' },
+  { ts:'2026-05-11T19:27:25.462Z', motivo:'colunas deslocadas + sugestão "Teste" (Lozania · AUTOPARVI NATAL)' },
+  { ts:'2026-05-11T19:35:18.666Z', motivo:'colunas deslocadas — fase de teste do formulário (Clayton · AUTOPARVI RETIRO)' },
+  { ts:'2026-05-12T10:00:22.112Z', motivo:'colunas deslocadas — fase de teste do formulário (Rodrigo · AUTOPARVI AFOGADOS)' },
+  { ts:'2026-05-20T14:39:47.870Z', motivo:'sugestão "teste" / comentário "teste 2" (Rodrigo · AUDI RECIFE)' },
+  { ts:'2026-05-21T11:29:19.870Z', motivo:'teste — 4 treinamentos em 4 lojas em 4 min, 1 avaliação cada (Rodrigo · AUTOPARVI PIEDADE)' },
+  { ts:'2026-05-21T11:30:12.429Z', motivo:'teste — 4 treinamentos em 4 lojas em 4 min, 1 avaliação cada (Rodrigo · TOYOLEX IMBIRIBEIRA)' },
+  { ts:'2026-05-21T11:32:22.445Z', motivo:'teste — 4 treinamentos em 4 lojas em 4 min, 1 avaliação cada (Rodrigo · AUTOPARVI AFOGADOS)' },
+  { ts:'2026-05-21T11:33:11.301Z', motivo:'teste — 4 treinamentos em 4 lojas em 4 min, 1 avaliação cada (Rodrigo · AUTOPARVI CARUARU)' },
+  { ts:'2026-09-15T18:51:36.706Z', motivo:'teste — 4 treinamentos em 4 estados em 40 min (Rodrigo · TOYOLEX CARUARU)' },
+  { ts:'2026-09-15T18:52:37.457Z', motivo:'teste — 4 treinamentos em 4 estados em 40 min (Rodrigo · AUTOPARVI HOLANDESES)' },
+  { ts:'2026-09-15T19:01:54.739Z', motivo:'teste — 4 treinamentos em 4 estados em 40 min (Rodrigo · BYD MANAUS)' },
+  { ts:'2026-09-15T19:31:24.929Z', motivo:'teste — 4 treinamentos em 4 estados em 40 min (Rodrigo · AUTOPARVI FEIRA DE SANTANA 2)' }
+];
+const _TRN_TESTE_MS = new Set(TRN_REGISTROS_TESTE.map(t => new Date(t.ts).getTime()));
+function trnEhTeste(r) {
+  if(/^\s*TESTE\s*$/i.test(String(r.status_registro || ''))) return true;
+  const d = r.timestamp ? new Date(r.timestamp) : null;
+  return !!(d && !isNaN(d) && _TRN_TESTE_MS.has(d.getTime()));
+}
+
 const TRN_APRESENTADORES_BASE = ['Antônio Martins','Clayton Barbosa','Jairo Sodré','Lozania Fontes','Paulo Vitor','Rodrigo França'];
 const TRN_MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-let TRN_DADOS = [];
+let TRN_DADOS = [];          // registros válidos e autorizados — fonte única
+let TRN_TESTES = [];         // registros de teste (só das UFs autorizadas) — guardados apenas para informar quantos foram ignorados
+let TRN_ROSTER = null;       // [{loja, uf, marca}] — lojas do mês corrente, já restritas às UFs autorizadas
 let _trnTabAtiva = 'treinamento';
 let _covLojaStatus = 'todas';
 
 // ── Utilitários de registro ────────────────────────────────────────────────
-// Linhas antigas (sem coluna Tipo Evento) são Treinamento — mesma regra do doPost.
 function trnTipoDoRegistro(r) {
   const t = String(r.tipo_evento || '').trim();
-  return t || TRN_T;
+  return t || TRN_T; // linhas antigas sem Tipo Evento = Treinamento (mesma regra do doPost)
 }
 function trnPad2(n) { return String(n).padStart(2,'0'); }
 function trnYMD(d) { return d.getFullYear()+'-'+trnPad2(d.getMonth()+1)+'-'+trnPad2(d.getDate()); }
 function trnNomeMes(idx) { const m = MESES[idx] || ''; return m.charAt(0) + m.slice(1).toLowerCase(); }
 function trnFmtData(d) { return d ? d.toLocaleDateString('pt-BR') : '—'; }
-
-// Data real do envio (Timestamp). A coluna "Mes" NÃO é usada para filtrar: o Google
-// Sheets converteu esse texto em data (chega como "2026-08-01T03:00:00.000Z") e em
-// registros antigos o formato variava — por isso o período é sempre derivado do Timestamp.
+// Período sempre pelo Timestamp real do envio (a coluna "Mes" virou data no Sheets).
 function trnDataRowObj(r) {
   if(r.timestamp) { const d = new Date(r.timestamp); if(!isNaN(d)) return d; }
   if(r.data) { const d = new Date(r.data); if(!isNaN(d)) return d; }
   return null;
 }
 
-// Normaliza cada registro UMA vez, logo após o carregamento.
-function trnPrepararRegistros(rows) {
-  return rows.map(function(r) {
-    const d = trnDataRowObj(r);
-    return Object.assign({}, r, {
-      _tipo:   trnTipoDoRegistro(r),
-      _data:   d,
-      _dia:    d ? trnYMD(d) : '',
-      _mesKey: d ? d.getFullYear()+'-'+trnPad2(d.getMonth()+1) : '',
-      _apres:  String(r.apresentador || '').trim(),
-      _loja:   String(r.loja || '').trim()
-    });
-  });
-}
-
-// ── UF / Praça de cada registro ────────────────────────────────────────────
-// ~30% dos registros da planilha estão com a coluna UF vazia (ou deslocada em linhas
-// antigas). O filtro de Praça antigo olhava só r.uf e descartava esses registros.
-// Agora a UF vem, nesta ordem: (1) roster de lojas ALL_STORES (mesma UF da Cobertura),
-// (2) coluna UF do registro, se for uma sigla válida, (3) nome da loja (mesma regra getUF do codigo.gs).
+// ── UF de loja/registro ────────────────────────────────────────────────────
+// Ordem: (1) roster de lojas (planilha de vendas), (2) nome da loja (regra getUF do
+// codigo.gs), (3) coluna UF do registro. A coluna UF do registro vem vazia/deslocada
+// em ~30% das linhas e às vezes errada (ex.: JEEP RETIRO gravado como PE).
 function trnUFPorNome(loja) {
   const n = String(loja||'').toUpperCase();
   const tem = function() { for(let i=0;i<arguments.length;i++) if(n.includes(arguments[i])) return true; return false; };
@@ -1507,28 +1542,29 @@ function trnUFPorNome(loja) {
   if(tem('MARABA','MARABÁ','BALSAS','PARAUAPEBAS')) return 'PA';
   return '';
 }
-let _trnUFCache = { ref:null, mapa:{} };
-function trnMapaLojas() {
-  const stores = window.ALL_STORES || [];
-  if(_trnUFCache.ref !== stores) {
-    const mapa = {};
-    stores.forEach(function(s){ if(s && s.loja) mapa[String(s.loja).trim()] = s; });
-    _trnUFCache = { ref: stores, mapa: mapa };
-  }
-  return _trnUFCache.mapa;
-}
+const _trnSigla = v => { const s = String(v||'').trim().toUpperCase(); return /^[A-Z]{2}$/.test(s) ? s : ''; };
+let _TRN_UF_ROSTER = {}; // loja → UF segundo a planilha de vendas (todas as UFs; só para resolver UF)
 function trnUFDaLoja(loja, ufRegistro) {
-  const info = trnMapaLojas()[String(loja||'').trim()];
-  const ufRoster = info && /^[A-Z]{2}$/.test(String(info.uf||'').trim().toUpperCase()) ? String(info.uf).trim().toUpperCase() : '';
-  if(ufRoster) return ufRoster;
-  const ufReg = String(ufRegistro||'').trim().toUpperCase();
-  if(/^[A-Z]{2}$/.test(ufReg)) return ufReg;
-  return trnUFPorNome(loja);
+  const l = String(loja||'').trim();
+  return _TRN_UF_ROSTER[l] || trnUFPorNome(l) || _trnSigla(ufRegistro);
 }
-function trnUF(r) { return trnUFDaLoja(r._loja, r.uf); }
-function trnPracaDaUF(uf) {
-  for(const p in UF_PRACA_MAP) if(UF_PRACA_MAP[p].includes(uf)) return p;
-  return '';
+
+// Normaliza cada registro UMA vez (depois que o roster carregou, para a UF ser estável).
+function trnPrepararRegistros(rows) {
+  return rows.map(function(r) {
+    const d = trnDataRowObj(r);
+    const loja = String(r.loja || '').trim();
+    return Object.assign({}, r, {
+      _tipo:   trnTipoDoRegistro(r),
+      _data:   d,
+      _dia:    d ? trnYMD(d) : '',
+      _mesKey: d ? d.getFullYear()+'-'+trnPad2(d.getMonth()+1) : '',
+      _apres:  String(r.apresentador || '').trim(),
+      _loja:   loja,
+      _uf:     trnUFDaLoja(loja, r.uf),
+      _teste:  trnEhTeste(r)
+    });
+  });
 }
 
 // ── Filtros globais do cabeçalho ───────────────────────────────────────────
@@ -1537,11 +1573,7 @@ function trnLerFiltros() {
   return { mes: v('trn-filtro-mes'), tri: v('trn-filtro-tri'), apres: v('trn-filtro-apres'), praca: v('trn-filtro-praca') };
 }
 
-// Mês × Trimestre: são mutuamente exclusivos na interface.
-//   • Mês específico  → só aquele mês (o trimestre volta para "Todos").
-//   • Mês = Todos + Trimestre → os 3 meses do trimestre.
-//   • Ambos = Todos   → todo o período disponível.
-// Mesmo que os dois cheguem preenchidos, o mês tem prioridade.
+// Mês × Trimestre são exclusivos (escolher um limpa o outro). Se ambos vierem, o mês vence.
 function trnPeriodo(f) {
   if(f.mes) {
     const p = f.mes.split('-'); const a = parseInt(p[0],10), m = parseInt(p[1],10);
@@ -1555,15 +1587,31 @@ function trnPeriodo(f) {
   return { tipo:'todos', inicio:null, fim:null, label:'Todo o período', curto:'Historico' };
 }
 
+// UNIVERSO DE UFs = UFs autorizadas do dashboard ∩ UFs do apresentador ∩ praça escolhida.
+// null = sem restrição (Geral, sem apresentador mapeado e sem praça).
+function trnIntersecao(a, b) { return a === null ? b.slice() : a.filter(x => b.includes(x)); }
+function trnUniversoBase(apres) {
+  let u = TRN_UFS_AUTORIZADAS ? TRN_UFS_AUTORIZADAS.slice() : null;
+  const ua = trnUFsDoApresentador(apres);
+  if(ua) u = trnIntersecao(u, ua);
+  return u;
+}
+function trnUniverso(f) {
+  let u = trnUniversoBase(f.apres);
+  if(f.praca) u = trnIntersecao(u, f.praca.split(','));
+  return u;
+}
+function trnUniversoLabel(u) { return u === null ? 'Todas as praças' : u.length ? u.join(' + ') : '—'; }
+
 function trnAplicarFiltros(rows, f, ignorarPeriodo) {
   const periodo = trnPeriodo(f);
-  const ufs = f.praca ? (UF_PRACA_MAP[f.praca] || []) : null;
+  const ufs = trnUniverso(f);
   return rows.filter(function(r) {
     if(!ignorarPeriodo && periodo.inicio) {
       if(!r._data || r._data < periodo.inicio || r._data >= periodo.fim) return false;
     }
     if(f.apres && r._apres !== f.apres) return false;
-    if(ufs && !ufs.includes(trnUF(r))) return false;
+    if(ufs && !ufs.includes(r._uf)) return false;
     return true;
   });
 }
@@ -1574,7 +1622,7 @@ function trnVisitas(rows) {
   rows.forEach(function(r) {
     if(!r._loja) return;
     const k = r._tipo+'||'+r._apres+'||'+r._loja+'||'+r._dia;
-    if(!mapa[k]) mapa[k] = { tipo:r._tipo, apres:r._apres, loja:r._loja, dia:r._dia, data:r._data, uf:trnUF(r), registros:0 };
+    if(!mapa[k]) mapa[k] = { tipo:r._tipo, apres:r._apres, loja:r._loja, dia:r._dia, data:r._data, uf:r._uf, registros:0 };
     mapa[k].registros++;
   });
   return Object.values(mapa);
@@ -1595,27 +1643,29 @@ function trnContar(visitas, rows) {
 function trnContexto() {
   const filtros   = trnLerFiltros();
   const periodo   = trnPeriodo(filtros);
-  const dados     = trnAplicarFiltros(TRN_DADOS, filtros, false);   // período + apresentador + praça
-  const historico = trnAplicarFiltros(TRN_DADOS, filtros, true);    // apresentador + praça (sem período) — só p/ "última visita histórica"
+  const universo  = trnUniverso(filtros);
+  const dados     = trnAplicarFiltros(TRN_DADOS, filtros, false);   // período + apresentador + universo de UFs
+  const historico = trnAplicarFiltros(TRN_DADOS, filtros, true);    // idem, sem período — só p/ "última visita histórica"
   const visitas   = trnVisitas(dados);
-  return { filtros, periodo, dados, historico, visitas, visitasHistorico: trnVisitas(historico), contagens: trnContar(visitas, dados) };
+  return { filtros, periodo, universo, dados, historico, visitas, visitasHistorico: trnVisitas(historico), contagens: trnContar(visitas, dados) };
 }
 
 // ── Cobertura por Loja ─────────────────────────────────────────────────────
-function trnRosterLojas(filtros, ctxDados) {
-  const ufs = filtros.praca ? (UF_PRACA_MAP[filtros.praca] || []) : null;
-  let lojas = (window.ALL_STORES || []).map(function(s){ return String(s.loja||'').trim(); }).filter(Boolean);
-  if(!lojas.length) lojas = TRN_DADOS.map(function(r){ return r._loja; }).filter(Boolean); // fallback até o roster carregar
-  lojas = [...new Set(lojas)];
-  if(ufs) lojas = lojas.filter(function(l){ return ufs.includes(trnUFDaLoja(l, '')); });
+// Roster = lojas do mês corrente (planilha de vendas), restrito ao universo de UFs.
+// Se o roster ainda não carregou, usa as lojas presentes nos registros autorizados.
+function trnRosterLojas(universo) {
+  let lojas = TRN_ROSTER && TRN_ROSTER.length
+    ? TRN_ROSTER.map(s => ({ loja:s.loja, uf:s.uf, marca:s.marca }))
+    : [...new Map(TRN_DADOS.map(r => [r._loja, { loja:r._loja, uf:r._uf, marca:r._loja.split(' ')[0] }])).values()];
+  lojas = lojas.filter(s => s.loja && trnUFAutorizada(s.uf));
+  if(universo) lojas = lojas.filter(s => universo.includes(s.uf));
   return lojas;
 }
 
-// Duas perguntas diferentes, respondidas separadamente:
-//   1) COBERTURA NO PERÍODO — a loja teve visita dentro do período filtrado? (checks + contagem)
-//   2) RECICLAGEM — quando foi a última visita da loja (histórico, respeitando apresentador
-//      e praça) até a data de referência, e quantos dias se passaram (Em dia/Alerta/Vencida).
-// Uma visita antiga fora do período NUNCA marca a loja como coberta no período.
+// Duas perguntas separadas:
+//   1) COBERTURA NO PERÍODO — visita dentro do período filtrado (checks + contagem);
+//   2) RECICLAGEM — última visita histórica (mesmo apresentador/universo) até a data de
+//      referência (fim do período ou hoje) → Em dia / Alerta / Vencida / Nunca visitada.
 function trnCalcularCobertura(ctx) {
   const hoje = new Date();
   const refDate = ctx.periodo.fim ? new Date(Math.min(hoje.getTime(), ctx.periodo.fim.getTime() - 1)) : hoje;
@@ -1624,16 +1674,14 @@ function trnCalcularCobertura(ctx) {
   ctx.visitasHistorico.forEach(function(v){ if(v.data && v.data <= refDate) (porLojaHist[v.loja] = porLojaHist[v.loja] || []).push(v); });
   const maisRecente = function(arr){ let d = null; (arr||[]).forEach(function(v){ if(v.data && (!d || v.data > d)) d = v.data; }); return d; };
 
-  const lojas = trnRosterLojas(ctx.filtros).map(function(loja) {
-    const per  = porLojaPer[loja] || [];
-    const ult  = maisRecente(porLojaHist[loja]);
+  const lojas = trnRosterLojas(ctx.universo).map(function(s) {
+    const per  = porLojaPer[s.loja] || [];
+    const ult  = maisRecente(porLojaHist[s.loja]);
     const diasDesde = ult ? Math.floor((refDate - ult) / 86400000) : null;
     const status = ult === null ? 'nunca' : diasDesde < 60 ? 'ok' : diasDesde <= 90 ? 'alerta' : 'vencido';
-    const info = trnMapaLojas()[loja] || {};
-    const uf = trnUFDaLoja(loja, '');
     return {
-      loja, uf, marca: info.marca || loja.split(' ')[0],
-      coordenador: UF_COORDENADOR[uf] || '—',
+      loja: s.loja, uf: s.uf, marca: s.marca || s.loja.split(' ')[0],
+      coordenador: trnCoordenadorDaUF(s.uf),
       temTreinamento: per.some(function(v){ return v.tipo === TRN_T; }),
       temBomDia:      per.some(function(v){ return v.tipo === TRN_BD; }),
       temInventario:  per.some(function(v){ return v.tipo === TRN_INV; }),
@@ -1665,19 +1713,36 @@ function trnRenderFotos(fotoUrlStr) {
   return urls.map((u, i) => `<a href="${u}" target="_blank" style="color:var(--blue);font-weight:600;margin-right:6px;white-space:nowrap">📷 Foto ${i + 1}</a>`).join('');
 }
 
-// Garante ALL_STORES (roster de lojas do mês, aba INTEGRAÇÃO) mesmo se a aba Treinamentos
-// abrir antes do carregamento principal (loadData) terminar.
-async function trnCarregarLojasFallback() {
-  if((window.ALL_STORES||[]).length) return;
+// Roster de lojas do MÊS CORRENTE (independe do mês escolhido nas páginas de vendas),
+// para Geral e coordenadores usarem exatamente a mesma lista de lojas.
+function trnDefinirRoster(allStores) {
+  _TRN_UF_ROSTER = {};
+  const lista = [];
+  (allStores || []).forEach(function(s) {
+    const loja = String(s.loja || '').trim(); if(!loja) return;
+    const uf = _trnSigla(s.uf) || trnUFPorNome(loja);
+    if(uf) _TRN_UF_ROSTER[loja] = uf;
+    if(trnUFAutorizada(uf)) lista.push({ loja, uf, marca: s.marca || loja.split(' ')[0] });
+  });
+  TRN_ROSTER = lista;
+}
+async function trnBuscarRoster() {
+  if(TRN_ROSTER && TRN_ROSTER.length) return;
   try {
-    const mes = MES_SELECIONADO || MESES[new Date().getMonth()];
+    const mes = MESES[new Date().getMonth()];
     const res = await fetch(`${APPS_SCRIPT_URL}?mes=${encodeURIComponent(mes)}&ano=${ANO}&t=${Date.now()}`);
     const json = await res.json();
-    if(json && json.allStores && json.allStores.length && !(window.ALL_STORES||[]).length) {
-      window.ALL_STORES = enrichStores(json.allStores);
-      trnRenderizar(); // UF/praça e roster da Cobertura dependem de ALL_STORES
-    }
-  } catch(e) { /* silencioso */ }
+    if(json && Array.isArray(json.allStores) && json.allStores.length) trnDefinirRoster(json.allStores);
+  } catch(e) { /* sem roster: UF pelo nome da loja e lojas dos próprios registros */ }
+}
+
+// Carrega a base, descartando testes e — nos dashboards de praça — tudo que não for das
+// UFs autorizadas. O JSON bruto não é guardado em nenhuma variável global.
+function trnIngerirRegistros(brutos) {
+  const todos = trnPrepararRegistros(brutos);
+  TRN_TESTES = todos.filter(r => r._teste && trnUFAutorizada(r._uf));
+  TRN_DADOS = todos.filter(r => !r._teste && trnUFAutorizada(r._uf));
+  if(TRN_UFS_AUTORIZADAS) { const m = {}; for(const l in _TRN_UF_ROSTER) if(trnUFAutorizada(_TRN_UF_ROSTER[l])) m[l] = _TRN_UF_ROSTER[l]; _TRN_UF_ROSTER = m; }
 }
 
 function trnPopularFiltros() {
@@ -1693,22 +1758,54 @@ function trnPopularFiltros() {
   const selApres = document.getElementById('trn-filtro-apres');
   if(selApres) {
     const atual = selApres.value;
-    const nomes = [...new Set(TRN_APRESENTADORES_BASE.concat(TRN_DADOS.map(r=>r._apres).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    // Geral: lista base + nomes da base. Praça: só quem tem registro autorizado ou é
+    // responsável por essas UFs — e cujo universo cruza as UFs autorizadas.
+    let nomes = TRN_UFS_AUTORIZADAS
+      ? TRN_DADOS.map(r=>r._apres).concat(Object.keys(TRN_RESPONSABILIDADE).filter(n => TRN_RESPONSABILIDADE[n].some(u => TRN_UFS_AUTORIZADAS.includes(u))))
+      : TRN_APRESENTADORES_BASE.concat(TRN_DADOS.map(r=>r._apres));
+    nomes = [...new Set(nomes.filter(Boolean))].filter(n => { const u = trnUniversoBase(n); return u === null || u.length > 0; }).sort((a,b)=>a.localeCompare(b,'pt-BR'));
     selApres.innerHTML = '<option value="">Todos os apresentadores</option>' + nomes.map(n=>`<option>${n}</option>`).join('');
     if(nomes.includes(atual)) selApres.value = atual;
   }
+  trnPopularPraca();
+}
+
+// Opções de Praça dependem do apresentador (e das UFs autorizadas do dashboard):
+//   • sem restrição → Todas + cada praça + cada UF das praças com 2 UFs;
+//   • com restrição (ex.: Lozania ou dashboard AM/RR) → Todas (AM + RR), AM, RR.
+// Combinações incompatíveis (Lozania + PE) não aparecem.
+function trnPopularPraca() {
+  const sel = document.getElementById('trn-filtro-praca');
+  if(!sel) return;
+  const atual = sel.value;
+  const apres = (document.getElementById('trn-filtro-apres')||{}).value || '';
+  const base = trnUniversoBase(apres);
+  let opcoes = [];
+  if(base === null) {
+    opcoes.push({ v:'', t:'Todas as praças' });
+    TRN_PRACAS.forEach(p => {
+      opcoes.push({ v:p.ufs.join(','), t:p.label });
+      if(p.ufs.length > 1) p.ufs.forEach(u => opcoes.push({ v:u, t:'   ↳ '+u }));
+    });
+  } else {
+    opcoes.push({ v:'', t: base.length > 1 ? 'Todas — '+base.join(' + ') : (base[0] || '—') });
+    if(base.length > 1) base.forEach(u => opcoes.push({ v:u, t:u }));
+  }
+  sel.innerHTML = opcoes.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+  sel.value = opcoes.some(o => o.v === atual) ? atual : '';
+  sel.disabled = opcoes.length <= 1;
 }
 
 async function trnCarregarDados() {
   const kpis = document.getElementById('trn-kpis');
   if(kpis) kpis.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">⏳ Carregando registros...</div>';
-  trnCarregarLojasFallback();
   try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=treinamentos&t=${Date.now()}`);
-    const json = await res.json();
+    const [, json] = await Promise.all([
+      trnBuscarRoster(),
+      fetch(`${APPS_SCRIPT_URL}?action=treinamentos&t=${Date.now()}`).then(r => r.json())
+    ]);
     if(json.error) throw new Error(json.error);
-    const brutos = Array.isArray(json.treinamentos) ? json.treinamentos : (Array.isArray(json) ? json : []);
-    TRN_DADOS = trnPrepararRegistros(brutos);
+    trnIngerirRegistros(Array.isArray(json.treinamentos) ? json.treinamentos : (Array.isArray(json) ? json : []));
     trnPopularFiltros();
     trnRenderizar();
   } catch(e) {
@@ -1727,8 +1824,10 @@ function trnOnFiltroTri() {
   if(tri && tri.value && mes) mes.value = '';
   trnRenderizar();
 }
+function trnOnFiltroApres() { trnPopularPraca(); trnRenderizar(); }
 function trnLimparFiltros() {
   ['trn-filtro-mes','trn-filtro-tri','trn-filtro-apres','trn-filtro-praca'].forEach(function(id){ const el = document.getElementById(id); if(el) el.value = ''; });
+  trnPopularPraca();
   trnRenderizar();
 }
 
@@ -1760,7 +1859,9 @@ function trnRenderizarResumo(ctx) {
   if(chip) {
     const partes = ['📅 ' + ctx.periodo.label];
     if(f.apres) partes.push('👤 ' + f.apres);
-    if(f.praca) partes.push('📍 ' + f.praca);
+    partes.push('📍 ' + trnUniversoLabel(ctx.universo));
+    const nTeste = trnAplicarFiltros(TRN_TESTES, f, false).length;
+    if(nTeste) partes.push(`<span title="Registros classificados como teste — ignorados em todas as métricas (não foram apagados da planilha)">🧪 ${nTeste} registro${nTeste>1?'s':''} de teste ignorado${nTeste>1?'s':''}</span>`);
     chip.innerHTML = partes.join(' &nbsp;·&nbsp; ') + (f.mes || f.tri || f.apres || f.praca
       ? ' &nbsp;<a href="javascript:trnLimparFiltros()" style="color:var(--blue);font-weight:600;text-decoration:underline">limpar filtros</a>' : '');
   }
@@ -2042,7 +2143,7 @@ function trnRenderizarCobertura(ctx) {
     <div class="kpi"><div class="kpi-ico">⚫</div><div class="kpi-val" style="color:var(--text3)">${n('nunca')}</div><div class="kpi-lbl">Nunca visitadas</div><div class="kpi-accent o"></div></div>`;
 
   const sub = document.getElementById('cov-sub');
-  if(sub) sub.innerHTML = `✔ e "Visitas" = somente <b>${ctx.periodo.label}</b>${ctx.filtros.apres?' · '+ctx.filtros.apres:''}${ctx.filtros.praca?' · '+ctx.filtros.praca:''} &nbsp;|&nbsp; Reciclagem = última visita histórica até ${refFmt}`;
+  if(sub) sub.innerHTML = `Lojas: <b>${trnUniversoLabel(ctx.universo)}</b>${ctx.filtros.apres?' · atividades de '+ctx.filtros.apres:''} &nbsp;|&nbsp; ✔ e "Visitas" = somente <b>${ctx.periodo.label}</b> &nbsp;|&nbsp; Reciclagem = última visita histórica até ${refFmt}`;
 
   const search = (document.getElementById('cov-search')?.value||'').toLowerCase().trim();
   let filtradas = trnFiltrarPorStatus(lojas, _covLojaStatus);
@@ -2083,15 +2184,7 @@ function trnRenderizarCobertura(ctx) {
     </tr>`).join('')}</tbody>`;
 }
 
-// ── EXPORTAR RELATÓRIO PDF (1 página por praça) — usa o MESMO ctx da tela ──
-const PRACAS_RELATORIO = [
-  { label:'Pernambuco', coord:'Clayton Barbosa', ufs:['PE'] },
-  { label:'AM / RR',    coord:'Lozania Fontes',  ufs:['AM','RR'] },
-  { label:'BA / SE',    coord:'Jairo Sodré',     ufs:['BA','SE'] },
-  { label:'PB / RN',    coord:'Paulo Vitor',     ufs:['PB','RN'] },
-  { label:'MA / PA',    coord:'Antônio Martins', ufs:['MA','PA'] }
-];
-
+// ── EXPORTAR RELATÓRIO PDF (1 página por praça do universo) — usa o MESMO ctx da tela ──
 async function trnExportarRelatorioPDF() {
   const btn = document.getElementById('cov-export-btn');
   const btnHtmlOrig = btn ? btn.innerHTML : '';
@@ -2110,7 +2203,10 @@ async function trnExportarRelatorioPDF() {
     const filtroStatusLabel = { todas:'Todas', coberta:'Cobertas no período', naocoberta:'Sem visita no período', ok:'Em dia', alerta:'Alerta', vencido:'Vencidas', nunca:'Nunca visitadas' };
     const tituloRelatorio = { todas:'Cobertura de Visitas', coberta:'Lojas Cobertas', naocoberta:'Lojas sem Visita no Período', ok:'Lojas em Dia', alerta:'Lojas em Alerta', vencido:'Lojas com Visita Vencida', nunca:'Lojas Nunca Visitadas' };
     const hojeFmt = new Date().toLocaleDateString('pt-BR');
-    const pracas = ctx.filtros.praca ? PRACAS_RELATORIO.filter(p=>p.label===ctx.filtros.praca) : PRACAS_RELATORIO;
+    const pracas = TRN_PRACAS
+      .map(p => ({ label: p.label, ufs: ctx.universo ? p.ufs.filter(u => ctx.universo.includes(u)) : p.ufs.slice() }))
+      .filter(p => p.ufs.length)
+      .map(p => ({ label: p.ufs.length === TRN_PRACAS.find(x=>x.label===p.label).ufs.length ? p.label : p.ufs.join(' / '), ufs: p.ufs, coord: trnCoordenadorDaUF(p.ufs[0]) }));
 
     let algumaLoja = false;
     pracas.forEach(function(praca, idx) {
@@ -2171,6 +2267,9 @@ async function trnExportarRelatorioPDF() {
     if(btn) { btn.disabled = false; btn.innerHTML = btnHtmlOrig; }
   }
 }
+
+
+// ══ FIM DO MÓDULO TREINAMENTOS ══
 
 const _ddAberto = {};
 

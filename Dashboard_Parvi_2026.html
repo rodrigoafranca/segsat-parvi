@@ -319,6 +319,19 @@ tr:hover td{background:var(--surface2);}
 #login-error{color:var(--red);font-size:12px;margin-top:8px;display:none;}
 #login-footer{margin-top:20px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;}
 
+
+/* ── CORRETORA (Autosegsat + Seguro) ── */
+.ct-plan{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;margin:1px 2px 1px 0;border-radius:4px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap;}
+.ct-plan b{font-weight:700;}
+.ct-plan.green{background:var(--green-bg);color:var(--green-d);}
+.ct-plan.purple{background:var(--purple-bg);color:var(--purple);}
+.ct-plan.gold{background:var(--gold-bg);color:var(--gold);}
+.ct-plan.grey{background:var(--surface2);color:var(--text3);}
+.ct-plan.top{font-size:11px;padding:3px 9px;border:1px solid currentColor;}
+.ct-conv{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:70px;}
+.ct-conv span{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;}
+.ct-bar{width:100%;height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+.ct-bar i{display:block;height:100%;background:var(--green);border-radius:99px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -386,6 +399,7 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
   <button class="nav-item" onclick="navTo('marcas',this)"><span class="ni">🏷️</span> Por Marca</button>
   <button class="nav-item" onclick="navTo('marca-detalhe',this)"><span class="ni">🔍</span> Detalhe por Marca</button>
   <button class="nav-item" onclick="navTo('meta-tri',this)"><span class="ni">🎯</span> Meta Trimestre</button>
+  <button class="nav-item" onclick="navTo('corretora',this)"><span class="ni">🛡️</span> Corretora</button>
   <button class="nav-item" onclick="navTo('comissoes',this)"><span class="ni">💵</span> Comissões</button>
   <button class="nav-item" onclick="navTo('estoque',this)"><span class="ni">📦</span> Estoque</button>
   <button class="nav-item" onclick="navTo('estoque-at',this);carregarEstoqueAtualizado()"><span class="ni">📡</span> Estoque Atualizado</button>
@@ -635,6 +649,24 @@ if(sessionStorage.getItem('parvi_auth') === '1') {
       </div>
       <div class="tbl-wrap"><table id="mt-table"></table></div>
     </div>
+  </div>
+
+  <!-- PAGE: CORRETORA (Autosegsat + Seguro) -->
+  <div class="page" id="page-corretora">
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--text2)">Vendas da <b>Corretora Parvi</b> (Autosegsat + Seguro), lançadas na aba VENDAS com marca = CORRETORA. Compara com os carros vendidos de cada loja (aba INTEGRAÇÃO) e mostra a performance de cada vendedor da Equipe Corretora. Estes números ficam só neste menu — não entram nas demais telas.</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="modo-group" id="ct-modo-group"></div>
+      <div class="modo-group" id="ct-per-group"></div>
+      <div class="card-tag gold" id="ct-info">—</div>
+      <button class="btn-refresh" onclick="ctAtualizar()"><span class="ri">↻</span> Atualizar</button>
+    </div>
+    <div class="marca-selector" id="ct-praca-group" style="margin-bottom:12px"></div>
+    <div id="ct-aviso"></div>
+    <div class="kpi-row" id="ct-kpis"></div>
+    <div class="marca-selector" id="ct-abas"></div>
+    <div id="ct-conteudo"></div>
   </div>
 
   <!-- PAGE: ESTOQUE -->
@@ -2935,6 +2967,595 @@ function copiarTabelaMetaTrimestre() {
 }
 
 // ============================================================
+// 🛡️ CORRETORA PARVI · AUTOSEGSAT + SEGURO
+// ------------------------------------------------------------
+// Fonte: endpoint ?action=corretora&mes=..&ano=.. (codigo.gs → processCorretora), que lê as
+// linhas da aba VENDAS com col H = "CORRETORA" (col G = loja da venda, col J = vendedor) e
+// cruza com os Carros da aba INTEGRAÇÃO (col I).
+// Duas visões: (1) Por Loja — vendas x carros, plano e % de conversão; (2) Vendedores por Loja —
+// performance de cada pessoa da Equipe Corretora, agrupada pela loja de origem.
+// ============================================================
+
+// Equipe Corretora (planilha "Equipe Corretora.xlsx"): [vendedor, loja de origem].
+// Para incluir/tirar alguém da equipe, edite só esta lista. Loja = "RENOVAÇÃO", "BDC" ou
+// "SUPERVISOR <área>" vira seção própria; qualquer outro valor é tratado como loja.
+const EQUIPE_CORRETORA = [
+  ["OTAVIO TEODORO DE AMORIM NETO", "LEAP JOÃO PESSOA"],
+  ["JOSE LUCIANO DE ARAUJO OLIVEIRA JUNIOR", "PATEO JOÃO PESSOA"],
+  ["GILMARA DE ARAUJO TEBERGE", "JEEP CAMPINA GRANDE"],
+  ["HENRIQUE GUIMARÃES BARROS", "FIORI CAMPINA GRANDE"],
+  ["LUANA HAAB SILVA DE MEDEIROS ANTONIO", "BYD JOÃO PESSOA"],
+  ["BRUNO DO NASCIMENTO SILVA", "FIORI JOÃO PESSOA"],
+  ["MARILIA GABRIELA BARRETO DA SILVA", "RENOVAÇÃO"],
+  ["MARIA JOSE DA SILVA", "TOYOLEX CARUARU"],
+  ["ALINNY BARBOSA DA SILVA", "RENOVAÇÃO"],
+  ["WLLYSSES FERREIRA DE OLIVEIRA", "RENOVAÇÃO"],
+  ["EVELLIN CRISTINE OLIVEIRA DA SILVA", "PATEO ILHA"],
+  ["JANAYNA CRISTINA DOS SANTOS QUEIROZ", "RENOVAÇÃO"],
+  ["DIEGO LEITE DE LIMA", "RENOVAÇÃO"],
+  ["DENIZE FERREIRA DE QUEIROZ", "RENOVAÇÃO"],
+  ["SHEYLA FERNANDA SANTANA DA SILVA", "BYD IMBIRIBEIRA"],
+  ["JENEFFER MIKAELA SILVA AMORIM", "BDC"],
+  ["THAMIRES HELOISA SOARES DA SILVA", "BDC"],
+  ["MERYELLEM BREYNER DE ARAUJO MOREIRA", "BDC"],
+  ["ISADORA VIRGINIA DE LIMA CAMPOS", "FIORI AFOGADOS"],
+  ["VITORIA TORRES FRANCA", "BYD CARUARU"],
+  ["BRUNA MANUELA MOREIRA BATISTA DA CRUZ", "TOYOLEX NATAL"],
+  ["CAILANE DE CARVALHO BARBOSA", "JEEP PARALELA"],
+  ["CAMILLY VICTORIA SANTOS DA SILVA", "BREMEN TANCREDO"],
+  ["LUANA FONTES SANTANA", "FIORI PARALELA"],
+  ["ELAINE VITORIA SIQUEIRA SOUSA LIMA", "BYD PETROLINA"],
+  ["ANA CARLA NASCIMENTO DOS SANTOS SANTOS", "BREMEN RETIRO"],
+  ["DAVID DA PAIXAO", "PATEO FEIRA"],
+  ["ARTUR CERQUEIRA AZEVEDO", "FIORI RETIRO"],
+  ["LARISSA BARBOZA OLIVEIRA", "JEEP RETIRO"],
+  ["DELLANE MOREIRA CARNEIRO SOUZA", "BREMEN FEIRA"],
+  ["CLOTILDES SILVA NUNES ARGOLO", "TOYOLEX ARACAJU"],
+  ["FERNANDA REQUE FERREIRA", "TOYOLEX PETROLINA"],
+  ["MARCOS GALDINO GOMES OLIVEIRA SILVA", "BYD RETIRO"],
+  ["JULIANA SILVA SANTOS", "BYD FEIRA"],
+  ["ANA LUIZA SOUZA DOS SANTOS", "AUTO PARVI RETIRO"],
+  ["KAMILA SANTOS DA ROCHA", "BYD PARALELA"],
+  ["SAMYLA PINTO BATISTA", "TOYOLEX MANAUS"],
+  ["MARIA RISOLETA DE OLIVEIRA MUNIZ", "PATEO MANAUS"],
+  ["CYBELLE ROSARIO ISHIZUKA", "JEEP MANAUS"],
+  ["MICHAEL DA SILVA FERREIRA", "BYD MANAUS"],
+  ["JOSE RIBAMAR FRANK BARROS JUNIOR", "BREMEN HOLANDESES"],
+  ["REJANE CANTANHEDE DIAS", "RENOVAÇÃO"],
+  ["GABRIELE VIEIRA AZEVEDO COSTA", "BREMEN BEQUIMAO"],
+  ["RAICYLIA AGUIAR CAMPOS", "TOYOLEX SÃO LUIS"],
+  ["ERIKA TALITA DA SILVA CORREIA", "BYD SÃO LUIS"],
+  ["SARA PEDREIRA BORGES", "SUPERVISOR SALVADOR"],
+  ["ANA CLAUDIA HERMINIO MARQUES SILVA", "SUPERVISOR PE"],
+  ["LUCIANA DOS SANTOS GUIMARÃES SANTANA CARIBÉ", "SUPERVISOR SALVADOR"],
+  ["ENZA RAFAELA MORENO GARRIDO", "SUPERVISOR SALVADOR"],
+  ["SAMARA DE LOURDES SOMBREIRA PINHO", "SUPERVISOR MA"],
+  ["LUCI ALVES FRAGA GAMEIRO", "SUPERVISOR PE"],
+  ["GICELIA SILVA OLIVEIRA", "SUPERVISOR AM"],
+  ["KLEYTON DE SOUZA AMARAL DE CASTRO", "SUPERVISOR PE"],
+  ["ALVANICE PEREIRA CIPRIANO", "SUPERVISOR JP"]
+];
+
+const CT_PARTICULAS = new Set(['DE','DA','DO','DOS','DAS','E']);
+const CT_PRACAS = [
+  { id:'TODAS', label:'Todas as praças' },
+  { id:'PE',    label:'Pernambuco' },
+  { id:'AM',    label:'AM / RR' },
+  { id:'BASE',  label:'BA / SE' },
+  { id:'PBRN',  label:'PB / RN' },
+  { id:'MA',    label:'MA / PA' }
+];
+// Área do supervisor → UF (para o filtro de praça)
+const CT_AREA_UF = { PE:'PE', AM:'AM', MA:'MA', SALVADOR:'BA', JP:'PB' };
+
+let CT_MODO = 'mensal';           // mensal | trimestral | anual
+let CT_MES  = MES_ATUAL;          // índice em MESES
+let CT_TRI  = TRI_ATUAL;          // índice em Object.keys(TRIMESTRES)
+let CT_PRACA = 'TODAS';
+let CT_ABA = 'lojas';             // lojas | vendedores
+let CT_SORT = 'qtd';              // qtd | pct | carros
+let CT_LOJAS_SO_VENDA = true;     // aba Por Loja: esconde lojas sem venda
+let CT_VEND_SO_VENDA  = false;    // aba Vendedores: esconde vendedores sem venda
+let CT_CACHE = {};                // { MES: json | {error} }
+let CT_DATA = null;               // dados consolidados do período
+let CT_LOADING = false;
+
+// ── helpers ────────────────────────────────────────────────
+function ctEsc(t) {
+  return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function ctNorm(t) {
+  return String(t || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+}
+// Chave de loja: tolera "AUTO PARVI"/"AUTOPARVI" e "FEIRA"/"FEIRA SANTANA"/"FEIRA DE SANTANA"
+function ctLojaKey(t) {
+  return ctNorm(t).replace(/\bAUTO PARVI\b/g,'AUTOPARVI')
+    .replace(/\bFEIRA DE SANTANA\b/g,'FEIRA').replace(/\bFEIRA SANTANA\b/g,'FEIRA');
+}
+function ctTokens(t) { return ctNorm(t).split(' ').filter(x => x && !CT_PARTICULAS.has(x)); }
+function ctFmtPct(p) { return (p * 100).toFixed(1).replace('.', ',') + '%'; }
+function ctFmtData(iso) {
+  if (!iso) return '—';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? m[3] + '/' + m[2] : '—';
+}
+function ctMesCurto(i) { const m = MESES[i]; return m.charAt(0) + m.slice(1, 3).toLowerCase(); }
+function ctUF(nome) { // mesmo mapeamento do getUF do codigo.gs (fallback quando a loja não veio com UF)
+  const n = ctNorm(nome);
+  const has = (...a) => a.some(x => n.includes(x));
+  if (has('MANAUS','CONSTANTINO','DJALMA','TORQUARTO','ARENA')) return 'AM';
+  if (has('BOA VISTA')) return 'RR';
+  if (has('ARACAJU')) return 'SE';
+  if (has('SALVADOR','PARALELA','RETIRO','PATAMARES','LAURO','FEIRA','TANCREDO')) return 'BA';
+  if (has('JOAO PESSOA','CAMPINA GRANDE','EPITAFIO')) return 'PB';
+  if (has('RECIFE','OLINDA','AFOGADOS','PIEDADE','BOA VIAGEM','IMBIRIBEIRA','CARPINA','GARANHUNS','CARUARU','PETROLINA','RUI BARBOSA','CAXANGA')) return 'PE';
+  if (has('SAO LUIS','HOLANDESES','BEQUIMAO','IMPERATRIZ','CALHAU','ILHA')) return 'MA';
+  if (has('NATAL','MOSSORO','CAICO')) return 'RN';
+  if (has('MARABA','BALSAS','PARAUAPEBAS')) return 'PA';
+  return '';
+}
+function ctPracaAceita(uf) {
+  if (CT_PRACA === 'TODAS') return true;
+  return (STATE_GROUPS[CT_PRACA].ufs || []).includes(uf);
+}
+
+// ── equipe ────────────────────────────────────────────────
+const CT_ROSTER = EQUIPE_CORRETORA.map(([nome, loja]) => {
+  const l = String(loja).trim();
+  const lu = ctNorm(l);
+  let tipo = 'LOJA', area = '';
+  if (lu === 'RENOVACAO') tipo = 'RENOVACAO';
+  else if (lu === 'BDC') tipo = 'BDC';
+  else if (lu.startsWith('SUPERVISOR')) { tipo = 'SUPERVISOR'; area = lu.replace('SUPERVISOR', '').trim(); }
+  return { nome: String(nome).trim(), key: ctNorm(nome), tokens: ctTokens(nome), loja: l, tipo, area,
+           lojaKey: tipo === 'LOJA' ? ctLojaKey(l) : lu };
+});
+
+// Nome na coluna J da planilha → integrante da equipe. Exato; senão, tolera nome abreviado
+// (todas as palavras contidas no nome completo, ou primeiro+último nome) se só houver 1 candidato.
+function ctMatchVendedor(nomeVenda) {
+  const k = ctNorm(nomeVenda);
+  if (!k) return null;
+  const exato = CT_ROSTER.find(r => r.key === k);
+  if (exato) return { r: exato, aprox: false };
+  const tk = ctTokens(nomeVenda);
+  if (!tk.length) return null;
+  let c = CT_ROSTER.filter(r => tk.every(t => r.tokens.includes(t)));
+  if (c.length === 1) return { r: c[0], aprox: true };
+  if (tk.length >= 2) {
+    c = CT_ROSTER.filter(r => r.tokens[0] === tk[0] && r.tokens[r.tokens.length - 1] === tk[tk.length - 1]);
+    if (c.length === 1) return { r: c[0], aprox: true };
+  }
+  return null;
+}
+
+// ── planos ────────────────────────────────────────────────
+function ctPlanCls(k) { return k === 'OUTROS' ? 'grey' : /FSv/.test(k) ? 'purple' : /FG/.test(k) ? 'gold' : 'green'; }
+function ctPlanTop(planos) {
+  let best = null, q = 0;
+  PLAN_KEYS.concat(['OUTROS']).forEach(k => { if ((planos[k] || 0) > q) { q = planos[k]; best = k; } });
+  return best ? { k: best, q } : null;
+}
+function ctPlanDestaque(planos) {
+  const t = ctPlanTop(planos);
+  if (!t) return '<span style="color:var(--text3)">—</span>';
+  return `<span class="ct-plan ${ctPlanCls(t.k)} top" title="Plano mais vendido">★ ${ctEsc(PLAN_LABELS[t.k] || t.k)} <b>×${t.q}</b></span>`;
+}
+function ctPlanMix(planos) {
+  const chips = PLAN_KEYS.concat(['OUTROS']).filter(k => planos[k]).map(k =>
+    `<span class="ct-plan ${ctPlanCls(k)}" title="${ctEsc(PLAN_LABELS[k] || 'Plano não identificado')}">${ctEsc(k)} <b>${planos[k]}</b></span>`);
+  return chips.length ? chips.join(' ') : '<span style="color:var(--text3)">—</span>';
+}
+
+// ── consolidação de meses ─────────────────────────────────
+function ctSomaPlanos(dst, src) { Object.keys(src || {}).forEach(k => { dst[k] = (dst[k] || 0) + src[k]; }); }
+function ctSomaVend(a, b) {
+  a.total += b.total; ctSomaPlanos(a.planos, b.planos);
+  Object.keys(b.lojas || {}).forEach(k => {
+    if (!a.lojas[k]) a.lojas[k] = { nome: b.lojas[k].nome, qtd: 0 };
+    a.lojas[k].qtd += b.lojas[k].qtd;
+  });
+  if (b.ultimaVenda && (!a.ultimaVenda || b.ultimaVenda > a.ultimaVenda)) a.ultimaVenda = b.ultimaVenda;
+  a.diasAtivos += b.diasAtivos || 0;
+}
+function ctVendNormaliza(v) { // lojas {nome: qtd} do backend → {lojaKey: {nome, qtd}}
+  const lojas = {};
+  Object.keys(v.lojas || {}).forEach(chave => {
+    const val = v.lojas[chave];
+    const jaNormalizado = val && typeof val === 'object'; // {nome, qtd} (já passou por aqui)
+    const nome = jaNormalizado ? val.nome : chave;
+    const qtd = jaNormalizado ? val.qtd : val;
+    const k = ctLojaKey(nome);
+    if (!lojas[k]) lojas[k] = { nome, qtd: 0 };
+    lojas[k].qtd += qtd;
+  });
+  return { vendedor: v.vendedor, key: v.key, total: v.total || 0, planos: Object.assign({}, v.planos),
+           lojas, ultimaVenda: v.ultimaVenda || '', diasAtivos: v.diasAtivos || 0 };
+}
+function ctMerge(jsons) {
+  const lojas = {}, vend = {};
+  let semVendedor = 0;
+  jsons.forEach(j => {
+    (j.lojas || []).forEach(l => {
+      const k = ctLojaKey(l.loja);
+      if (!lojas[k]) lojas[k] = { key: k, loja: l.loja, uf: l.uf || ctUF(l.loja), marca: l.marca || '', carros: 0, corretora: 0, planos: {} };
+      lojas[k].carros += l.carros || 0;
+      lojas[k].corretora += l.corretora || 0;
+      ctSomaPlanos(lojas[k].planos, l.planos);
+    });
+    (j.vendedores || []).forEach(v => {
+      const nv = ctVendNormaliza(v);
+      if (!vend[nv.key]) vend[nv.key] = nv; else ctSomaVend(vend[nv.key], nv);
+    });
+    semVendedor += (j.meta && j.meta.semVendedor) || 0;
+  });
+  const arr = Object.values(lojas);
+  arr.forEach(l => { l.pct = l.carros > 0 ? l.corretora / l.carros : 0; });
+  return { lojas: arr, vendedores: Object.values(vend), semVendedor,
+           totalCorretora: arr.reduce((a, l) => a + l.corretora, 0) };
+}
+
+// ── período / carregamento ────────────────────────────────
+function ctMesesDoPeriodo() {
+  if (CT_MODO === 'trimestral') return TRIMESTRES[Object.keys(TRIMESTRES)[CT_TRI]];
+  if (CT_MODO === 'anual') return MESES.slice(0, MES_ATUAL + 1);
+  return [MESES[CT_MES]];
+}
+function ctPeriodoLabel() {
+  if (CT_MODO === 'trimestral') return Object.keys(TRIMESTRES)[CT_TRI] + '/' + ANO.slice(-2);
+  if (CT_MODO === 'anual') return 'Ano ' + ANO;
+  return MESES[CT_MES].charAt(0) + MESES[CT_MES].slice(1).toLowerCase() + '/' + ANO.slice(-2);
+}
+function ctSetModo(m) { CT_MODO = m; carregarCorretora(); }
+function ctSetMes(i) { CT_MES = i; carregarCorretora(); }
+function ctSetTri(i) { CT_TRI = i; carregarCorretora(); }
+function ctSetPraca(p) { CT_PRACA = p; ctBuildControles(); ctRender(); }
+function ctSetAba(a) { CT_ABA = a; ctBuildControles(); ctRender(); }
+function ctSetSort(s) { CT_SORT = s; ctRender(); }
+function ctToggleLojas() { CT_LOJAS_SO_VENDA = !CT_LOJAS_SO_VENDA; ctRender(); }
+function ctToggleVend()  { CT_VEND_SO_VENDA  = !CT_VEND_SO_VENDA;  ctRender(); }
+function ctAtualizar() { ctMesesDoPeriodo().forEach(m => { delete CT_CACHE[m]; }); carregarCorretora(); }
+
+function ctBuildControles() {
+  const g = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  g('ct-modo-group',
+    `<button class="modo-opt${CT_MODO==='mensal'?' active':''}" onclick="ctSetModo('mensal')">📅 Mensal</button>` +
+    `<button class="modo-opt${CT_MODO==='trimestral'?' active tri-active':''}" onclick="ctSetModo('trimestral')">📊 Trimestral</button>` +
+    `<button class="modo-opt${CT_MODO==='anual'?' active anual-active':''}" onclick="ctSetModo('anual')">🗓️ Anual</button>`);
+  let per = '';
+  if (CT_MODO === 'mensal') {
+    for (let i = 0; i <= MES_ATUAL; i++) per += `<button class="modo-opt${i===CT_MES?' active':''}" onclick="ctSetMes(${i})">${ctMesCurto(i)}</button>`;
+  } else if (CT_MODO === 'trimestral') {
+    Object.keys(TRIMESTRES).forEach((t, i) => {
+      per += `<button class="modo-opt${i===CT_TRI?' active tri-active':''}" onclick="ctSetTri(${i})">${t}</button>`;
+    });
+  }
+  const perEl = document.getElementById('ct-per-group');
+  if (perEl) { perEl.innerHTML = per; perEl.style.display = per ? 'flex' : 'none'; }
+  g('ct-praca-group', CT_PRACAS.map(p =>
+    `<button class="marca-btn${p.id===CT_PRACA?' active':''}" onclick="ctSetPraca('${p.id}')">${p.label}</button>`).join(''));
+  g('ct-abas',
+    `<button class="ranking-tab${CT_ABA==='lojas'?' active':''}" onclick="ctSetAba('lojas')">🏪 Por Loja · Vendas x Carros</button>` +
+    `<button class="ranking-tab${CT_ABA==='vendedores'?' active':''}" onclick="ctSetAba('vendedores')">👤 Vendedores por Loja</button>`);
+}
+
+async function carregarCorretora() {
+  ctBuildControles();
+  if (CT_LOADING) return; // o carregamento em andamento reavalia o período ao terminar
+  const info = document.getElementById('ct-info');
+  const cont = document.getElementById('ct-conteudo');
+  const meses = ctMesesDoPeriodo();
+  const sig = meses.join('|');
+  const faltam = meses.filter(m => !(m in CT_CACHE));
+  if (faltam.length) {
+    CT_LOADING = true;
+    if (info) info.textContent = 'Carregando ' + meses.map(mtMesLabel).join(' · ') + '...';
+    if (cont) cont.innerHTML = '<div class="card"><div style="padding:24px;text-align:center;color:var(--text3);font-size:12px">⏳ Buscando vendas da Corretora...</div></div>';
+    await Promise.all(faltam.map(async m => {
+      try {
+        const r = await fetch(`${APPS_SCRIPT_URL}?action=corretora&mes=${encodeURIComponent(m)}&ano=${ANO}&t=${Date.now()}`);
+        CT_CACHE[m] = await r.json();
+      } catch (e) { CT_CACHE[m] = { error: e.message }; }
+    }));
+    CT_LOADING = false;
+    if (ctMesesDoPeriodo().join('|') !== sig) return carregarCorretora(); // usuário trocou o período no meio
+  }
+  const jsons = meses.map(m => CT_CACHE[m]);
+  const ok = jsons.filter(j => j && !j.error && Array.isArray(j.lojas));
+  const legado = jsons.some(j => j && !j.error && !Array.isArray(j.lojas));
+  if (info) info.textContent = meses.map((m, i) => {
+    const j = jsons[i];
+    return mtMesLabel(m) + (j && !j.error && Array.isArray(j.lojas) ? '' : ' (sem dados)');
+  }).join(' · ');
+  const aviso = document.getElementById('ct-aviso');
+  if (aviso) aviso.innerHTML = legado
+    ? '<div class="card" style="border-color:var(--red)"><div style="font-size:12px;color:var(--red)">⚠️ O Apps Script publicado ainda é a versão antiga (não conhece <b>action=corretora</b>). Cole o <b>codigo.gs</b> atualizado e reimplante: Implantar → Gerenciar implantações → Nova versão.</div></div>'
+    : '';
+  if (!ok.length) {
+    CT_DATA = null;
+    const erro = jsons.map(j => j && j.error).filter(Boolean)[0];
+    document.getElementById('ct-kpis').innerHTML = '';
+    if (cont) cont.innerHTML = `<div class="card"><div style="padding:24px;text-align:center;color:var(--text3);font-size:12px">${legado ? '' : 'Sem dados para ' + ctEsc(ctPeriodoLabel()) + (erro ? ' — ' + ctEsc(erro) : '') + '.'}</div></div>`;
+    return;
+  }
+  CT_DATA = ctMerge(ok);
+  ctRender();
+}
+
+// ── visões ────────────────────────────────────────────────
+function ctBuildLojas() {
+  const d = CT_DATA;
+  const todas = d.lojas.filter(l => ctPracaAceita(l.uf));
+  const cmp = {
+    qtd:    (a, b) => b.corretora - a.corretora || b.pct - a.pct || b.carros - a.carros || a.loja.localeCompare(b.loja),
+    pct:    (a, b) => b.pct - a.pct || b.corretora - a.corretora || b.carros - a.carros || a.loja.localeCompare(b.loja),
+    carros: (a, b) => b.carros - a.carros || b.corretora - a.corretora || a.loja.localeCompare(b.loja)
+  }[CT_SORT];
+  const comVenda = todas.filter(l => l.corretora > 0).sort(cmp);
+  const semVenda = todas.filter(l => l.corretora === 0).sort((a, b) => b.carros - a.carros || a.loja.localeCompare(b.loja));
+  const tot = { carros: 0, corretora: 0, planos: {} };
+  todas.forEach(l => { tot.carros += l.carros; tot.corretora += l.corretora; ctSomaPlanos(tot.planos, l.planos); });
+  return { todas, comVenda, semVenda, tot };
+}
+
+function ctBuildVendedores() {
+  const d = CT_DATA;
+  const porRoster = new Map();
+  const orfaos = [];
+  d.vendedores.forEach(v => {
+    const m = ctMatchVendedor(v.vendedor);
+    if (!m) { orfaos.push(v); return; }
+    const cur = porRoster.get(m.r);
+    if (cur) { ctSomaVend(cur, v); cur.aprox = cur.aprox || m.aprox; cur.nomesPlanilha.push(v.vendedor); }
+    else porRoster.set(m.r, Object.assign(ctVendNormaliza(v), { aprox: m.aprox, nomesPlanilha: [v.vendedor] }));
+  });
+  const lojaPorKey = {};
+  d.lojas.forEach(l => { lojaPorKey[l.key] = l; });
+
+  const grupos = {};
+  CT_ROSTER.forEach(r => {
+    const rec = porRoster.get(r) || { total: 0, planos: {}, lojas: {}, ultimaVenda: '', diasAtivos: 0, aprox: false, nomesPlanilha: [] };
+    let gk, titulo, uf = '', tipo = r.tipo, loja = null;
+    if (r.tipo === 'LOJA') {
+      gk = 'L:' + r.lojaKey; titulo = r.loja;
+      loja = lojaPorKey[r.lojaKey] || null;
+      uf = loja ? loja.uf : ctUF(r.loja);
+    } else if (r.tipo === 'SUPERVISOR') { gk = 'S'; titulo = 'SUPERVISORES'; }
+    else { gk = 'T:' + r.tipo; titulo = r.tipo === 'RENOVACAO' ? 'RENOVAÇÃO' : 'BDC'; }
+    if (!grupos[gk]) grupos[gk] = { gk, titulo, tipo, uf, loja, itens: [], total: 0 };
+    grupos[gk].itens.push({ r, rec });
+    grupos[gk].total += rec.total;
+  });
+
+  const visivel = g => {
+    if (CT_PRACA === 'TODAS') return true;
+    if (g.tipo === 'LOJA') return ctPracaAceita(g.uf);
+    if (g.tipo === 'SUPERVISOR') { g.itens = g.itens.filter(it => ctPracaAceita(CT_AREA_UF[it.r.area] || '')); return g.itens.length > 0; }
+    return false; // Renovação e BDC não têm praça
+  };
+  const ordem = { LOJA: 0, RENOVACAO: 1, BDC: 2, SUPERVISOR: 3 };
+  const lista = Object.values(grupos).filter(visivel).sort((a, b) =>
+    ordem[a.tipo] - ordem[b.tipo] || b.total - a.total || a.titulo.localeCompare(b.titulo));
+  lista.forEach(g => {
+    g.total = g.itens.reduce((a, it) => a + it.rec.total, 0);
+    g.itens.sort((a, b) => b.rec.total - a.rec.total || a.r.nome.localeCompare(b.r.nome));
+  });
+  // ordena as seções de loja pelo total; as demais seções ficam depois, em ordem fixa
+  const todosItens = lista.flatMap(g => g.itens);
+  const ativos = todosItens.filter(it => it.rec.total > 0);
+  const lider = ativos.slice().sort((a, b) => b.rec.total - a.rec.total)[0] || null;
+  return { lista, orfaos: CT_PRACA === 'TODAS' ? orfaos : [], ativos: ativos.length,
+           totalRoster: todosItens.length, lider, maxVend: lider ? lider.rec.total : 0,
+           somaEquipe: ativos.reduce((a, it) => a + it.rec.total, 0) };
+}
+
+// ── render ────────────────────────────────────────────────
+const CT_TH = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text);background:var(--surface2);border-bottom:1.5px solid var(--border2)';
+const CT_THC = CT_TH + ';text-align:center';
+
+function ctRender() {
+  if (!CT_DATA) return;
+  const L = ctBuildLojas();
+  const V = ctBuildVendedores();
+  ctRenderKpis(L, V);
+  const cont = document.getElementById('ct-conteudo');
+  cont.innerHTML = CT_ABA === 'lojas' ? ctHtmlLojas(L) : ctHtmlVendedores(V, L);
+}
+
+function ctRenderKpis(L, V) {
+  const tot = L.tot;
+  const conv = tot.carros > 0 ? tot.corretora / tot.carros : 0;
+  const top = ctPlanTop(tot.planos);
+  const lojasComVenda = L.comVenda.length;
+  const k = (ico, val, lbl, acc, sub, cor) =>
+    `<div class="kpi"><div class="kpi-ico">${ico}</div><div class="kpi-val" style="color:var(${cor})">${val}</div><div class="kpi-lbl">${lbl}</div>${sub ? `<div style="font-size:10px;color:var(--text2);margin-top:6px">${sub}</div>` : ''}<div class="kpi-accent ${acc}"></div></div>`;
+  document.getElementById('ct-kpis').innerHTML =
+    k('🛡️', tot.corretora.toLocaleString('pt-BR'), 'Autosegsat + Seguro · ' + ctEsc(ctPeriodoLabel()), 'g', `em ${lojasComVenda} de ${L.todas.length} lojas`, '--green') +
+    k('🎯', tot.carros > 0 ? ctFmtPct(conv) : '—', 'Conversão sobre carros', 'gold', `${tot.corretora.toLocaleString('pt-BR')} de ${tot.carros.toLocaleString('pt-BR')} carros vendidos`, '--gold') +
+    k('📦', top ? ctEsc(PLAN_LABELS[top.k] || top.k) : '—', 'Plano mais vendido', 'p', top ? `${top.q} vendas · ${ctFmtPct(top.q / tot.corretora)} do total` : 'sem vendas no período', '--purple') +
+    k('👤', `${V.ativos}<span style="font-size:14px;color:var(--text3)"> / ${V.totalRoster}</span>`, 'Vendedores com venda', 'b', V.lider ? `líder: ${ctEsc(V.lider.r.nome.split(' ').slice(0, 2).join(' '))} (${V.lider.rec.total})` : 'sem vendas no período', '--blue');
+}
+
+function ctBtnCopiar(cardId, btnId) {
+  return `<button id="${btnId}" onclick="ctCopiarImagem('${cardId}','${btnId}')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><span>📋</span> Copiar Imagem</button>`;
+}
+function ctBtnToggle(ativo, fn, textoOn, textoOff) {
+  return `<button class="marca-btn${ativo ? ' active' : ''}" style="margin-bottom:0" onclick="${fn}()">${ativo ? textoOn : textoOff}</button>`;
+}
+
+function ctHtmlLojas(L) {
+  const linhas = L.comVenda.concat(CT_LOJAS_SO_VENDA ? [] : L.semVenda);
+  const maxPct = Math.max(0.0001, ...linhas.map(l => l.pct));
+  const sortBtn = (id, txt) => `<button class="marca-btn${CT_SORT === id ? ' active' : ''}" style="margin-bottom:0" onclick="ctSetSort('${id}')">${txt}</button>`;
+  const rows = linhas.map((l, i) => {
+    const zero = l.corretora === 0;
+    const conv = l.carros > 0
+      ? `<div class="ct-conv"><span class="${zero ? '' : 'td-green'}" style="${zero ? 'color:var(--text3)' : ''}">${ctFmtPct(l.pct)}</span><div class="ct-bar"><i style="width:${Math.min(100, l.pct / maxPct * 100).toFixed(0)}%"></i></div></div>`
+      : `<span class="badge orange" title="Carros da aba INTEGRAÇÃO (col. I) não preenchido para esta loja">sem carros</span>`;
+    return `<tr style="${zero ? 'opacity:.55' : ''}">
+      <td class="td-mono" style="color:var(--text3)">${i + 1}</td>
+      <td class="td-main">${ctEsc(l.loja)}</td>
+      <td>${ctEsc(l.marca)}</td>
+      <td>${ctEsc(l.uf)}</td>
+      <td class="td-mono" style="text-align:center">${l.carros.toLocaleString('pt-BR')}</td>
+      <td class="td-mono" style="text-align:center;font-size:15px;font-weight:700;color:${zero ? 'var(--text3)' : 'var(--green-d)'}">${l.corretora}</td>
+      <td style="text-align:center">${conv}</td>
+      <td>${ctPlanDestaque(l.planos)}</td>
+      <td>${ctPlanMix(l.planos)}</td>
+    </tr>`;
+  }).join('');
+  const t = L.tot;
+  const totalRow = `<tr style="background:var(--surface2);font-weight:700">
+      <td></td><td class="td-main" colspan="3">TOTAL${CT_PRACA !== 'TODAS' ? ' · ' + ctEsc(CT_PRACAS.find(p => p.id === CT_PRACA).label) : ''} (${L.todas.length} lojas)</td>
+      <td class="td-mono" style="text-align:center">${t.carros.toLocaleString('pt-BR')}</td>
+      <td class="td-mono" style="text-align:center;font-size:15px;color:var(--green-d)">${t.corretora}</td>
+      <td style="text-align:center" class="td-green">${t.carros > 0 ? ctFmtPct(t.corretora / t.carros) : '—'}</td>
+      <td>${ctPlanDestaque(t.planos)}</td>
+      <td>${ctPlanMix(t.planos)}</td></tr>`;
+  const vazio = !linhas.length ? `<tr><td colspan="9" style="padding:22px;text-align:center;color:var(--text3)">Nenhuma venda da Corretora em ${ctEsc(ctPeriodoLabel())}${CT_PRACA !== 'TODAS' ? ' nesta praça' : ''}. Confira se a coluna H da aba VENDAS está como <b>CORRETORA</b>.</td></tr>` : '';
+  return `<div class="card" id="ct-card-lojas">
+    <div class="card-hd">
+      <div><div class="card-title">🏪 Autosegsat + Seguro x Carros vendidos, por loja</div>
+      <div class="card-sub">Loja = onde a venda foi realizada (col. G) · Carros = aba INTEGRAÇÃO (col. I) · Conversão = vendas Corretora ÷ carros · ${ctEsc(ctPeriodoLabel())}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <span class="card-tag gold" data-ct-hide>Ordenar:</span>${sortBtn('qtd', 'Qtd vendida')}${sortBtn('pct', '% conversão')}${sortBtn('carros', 'Carros')}
+        ${ctBtnToggle(!CT_LOJAS_SO_VENDA, 'ctToggleLojas', 'Mostrando lojas sem venda (' + L.semVenda.length + ')', 'Mostrar lojas sem venda (' + L.semVenda.length + ')')}
+        ${ctBtnCopiar('ct-card-lojas', 'ct-btn-copiar-lojas')}
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th style="${CT_TH}">#</th><th style="${CT_TH}">Loja</th><th style="${CT_TH}">Marca</th><th style="${CT_TH}">UF</th>
+        <th style="${CT_THC}">Carros</th><th style="${CT_THC}">Autosegsat + Seguro</th><th style="${CT_THC}">% Conv.</th>
+        <th style="${CT_TH}">Plano destaque</th><th style="${CT_TH}">Mix de planos (qtd)</th>
+      </tr></thead>
+      <tbody>${rows}${vazio}${totalRow}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function ctHtmlVendedores(V, L) {
+  const total = Math.max(1, L.tot.corretora);
+  const vendRow = (it, home) => {
+    const { r, rec } = it;
+    const zero = rec.total === 0;
+    if (zero && CT_VEND_SO_VENDA) return '';
+    const share = rec.total / total;
+    const larg = V.maxVend > 0 ? Math.min(100, rec.total / V.maxVend * 100) : 0;
+    const outras = Object.keys(rec.lojas).map(k => rec.lojas[k])
+      .filter(x => !home || ctLojaKey(x.nome) !== r.lojaKey).sort((a, b) => b.qtd - a.qtd);
+    let obs = '';
+    if (rec.aprox) obs += `<span class="badge grey" title="Na planilha o nome aparece como: ${ctEsc(rec.nomesPlanilha.join(' / '))}">≈ nome abreviado</span> `;
+    if (outras.length && !zero) {
+      obs += `<span style="font-size:10.5px;color:var(--text2)">${home ? 'Também vendeu em' : 'Vendeu em'}: ${outras.slice(0, 3).map(x => ctEsc(x.nome) + ' (' + x.qtd + ')').join(', ')}${outras.length > 3 ? '…' : ''}</span>`;
+    }
+    const area = r.tipo === 'SUPERVISOR' ? ` <span class="badge grey">${ctEsc(r.area)}</span>` : '';
+    return `<tr style="${zero ? 'opacity:.55' : ''}">
+      <td class="td-main">${ctEsc(r.nome)}${area}${zero ? ' <span class="badge grey">sem venda</span>' : ''}</td>
+      <td class="td-mono" style="text-align:center;font-size:15px;font-weight:700;color:${zero ? 'var(--text3)' : 'var(--green-d)'}">${rec.total}</td>
+      <td style="min-width:120px"><div class="ct-conv"><span class="td-mono" style="font-size:11px">${zero ? '—' : ctFmtPct(share)}</span><div class="ct-bar"><i style="width:${larg.toFixed(0)}%"></i></div></div></td>
+      <td>${ctPlanDestaque(rec.planos)}</td>
+      <td>${ctPlanMix(rec.planos)}</td>
+      <td class="td-mono" style="text-align:center">${ctFmtData(rec.ultimaVenda)}</td>
+      <td class="td-mono" style="text-align:center">${rec.diasAtivos || '—'}</td>
+      <td>${obs}</td>
+    </tr>`;
+  };
+  const COLS = 8;
+  let body = '';
+  V.lista.forEach(g => {
+    const linhas = g.itens.map(it => vendRow(it, g.tipo === 'LOJA')).join('');
+    if (!linhas) return;
+    const nAtivos = g.itens.filter(it => it.rec.total > 0).length;
+    let dir = `<span class="badge ${g.total > 0 ? 'green' : 'grey'}">${g.total} venda${g.total === 1 ? '' : 's'} · ${nAtivos}/${g.itens.length} vendedor${g.itens.length === 1 ? '' : 'es'}</span>`;
+    if (g.tipo === 'LOJA') {
+      dir += g.loja
+        ? ` <span class="badge gold" title="Vendas da Corretora na loja (col. G) x carros vendidos">Loja: ${g.loja.corretora} de ${g.loja.carros.toLocaleString('pt-BR')} carros${g.loja.carros > 0 ? ' · ' + ctFmtPct(g.loja.pct) : ''}</span>`
+        : ' <span class="badge grey" title="Nenhuma venda nem carros encontrados com esse nome de loja no período">loja sem dados no período</span>';
+    }
+    const cor = g.tipo === 'LOJA' ? 'var(--surface2)' : g.tipo === 'SUPERVISOR' ? 'var(--purple-bg)' : 'var(--gold-bg)';
+    const ico = g.tipo === 'LOJA' ? '🏪' : g.tipo === 'SUPERVISOR' ? '🧭' : g.tipo === 'BDC' ? '📞' : '🔄';
+    body += `<tr><td colspan="${COLS}" style="background:${cor};border-top:1.5px solid var(--border2);padding:9px 10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-weight:700;color:var(--text);font-size:12.5px">${ico} ${ctEsc(g.titulo)}${g.uf ? ' <span style="font-weight:500;color:var(--text3)">· ' + ctEsc(g.uf) + '</span>' : ''}</span>
+        <span>${dir}</span></div></td></tr>${linhas}`;
+  });
+  if (V.orfaos.length) {
+    body += `<tr><td colspan="${COLS}" style="background:var(--red-bg);border-top:1.5px solid var(--border2);padding:9px 10px">
+      <span style="font-weight:700;color:var(--red);font-size:12.5px">⚠️ Nomes da coluna J que não batem com a Equipe Corretora</span>
+      <span style="font-size:11px;color:var(--text2)"> — confira a grafia na planilha de vendas ou inclua a pessoa na lista EQUIPE_CORRETORA</span></td></tr>`;
+    V.orfaos.slice().sort((a, b) => b.total - a.total).forEach(v => {
+      const rec = ctVendNormaliza(v);
+      const outras = Object.keys(rec.lojas).map(k => rec.lojas[k]).sort((a, b) => b.qtd - a.qtd);
+      body += `<tr><td class="td-main" style="color:var(--red)">${ctEsc(v.vendedor)}</td>
+        <td class="td-mono" style="text-align:center;font-size:15px;font-weight:700">${rec.total}</td>
+        <td></td><td>${ctPlanDestaque(rec.planos)}</td><td>${ctPlanMix(rec.planos)}</td>
+        <td class="td-mono" style="text-align:center">${ctFmtData(rec.ultimaVenda)}</td>
+        <td class="td-mono" style="text-align:center">${rec.diasAtivos || '—'}</td>
+        <td><span style="font-size:10.5px;color:var(--text2)">Vendeu em: ${outras.slice(0, 3).map(x => ctEsc(x.nome) + ' (' + x.qtd + ')').join(', ')}</span></td></tr>`;
+    });
+  }
+  const media = V.ativos > 0 ? (V.somaEquipe / V.ativos).toFixed(1).replace('.', ',') : '0';
+  const vazio = !body ? `<tr><td colspan="${COLS}" style="padding:22px;text-align:center;color:var(--text3)">Nenhum vendedor para exibir com os filtros atuais.</td></tr>` : '';
+  return `<div class="card" id="ct-card-vend">
+    <div class="card-hd">
+      <div><div class="card-title">👤 Vendedores por loja · performance de vendas</div>
+      <div class="card-sub">Equipe Corretora agrupada pela loja de origem · ${V.ativos} de ${V.totalRoster} com venda · média ${media} por vendedor ativo · ${ctEsc(ctPeriodoLabel())}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        ${ctBtnToggle(CT_VEND_SO_VENDA, 'ctToggleVend', 'Só quem vendeu', 'Só quem vendeu')}
+        ${ctBtnCopiar('ct-card-vend', 'ct-btn-copiar-vend')}
+      </div>
+    </div>
+    <div class="tbl-wrap" style="max-height:640px"><table>
+      <thead><tr>
+        <th style="${CT_TH}">Vendedor</th><th style="${CT_THC}">Vendas</th><th style="${CT_TH}">% do total</th>
+        <th style="${CT_TH}">Plano destaque</th><th style="${CT_TH}">Mix de planos (qtd)</th>
+        <th style="${CT_THC}">Última venda</th><th style="${CT_THC}">Dias c/ venda</th><th style="${CT_TH}">Obs.</th>
+      </tr></thead>
+      <tbody>${body}${vazio}</tbody>
+    </table></div>
+  </div>`;
+}
+
+// ── copiar tabela como imagem (WhatsApp) ──────────────────
+function ctCopiarImagem(cardId, btnId) {
+  const btn = document.getElementById(btnId);
+  const card = document.getElementById(cardId);
+  if (!card || typeof html2canvas === 'undefined') { showWarnBanner('Não foi possível gerar a imagem agora.'); return; }
+  const restoreLabel = () => { if (btn) { btn.innerHTML = '<span>📋</span> Copiar Imagem'; btn.disabled = false; btn.style.borderColor = ''; btn.style.color = ''; } };
+  if (btn) { btn.innerHTML = '<span>⏳</span> Gerando...'; btn.disabled = true; }
+  const wrap = card.querySelector('.tbl-wrap'), tbl = card.querySelector('table');
+  const orig = { wo: wrap.style.overflow, wm: wrap.style.maxHeight, wh: wrap.style.height, co: card.style.overflow, tl: tbl.style.tableLayout, tw: tbl.style.width };
+  wrap.style.overflow = 'visible'; wrap.style.maxHeight = 'none'; wrap.style.height = 'auto';
+  card.style.overflow = 'visible'; tbl.style.tableLayout = 'auto'; tbl.style.width = 'auto';
+  const escondidos = Array.from(card.querySelectorAll('button, [data-ct-hide]'));
+  escondidos.forEach(el => { el.dataset.vis = el.style.visibility; el.style.visibility = 'hidden'; });
+  const restaurar = () => {
+    wrap.style.overflow = orig.wo; wrap.style.maxHeight = orig.wm; wrap.style.height = orig.wh;
+    card.style.overflow = orig.co; tbl.style.tableLayout = orig.tl; tbl.style.width = orig.tw;
+    escondidos.forEach(el => { el.style.visibility = el.dataset.vis || ''; });
+  };
+  const nomeArq = 'Corretora_' + (cardId === 'ct-card-vend' ? 'Vendedores' : 'Lojas') + '_' + ctPeriodoLabel().replace(/[^0-9A-Za-z]/g, '') + '.png';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const W = Math.max(card.offsetWidth, tbl.offsetWidth) + 40, H = card.offsetHeight + 40;
+    html2canvas(card, { backgroundColor: '#ffffff', scale: 3, useCORS: true, logging: false, width: W, height: H, windowWidth: W + 200, windowHeight: H + 200, x: 0, y: 0 })
+      .then(canvas => {
+        restaurar();
+        const baixar = () => { const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = nomeArq; a.click(); if (btn) { btn.innerHTML = '<span>📷</span> Baixado!'; setTimeout(restoreLabel, 2500); } };
+        canvas.toBlob(blob => {
+          try {
+            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => {
+              if (btn) { btn.innerHTML = '<span>✅</span> Copiado!'; btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)'; setTimeout(restoreLabel, 2500); }
+            }).catch(baixar);
+          } catch (e) { baixar(); }
+        }, 'image/png');
+      })
+      .catch(err => { restaurar(); restoreLabel(); showWarnBanner('Erro ao gerar imagem: ' + err); });
+  }));
+}
+
+// ============================================================
 // LOADING
 // ============================================================
 function setLoading(pct, msg) {
@@ -3083,13 +3704,14 @@ function navTo(page, btn) {
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   currentPage = page;
-  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',comparativo:'Comparativo de Lojas · 3 Meses',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca','meta-tri':'Meta Trimestre · Projeção de Fechamento',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
+  const titles = {geral:'Dashboard Geral',acoes:'Plano de Ação · Oportunidades',estados:'Por Estado',lojas:'Ranking de Lojas',comparativo:'Comparativo de Lojas · 3 Meses',marcas:'Por Marca','marca-detalhe':'Detalhe por Marca','meta-tri':'Meta Trimestre · Projeção de Fechamento',corretora:'Corretora · Autosegsat + Seguro',comissoes:'Comissões',estoque:'Estoque · Rastreadores','estoque-at':'Estoque Atualizado · Rastreadores',pracas:'Visão por Praça',treinamentos:'Treinamentos · Capacitação'};
   document.getElementById('page-title').textContent = (titles[page]||'') + ' · ' + getPeriodoLabel();
   if(page==='estoque') renderEstoque();
   if(page==='estoque-at') carregarEstoqueAtualizado();
   if(page==='treinamentos') trnCarregarDados();
   if(page==='comparativo') renderComparativo();
   if(page==='meta-tri') carregarMetaTrimestre();
+  if(page==='corretora') carregarCorretora();
 }
 
 // ============================================================
